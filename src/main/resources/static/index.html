@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baccarat App Game Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<style>
+    /* Hide scrollbars but still allow scrolling */
+    .hidden-scrollbar {
+        scrollbar-width: none;
+        /* For Firefox */
+        -ms-overflow-style: none;
+        /* For Internet Explorer and Edge */
+    }
+
+    .hidden-scrollbar::-webkit-scrollbar {
+        display: none;
+        /* For Chrome, Safari, and Opera */
+    }
+
+    .glow {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        /* Gold glow */
+        transition: box-shadow 0.3s ease-in-out;
+    }
+</style>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center my-4">Baccarat App </h1>
+
+        <div class="flex flex-col md:flex-row">
+
+            <!-- First Panel (Inputs, Results, Reset Button) -->
+            <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg p-6 mb-6" style="margin: 0.5%;">
+                <div id="inputsContainer">
+                    <form id="gameForm">
+
+                        <div id="circleContainer" class="gap-4 mb-4 w-full overflow-x-auto hidden-scrollbar"
+                            style="height: 170px; white-space: nowrap;">
+                            <div id="handResultColumn" class="flex flex-row h-full w-full">
+                                <!-- Make this horizontally scrollable -->
+                            </div>
+                        </div>
+
+
+
+                        <div class="mb-4 flex items-center">
+                            <label for="baseBetAmount" class="text-gray-700 mr-2">Base Bet Amount:</label>
+                            <input type="number" id="baseBetAmount" value="10"
+                                class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
+                        </div>
+
+                        <div class="flex justify-between">
+                            <button type="button" id="playerButton"
+                                class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-200 mr-2">
+                                PLAYER
+                            </button>
+                            <button type="button" id="bankerButton"
+                                class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition duration-200 ml-2">
+                                BANKER
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="results" class="bg-white shadow-md rounded-lg p-6 mb-4">
+                    <!-- <h2 class="text-2xl font-semibold mb-4">Results</h2> -->
+                    <div id="status" class="text-gray-700 mb-4 text-center"></div>
+                    <div id="bettingResults" class="text-gray-700"></div>
+                    <div id="finalStats" class="mt-4 font-bold"></div>
+                </div>
+
+                <div>
+                    <button id="resetButton" style="display: none;"
+                        class="mt-4 w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 transition duration-200">
+                        Reset Game
+                    </button>
+
+                </div>
+                <div>
+                    <button id="undoButton" style="display: none;"
+                        class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition duration-200">
+                        Undo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Second Panel -->
+            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-6 mb-6"  style="margin: 0.5%;">
+                <h2 class="text-2xl font-semibold mb-4">Game Results Overview</h2>
+                <p class="text-gray-700">Each result below represents the
+                    profit details for each shoe.</p>
+
+                <!-- Main Card -->
+                <div class="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
+                    <h3 class="font-semibold">Total Profit: <span id="totalProfit"></span></h3>
+                    <p class="text-gray-700">Date/Time: <span id="dateTime"></span></p>
+                </div>
+
+
+                <!-- Sub Card Container -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="journalContainer">
+                    <!-- Journal entries will be populated here -->
+                </div>
+            </div>
+
+
+
+
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+
+            getJournal();
+
+            // Function to handle button click and AJAX call
+            function playGame(userInput) {
+                const recommendedBetValue = $('#recommendedBet').text();
+                const baseBetAmount = $('#baseBetAmount').val();
+                // AJAX call to simulate the game
+                $.ajax({
+                    url: '/api/baccarat/play',
+                    method: 'POST',
+                    contentType: 'application/x-www-form-urlencoded',
+                    data: $.param({
+                        userInput: userInput,
+                        recommendedBet: recommendedBetValue,
+                        baseBetAmount: baseBetAmount
+                    }),
+                    success: function (response) {
+
+                        // console.log(response);
+                        displayResultToUi(response);
+                        getJournal();
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error
+                        $('#status').text(`Error: ${xhr.responseText}`);
+                    }
+                });
+            }
+
+            // Event listener for PLAYER button
+            $('#playerButton').on('click', function () {
+
+
+                playGame('p');
+
+
+
+            });
+
+            // Event listener for BANKER button
+            $('#bankerButton').on('click', function () {
+
+
+                playGame('b');
+            });
+
+            //Event listener for UNDO button
+
+            $('#undoButton').on('click', function () {
+
+                const recommendedBetValue = $('#recommendedBet').text();
+                const userInput = recommendedBetValue === "Player" ? "p" : "b";
+                back(userInput, recommendedBetValue);
+
+            });
+
+            // Event listener for RESET GAME button
+            $('#resetButton').on('click', function () {
+
+                // AJAX call to reset the game
+                $.ajax({
+                    url: '/api/baccarat/reset', // Update the URL to your reset endpoint
+                    method: 'POST',
+                    success: function (response) {
+
+                        // console.log(response);
+                        resetUi();
+
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error
+                        $('#status').text(`Error: ${xhr.responseText}`);
+                    }
+                });
+            });
+        });
+
+        function resetUi() {
+            // Update the UI with the response message   
+            $('#status').text("");
+            $('#bettingResults').html('');
+            $('#handResultColumn').html('');
+
+            $('#resetButton').hide();
+            $('#undoButton').hide();
+
+
+
+            $('#playerButton').prop('disabled', false);
+            $('#bankerButton').prop('disabled', false);
+            getJournal();
+        }
+
+
+        function displayResultToUi(response) {
+
+
+
+            if (response.status.handCount > 0) {
+                $('#resetButton').show();
+                $('#undoButton').show();
+            }
+
+
+            // Set the text and change color based on the message
+            const statusMessage = response.message;
+            if (statusMessage.includes("Target profit hit!")) {
+                $('#status').text(response.message).css('color', 'green'); // Set text color to red
+            } else if (response.message.includes("Stop loss hit")) {
+                $('#status').text(response.message).css('color', 'red'); // Set text color to red
+            } else {
+                $('#status').text(response.message).css('color', 'black');
+            }
+
+
+            $('#bettingResults').html(`
+            <p>Total Hands Played: ${response.status.handCount}</p>
+            <p>Total Wins: ${response.status.totalWins}</p>
+            <p>Total Losses: ${response.status.totalLosses}</p>
+            <p>Playing Fund: $${response.status.playingFund.toFixed(2)}</p>
+            <p>Net Profit: <span class="${response.status.profit >= 0 ? 'text-green-500' : 'text-red-500'}">$${response.status.profit.toFixed(2)}</span></p>
+            <p>Suggested Bet Amount: $${response.suggestedBet.toFixed(2)}</p>
+            <p>Recommended Bet: ${response.recommendedBet}</p>
+            <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
+
+            // Show or hide the RESET GAME button based on the result
+            if (statusMessage.includes("Target profit hit!")
+                || statusMessage.includes("Stop loss hit!")
+                || statusMessage.includes("Maximum")
+                || statusMessage.includes("Daily")) {
+
+                $('#playerButton').prop('disabled', true);
+                $('#bankerButton').prop('disabled', true);
+                $('#undoButton').hide();
+
+            } else {
+
+                $('#undoButton').show();
+                $('#playerButton').prop('disabled', false);
+                $('#bankerButton').prop('disabled', false);
+
+                // Update the UI of big road
+                displayResults(response.sequencePlayed.toUpperCase())
+            }
+        }
+        function back(userInput, recommendedBetValue) {
+
+
+            const baseBetAmount = parseFloat($('#baseBetAmount').val());
+
+            // Validate input
+            if (!userInput || !recommendedBet || isNaN(baseBetAmount)) {
+                $('#responseMessage').text("Please fill in all fields correctly.");
+                return;
+            }
+
+            $.ajax({
+                url: '/api/baccarat/back',
+                method: 'POST',
+                contentType: 'application/x-www-form-urlencoded',
+                data: $.param({
+                    recommendedBet: recommendedBetValue,
+                    baseBetAmount: baseBetAmount
+                }),
+                success: function (response) {
+
+                    console.log(response);
+                    if (response.message.includes("reset")) {
+                        resetUi();
+                    } else {
+                        displayResultToUi(response);
+                    }
+
+                    // Handle success, display response message
+                    // $('#responseMessage').text(response.message);
+                    // console.log(response); // Log the full response for debugging
+
+
+
+
+                },
+                error: function (xhr, status, error) {
+                    // Handle errors
+                    $('#responseMessage').text("An error occurred: " + xhr.responseText);
+                    console.error("Error details:", error);
+                }
+            });
+        }
+
+        function addContainer(group) {
+
+            const container = document.createElement('div');
+            container.classList.add(
+                'flex',
+                'flex-col',    // Align circles vertically
+                'items-start',  // Align items to the top
+                'justify-start', // Optional: ensures content starts from top
+                'h-full'       // Full height of the main container               
+            );
+
+            // Create circles for each character in the group
+            for (const char of group) {
+                const circle = document.createElement('div');
+                circle.classList.add(
+                    'flex',
+                    'items-center',
+                    'justify-center',
+                    'w-7',       // Width of the circle
+                    'h-7',       // Height of the circle
+                    'border',
+                    'border-gray-300',
+                    'rounded-full', // Full circle
+                    'text-white',
+                    'font-bold',
+                    char === 'P' ? 'bg-blue-500' : 'bg-red-500' // Circle color                   
+                );
+                circle.textContent = char; // Add the character to the circle
+                container.appendChild(circle); // Add circle to the container
+            }
+
+            return container; // Return the container with circles
+        }
+
+        function displayResults(playerAndBankerCollections) {
+
+            const results = playerAndBankerCollections.split('');
+            // Clear previous results
+            document.getElementById('handResultColumn').innerHTML = '';
+
+            let currentChar = results[0];
+            let group = currentChar; // Initialize the group with the first character
+            const column = document.getElementById('handResultColumn');
+            const circleContainer = document.getElementById('circleContainer'); // Reference to the outer container
+
+            for (let i = 1; i < results.length; i++) {
+                if (results[i] === currentChar) {
+                    group += results[i]; // Add to the current group if same
+                } else {
+                    // Create and append the container for the current group
+                    column.appendChild(addContainer(group));
+                    currentChar = results[i]; // Update currentChar
+                    group = currentChar; // Start a new group
+                }
+            }
+            // Append the last group after the loop
+            column.appendChild(addContainer(group));
+
+            // Auto-scroll the circleContainer to the right after adding new content
+            setTimeout(() => {
+                circleContainer.scrollLeft = circleContainer.scrollWidth;
+            }, 0); // Using a timeout to ensure rendering is complete before scrolling
+        }
+
+        function getJournal() {
+         
+            const currentDate = new Date();
+
+// Get the user's time zone
+const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+// Format the date with the user's time zone
+const options = { timeZone: userTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
+const localDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
+
+console.log(localDate);
+
+
+            // Perform the AJAX call
+            $.ajax({
+                url: '/api/journals/dateCreated',
+                type: 'GET',
+                data: {
+                    dateCreated: localDate
+                },
+                success: function (response) {
+
+                    // console.log(response.length);
+
+                    $('#journalContainer').html('');
+
+                    $('#dateTime').text(localDate);
+
+                    const journalContainer = document.getElementById('journalContainer');
+                    let totalProfit = 0;
+                    let lastValidIndex = -1;
+
+                    response.forEach((journal, index) => {
+                        if (journal.hand !== 0) {
+                            lastValidIndex = index; // Update lastValidIndex if Hand is not 0
+                        }
+                    });
+
+                    response.forEach((journal, index) => {
+                        const journalDiv = document.createElement('div');
+                        journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-4');
+
+                        const shoeHeading = document.createElement('h4');
+                        shoeHeading.classList.add('font-semibold');
+                        shoeHeading.textContent = `Shoe: ${journal.shoe}`;
+
+                        const handParagraph = document.createElement('p');
+                        handParagraph.classList.add('text-gray-700');
+                        handParagraph.textContent = `Hand: ${journal.hand}`;
+
+                        const profitParagraph = document.createElement('p');
+                        profitParagraph.classList.add('text-gray-700');
+                        profitParagraph.textContent = `Profit: ${journal.profit}`;
+
+                        totalProfit += journal.profit;
+
+                        journalDiv.appendChild(shoeHeading);
+                        journalDiv.appendChild(handParagraph);
+                        journalDiv.appendChild(profitParagraph);
+
+                        journalContainer.appendChild(journalDiv);
+
+                        // Add a glowing effect to the last card with Hand not equal to 0
+                        if (index === lastValidIndex) {
+                            journalDiv.classList.add('glow'); // Add a class for glowing effect
+                        }
+                    });
+
+
+                    $('#totalProfit').text(totalProfit);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching journals:', error);
+                    alert('An error occurred while fetching journals. Please try again.');
+                }
+            });
+        }
+
+    </script>
+</body>
+
+</html>

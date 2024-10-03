@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Container on Button Click</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hide scrollbars but still allow scrolling */
+        .hidden-scrollbar {
+            scrollbar-width: none; /* For Firefox */
+            -ms-overflow-style: none; /* For Internet Explorer and Edge */
+        }
+
+        .hidden-scrollbar::-webkit-scrollbar {
+            display: none; /* For Chrome, Safari, and Opera */
+        }
+    </style>
+</head>
+
+<body class="p-6">
+
+    <div id="circleContainer" class="gap-4 mb-4 overflow-auto hidden-scrollbar" style="max-height: 165px; width: 400px; white-space: nowrap;">
+        <div id="handResultColumn" class="flex flex-row h-full w-full ">
+            <!-- Make this horizontally scrollable -->
+        </div>
+    </div>
+
+    <button id="btnSimulate" class="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600">
+        Simulate
+    </button>
+
+    <script>
+        function addContainer(group) {
+            const container = document.createElement('div');
+            container.classList.add(
+                'flex',
+                'flex-col',    // Align circles vertically
+                'items-start',  // Align items to the top
+                'justify-start', // Optional: ensures content starts from top
+                'h-full'       // Full height of the main container               
+            );
+
+            // Create circles for each character in the group
+            for (const char of group) {
+                const circle = document.createElement('div');
+                circle.classList.add(
+                    'flex',
+                    'items-center',
+                    'justify-center',
+                    'w-7',       // Width of the circle
+                    'h-7',       // Height of the circle
+                    'border',
+                    'border-gray-300',
+                    'rounded-full', // Full circle
+                    'text-white',
+                    'font-bold',
+                    char === 'P' ? 'bg-blue-500' : 'bg-red-500', // Circle color
+                    'mb-1'    // Margin between all circles
+                );
+                circle.textContent = char; // Add the character to the circle
+                container.appendChild(circle); // Add circle to the container
+            }
+
+            return container; // Return the container with circles
+        }
+
+        function displayResults() {
+            const results = "PBPBPBPBPBPBPBPBPBPBPPPPPPPBPBPBPBBBBBBBPBPBPBPBPBPBPBPBPBPBPBP".split('');
+            // Clear previous results
+            document.getElementById('handResultColumn').innerHTML = '';
+
+            let currentChar = results[0];
+            let group = currentChar; // Initialize the group with the first character
+            const column = document.getElementById('handResultColumn');
+            const circleContainer = document.getElementById('circleContainer'); // Reference to the outer container
+
+            for (let i = 1; i < results.length; i++) {
+                if (results[i] === currentChar) {
+                    group += results[i]; // Add to the current group if same
+                } else {
+                    // Create and append the container for the current group
+                    column.appendChild(addContainer(group));
+                    currentChar = results[i]; // Update currentChar
+                    group = currentChar; // Start a new group
+                }
+            }
+            // Append the last group after the loop
+            column.appendChild(addContainer(group));
+
+            // Auto-scroll the circleContainer to the right after adding new content
+            setTimeout(() => {
+                circleContainer.scrollLeft = circleContainer.scrollWidth;
+            }, 0); // Using a timeout to ensure rendering is complete before scrolling
+        }
+
+        document.getElementById('btnSimulate').addEventListener('click', displayResults);
+    </script>
+</body>
+
+</html>

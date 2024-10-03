@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Page</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <section class="w-full h-full">
+        <div class="container mx-auto h-full">
+            <div class="flex justify-center items-center h-full">
+                <div class="w-full lg:w-10/12 xl:w-11/12">
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                        <div class="flex flex-col md:flex-row justify-center">
+
+                            <!-- Form Section -->
+                            <div class="md:w-1/2 p-8">
+                                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Sign up</h2>
+
+                                <form id="registrationForm">
+                                    <!-- Username -->
+                                    <div class="mb-6 flex items-center">
+                                        <i class="fas fa-user text-xl text-gray-400 mr-3"></i>
+                                        <div class="flex-grow">
+                                            <input type="text" id="username"
+                                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Your Username" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email -->
+                                    <div class="mb-6 flex items-center">
+                                        <i class="fas fa-envelope text-xl text-gray-400 mr-3"></i>
+                                        <div class="flex-grow">
+                                            <input type="email" id="email"
+                                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Your Email" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Password -->
+                                    <div class="mb-6 flex items-center">
+                                        <i class="fas fa-lock text-xl text-gray-400 mr-3"></i>
+                                        <div class="flex-grow">
+                                            <input type="password" id="password"
+                                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Password" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Repeat Password -->
+                                    <div class="mb-6 flex items-center">
+                                        <i class="fas fa-key text-xl text-gray-400 mr-3"></i>
+                                        <div class="flex-grow">
+                                            <input type="password" id="repeat-password"
+                                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Repeat your password" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Terms of Service Checkbox -->
+                                    <div class="mb-6 flex items-center justify-center">
+                                        <input type="checkbox" id="terms" class="mr-2" required>
+                                        <label for="terms" class="text-gray-600 text-sm">I agree to the <a href="#"
+                                                class="text-blue-600">Terms of Service</a></label>
+                                    </div>
+
+                                    <!-- Register Button -->
+                                    <div class="flex justify-center">
+                                        <button type="button" onclick="registration()"
+                                            class="bg-blue-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-blue-600">Register</button>
+                                    </div>
+
+                                    <!-- Message Display -->
+                                    <div class="flex justify-center">
+                                        <span id="message" class="mt-4 text-gray-600"></span>
+                                    </div>
+
+                                    <div class="flex justify-center">
+                                        <p class="mt-4 text-gray-600">
+                                            Already have an account?
+                                            <a href="login.html" class="text-blue-500 hover:underline">Login</a>
+                                        </p>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Image Section -->
+                            <div class="hidden md:block md:w-1/2 bg-cover bg-center"
+                                style="background-image: url('https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-registration/draw1.webp');">
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        $(document).ready(function () {
+            // Clear message on form input
+            $('#registrationForm input').on('input', function () {
+                $('#message').text('');
+            });
+        });
+
+        function registration() {
+            // Get form data
+            var username = $('#username').val();
+            var email = $('#email').val();
+            var password = $('#password').val();
+            var repeatPassword = $('#repeat-password').val();
+            var termsChecked = $('#terms').is(':checked');
+
+            // Basic validation
+            if (username === '' || email === '' || password === '' || repeatPassword === '') {
+                $('#message').text('Please fill in all fields.').addClass('text-red-500').removeClass('text-gray-600');
+                return;
+            }
+
+            if (!termsChecked) {
+                $('#message').text('You must agree to the Terms of Service.').addClass('text-red-500').removeClass('text-gray-600');
+                return;
+            }
+
+
+
+            if (password !== repeatPassword) {
+                $('#message').text('Passwords do not match.').addClass('text-red-500').removeClass('text-gray-600');
+                return;
+            }
+
+            // Collect user data from the form
+            const userData = {
+                username: username,
+                email: email,
+                password: password
+                // Add more fields as necessary based on your User model
+            };
+
+            // Make the AJAX POST request
+            $.ajax({
+                url: '/api/users/register', // Adjust the URL according to your API endpoint
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(userData),
+                success: function (response) {
+                    console.log('User created:', response);
+
+                $('#registrationForm')[0].reset(); // Reset the form
+                 $('#terms').prop('checked', false); // Uncheck the terms checkbox
+
+
+
+                    // Display success message
+                    $('#message').text('User created successfully!').addClass('text-green-500').removeClass('text-gray-600');
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error('Error creating user:', textStatus, errorThrown);
+                    // Display error message
+                    $('#message').text('Error creating user: ' + errorThrown).addClass('text-red-500').removeClass('text-gray-600');
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>
