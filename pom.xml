@@ -8,11 +8,11 @@
 		<version>3.3.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.baccarat</groupId>
-	<artifactId>markovchain</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>markovchain</name>
-	<description>Demo project for baccarat using markovchain</description>
+	<groupId>com.virtualsoft</groupId>
+	<artifactId>PlayerCompanion</artifactId>
+	<version>1.1.1-SNAPSHOT</version>
+	<name>PlayerCompanion</name>
+	<description>Player Companion Baccarat Game Tracker</description>
 	<url/>
 	<licenses>
 		<license/>
