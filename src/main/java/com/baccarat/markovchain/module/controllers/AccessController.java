@@ -51,7 +51,6 @@ public class AccessController {
     }
 
 
-
     // Handle the login request
     @PostMapping("/authentication")
     public String authenticateUser(@RequestParam String username,
@@ -62,15 +61,15 @@ public class AccessController {
         if (user != null && passwordMatches(password, user.getPassword()) && user.getIsActive() == 1) { // Implement your password matching logic
             // Successful authentication logic
             // Set user session, etc.
+            logger.info(user.getUsername() + ": successfully logged in.");
             return "redirect:/"; // Redirect to homepage after successful login
         } else {
+
             // Authentication failed
             model.addAttribute("error", "Invalid username or password");
             return "authentication"; // Return to login page
         }
     }
-
-
 
 
     private boolean passwordMatches(String rawPassword, String encodedPassword) {

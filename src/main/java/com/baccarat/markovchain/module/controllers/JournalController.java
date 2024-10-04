@@ -43,11 +43,12 @@ public class JournalController {
     public ResponseEntity<List<JournalResponse>> getJournalsByDateCreated(
             @RequestParam("dateCreated") LocalDate effectiveFrom) {
 
-        logger.info("Date created: {}", effectiveFrom);
+
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
+        logger.info(userPrincipal.getUsername()+ ": Date created: {}", effectiveFrom);
 
 //        logger.info("User UUID: {}", userUuid);
 
@@ -71,7 +72,7 @@ public class JournalController {
             journalResponses.add(new JournalResponse(remainingShoe++, 0, 0, LocalDate.now()));
         }
 
-        logger.info("Journals fetched: {}", journals.size());
+        logger.info(userPrincipal.getUsername()+ ": Journals fetched: {}", journals.size());
         return ResponseEntity.ok(journalResponses);
     }
 

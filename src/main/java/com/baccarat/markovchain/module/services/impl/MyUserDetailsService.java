@@ -25,7 +25,7 @@ public class MyUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userService.findByUsernameAndIsActive(username, 1);
         if (user == null) {
-            System.out.println("User Not Found");
+            System.out.println(username+": User Not Found");
             throw new UsernameNotFoundException("user not found");
         }
         System.out.println("User logged-in: " + user.getUsername());

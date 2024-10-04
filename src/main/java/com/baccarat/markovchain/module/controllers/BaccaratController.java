@@ -41,7 +41,7 @@ public class BaccaratController {
     private static int BASE_BET_UNIT = 1;
     private static int INITIAL_PLAYING_UNITS = 0;
     private static int MAX_DAILY_JOURNAL_LIMIT = 0;
-    private static int MAX_HANDS = 60;
+    private static final int MAX_HANDS = 60;
 
     private final MarkovChain markovChain;
     private final PatternRecognizer patternRecognizer;
@@ -74,34 +74,19 @@ public class BaccaratController {
     @PostMapping("/play")
     public GameResponse play(@RequestParam String userInput, @RequestParam String recommendedBet, @RequestParam int baseBetUnit) {
 
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
         // Log input values
-        logger.info("Received user input: {}", userInput);
-        logger.info("Received recommendedBet input: {}", recommendedBet);
-        logger.info("Received baseBetAmount input: {}", baseBetUnit);
+        logger.info(userPrincipal.getUsername()+ ": Received user input: {}", userInput);
+        logger.info(userPrincipal.getUsername()+ ": Received recommendedBet input: {}", recommendedBet);
+        logger.info(userPrincipal.getUsername()+ ": Received baseBetAmount input: {}", baseBetUnit);
 
         // Validate user input
         if (!isValidInput(userInput)) {
             return createErrorResponse();
         }
-        BASE_BET_UNIT = getBaseBetUnit();
 
-        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String userUuid = userPrincipal.getUserUuid();
-
-        updateSequenceAndUpdateHandCount(userInput);
-
-
-//        // Handle hand limits, stop profit/loss conditions
-//        if (hasReachedStopProfit()) {
-//            return saveAndReturn(new GameResponse(STOP_PROFIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
-//        } else if (hasReachedStopLoss()) {
-//            return saveAndReturn(new GameResponse(STOP_LOSS_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
-//        } else if (hasReachedDailyJournalLimit(userUuid)) {
-//            return saveAndReturn(new GameResponse(DAILY_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
-//        } else if (hasReachedHandsLimit()) {
-//            return saveAndReturn(new GameResponse(MAX_HAND_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
-//        }
-
+        updateSequenceAndUpdateHandCount(userInput,userPrincipal.getUsername());
 
         // Process virtual win if applicable
         if (waitingForVirtualWin) {
@@ -114,11 +99,11 @@ public class BaccaratController {
         Pair<Character, Double> markovPrediction = markovChain.predictNext(sequence.charAt(sequence.length() - 1));
         String patternPrediction = patternRecognizer.findPattern(sequence);
 
-        logger.info("Markov Prediction: {}, Pattern Prediction: {}", markovPrediction, patternPrediction);
+        logger.info(userPrincipal.getUsername()+": Markov Prediction: {}, Pattern Prediction: {}", markovPrediction, patternPrediction);
 
         // Combine predictions and handle the bet
         Pair<Character, Double> combinedPrediction = combinePredictions(markovPrediction, patternPrediction);
-        return handleBet(userInput, combinedPrediction, recommendedBet, baseBetUnit);
+        return handleBet(userPrincipal,userInput, combinedPrediction, recommendedBet, baseBetUnit);
     }
 
     //    @PostMapping("/init-config")
@@ -187,15 +172,15 @@ public class BaccaratController {
         return true;
     }
 
-    private void updateSequenceAndUpdateHandCount(String userInput) {
+    private void updateSequenceAndUpdateHandCount(String userInput,String username) {
         sequence += userInput;
         handCount++;
-        logger.info("Updated sequence: {}", sequence);
+        logger.info(username+ ": Updated sequence: {}", sequence);
     }
 
     private boolean hasReachedStopProfit() {
         if (profit >= STOP_PROFIT_PERCENTAGE * INITIAL_PLAYING_UNITS) {
-            logger.info("Target profit hit: {}!", profit);
+
             return true;
         }
         return false;
@@ -203,7 +188,7 @@ public class BaccaratController {
 
     private boolean hasReachedStopLoss() {
         if (profit <= -STOP_LOSS_PERCENTAGE * INITIAL_PLAYING_UNITS) {
-            logger.info("Stop loss hit: {}!", profit);
+
             return true;
         }
         return false;
@@ -228,11 +213,10 @@ public class BaccaratController {
         }
     }
 
-    private GameResponse handleBet(String userInput, Pair<Character, Double> combinedPrediction, String predictedBet, int betUnit) {
-
+    private GameResponse handleBet(UserPrincipal userPrincipal, String userInput, Pair<Character, Double> combinedPrediction, String predictedBet, int betUnit) {
+    String username = userPrincipal.getUsername();
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
-            logger.info("Prediction confidence too low. No bet suggested.");
-
+            logger.info(username+": Prediction confidence too low. No bet suggested.");
             return new GameResponse("Prediction confidence too low, no bet suggested.", sequence, getGameStatus(), BASE_BET_UNIT, 0, INITIAL_PLAYING_UNITS, WAIT);
         }
 
@@ -240,19 +224,19 @@ public class BaccaratController {
 
 
         if (playingUnit < betSize) {
-            logger.warn("Not enough funds to place bet. Current Playing Fund: ${}", playingUnit);
-
-            return new GameResponse("Not enough funds to place bet. Current Playing Fund: $" + String.format("%.2f", playingUnit), sequence, getGameStatus(), BASE_BET_UNIT, betSize, INITIAL_PLAYING_UNITS, WAIT);
+            logger.warn(username+": Not enough funds to place bet. Current Playing Fund: ${}", playingUnit);
+            return new GameResponse("Not enough funds to place bet. Current Playing Fund: $" + String.format("%d", playingUnit), sequence, getGameStatus(), BASE_BET_UNIT, betSize, INITIAL_PLAYING_UNITS, WAIT);
         }
 
         String prediction = String.valueOf(combinedPrediction.first);
 
         String recommendedBet = Objects.equals(prediction, "p") ? "Player" : "Banker";
 
-        return resolveBet(userInput, betSize, recommendedBet, predictedBet);
+        return resolveBet(userPrincipal,userInput, betSize, recommendedBet, predictedBet);
     }
 
-    private GameResponse resolveBet(String userInput, int betSize, String recommendedBet, String predictedBet) {
+    private GameResponse resolveBet(UserPrincipal userPrincipal,String userInput, int betSize, String recommendedBet, String predictedBet) {
+       String username = userPrincipal.getUsername();
         if (predictedBet.equals(WAIT) || predictedBet.isEmpty()) {
             return new GameResponse("Place your bet", sequence, getGameStatus(), BASE_BET_UNIT, betSize, INITIAL_PLAYING_UNITS, recommendedBet);
         }
@@ -261,28 +245,35 @@ public class BaccaratController {
 
         if (previousPrediction.equals(userInput)) {
             updateProfitAndFund(betSize, true);
-            logger.info("You won! New profit: {}, New playing fund: {}", profit, playingUnit);
+            logger.info(username+": You won! New profit: {}, New playing fund: {}", profit, playingUnit);
             // Handle hand limits, stop profit/loss conditions
-            return settleLimitAndValidation(betSize, recommendedBet, true);
+            return settleLimitAndValidation(userPrincipal, betSize, recommendedBet, true);
         } else {
             updateProfitAndFund(betSize, false);
-            logger.info("You lost! New profit: {}, New playing fund: {}", profit, playingUnit);
+            logger.info(username+": You lost! New profit: {}, New playing fund: {}", profit, playingUnit);
 
-            return settleLimitAndValidation(betSize, recommendedBet, false);
+            return settleLimitAndValidation(userPrincipal,betSize, recommendedBet, false);
         }
 
 
     }
 
-    private GameResponse settleLimitAndValidation(int betSize, String recommendedBet, boolean isWon) {
-        String userUuid = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUserUuid();
+    private GameResponse settleLimitAndValidation(UserPrincipal userPrincipal, int betSize, String recommendedBet, boolean isWon) {
+
+        String username = userPrincipal.getUsername();
+        String userUuid = userPrincipal.getUserUuid();
+
         if (hasReachedStopProfit()) {
+            logger.warn(username+": Reached stop profit. New profit: {}, New playing fund: {}", profit, playingUnit);
             return saveAndReturn(new GameResponse(STOP_PROFIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
         } else if (hasReachedStopLoss()) {
+            logger.warn(username+": Reached stop loss. New profit: {}, New playing fund: {}", profit, playingUnit);
             return saveAndReturn(new GameResponse(STOP_LOSS_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
         } else if (hasReachedDailyJournalLimit(userUuid)) {
+            logger.warn(username+": Reached daily journal limit. New profit: {}, New playing fund: {}", profit, playingUnit);
             return saveAndReturn(new GameResponse(DAILY_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
         } else if (hasReachedHandsLimit()) {
+            logger.warn(username+": Reached max hand limit. New profit: {}, New playing fund: {}", profit, playingUnit);
             return saveAndReturn(new GameResponse(MAX_HAND_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
         } else {
             return new GameResponse(isWon ? "You won!" : "You lost!", sequence, getGameStatus(), BASE_BET_UNIT, betSize, INITIAL_PLAYING_UNITS, recommendedBet);
@@ -303,7 +294,10 @@ public class BaccaratController {
 
     @GetMapping("/current-state")
     public GameResponse getCurrentState(@RequestParam String message) {
-        logger.info("Fetching current game state. " + message);
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        logger.info(userPrincipal.getUsername()+ ": Fetching current game state. " + message);
 
         double fund = getGameStatus().playingFund;
         if (fund == 0) {
