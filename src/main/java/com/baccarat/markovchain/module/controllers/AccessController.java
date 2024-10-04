@@ -38,7 +38,7 @@ public class AccessController {
     @GetMapping("/authentication")
     public String authenticationPage(Model model, CsrfToken csrfToken) {
 
-        logger.info("Authentication page requested. "+csrfToken.getToken());
+//        logger.info("Authentication page requested. "+csrfToken.getToken());
 
         // Get the current authentication status
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -54,6 +54,9 @@ public class AccessController {
         model.addAttribute("_csrf", csrfToken);
         return "authentication"; // Return the name of the HTML file without the .html extension
     }
+
+
+
     // Handle the login request
     @PostMapping("/authentication")
     public String authenticateUser(@RequestParam String username,

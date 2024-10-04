@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/authentication").permitAll() // Allow access to the custom login page
                         .requestMatchers("/logout").permitAll() // Allow access to logout
+                        .requestMatchers("/register").permitAll() // Allow access to logout
                         .requestMatchers("/").authenticated() // Home page must be authenticated
                         .requestMatchers("/login").denyAll() // Deny access to the default login URL
                         .anyRequest().authenticated())
