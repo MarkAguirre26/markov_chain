@@ -9,21 +9,24 @@
     <style>
         /* Hide scrollbars but still allow scrolling */
         .hidden-scrollbar {
-            scrollbar-width: none; /* For Firefox */
-            -ms-overflow-style: none; /* For Internet Explorer and Edge */
+            scrollbar-width: none;
+            /* For Firefox */
+            -ms-overflow-style: none;
+            /* For Internet Explorer and Edge */
         }
 
         .hidden-scrollbar::-webkit-scrollbar {
-            display: none; /* For Chrome, Safari, and Opera */
+            display: none;
+            /* For Chrome, Safari, and Opera */
         }
     </style>
 </head>
 
 <body class="p-6">
 
-    <div id="circleContainer" class="gap-4 mb-4 overflow-auto hidden-scrollbar" style="max-height: 165px; width: 400px; white-space: nowrap;">
-        <div id="handResultColumn" class="flex flex-row h-full w-full ">
-            <!-- Make this horizontally scrollable -->
+    <div id="circleContainer" class="gap-4 mb-4 overflow-auto hidden-scrollbar"
+        style="max-height: 165px; width: 400px; white-space: nowrap;">
+        <div id="handResultColumn" class="flex flex-row h-full w-full ">          
         </div>
     </div>
 
@@ -32,39 +35,62 @@
     </button>
 
     <script>
-        function addContainer(group) {
-            const container = document.createElement('div');
-            container.classList.add(
-                'flex',
-                'flex-col',    // Align circles vertically
-                'items-start',  // Align items to the top
-                'justify-start', // Optional: ensures content starts from top
-                'h-full'       // Full height of the main container               
-            );
+      function addContainer(group) {
+    const container = document.createElement('div');
+    container.classList.add(
+        'flex',
+        'flex-col',    // Align circles vertically
+        'items-start',  // Align items to the top (use 'items-center' if you want centered)
+        'justify-start', // Optional: ensures content starts from the top
+        'h-full'       // Full height of the main container
+    );
 
-            // Create circles for each character in the group
-            for (const char of group) {
-                const circle = document.createElement('div');
-                circle.classList.add(
-                    'flex',
-                    'items-center',
-                    'justify-center',
-                    'w-7',       // Width of the circle
-                    'h-7',       // Height of the circle
-                    'border',
-                    'border-gray-300',
-                    'rounded-full', // Full circle
-                    'text-white',
-                    'font-bold',
-                    char === 'P' ? 'bg-blue-500' : 'bg-red-500', // Circle color
-                    'mb-1'    // Margin between all circles
-                );
-                circle.textContent = char; // Add the character to the circle
-                container.appendChild(circle); // Add circle to the container
-            }
+    // Create circles for each character in the group
+    let circleNumber = 1;
+    for (const char of group) {
+        const circle = document.createElement('div');
+        circle.classList.add(
+            'flex',
+            'items-center',
+            'justify-center',
+            'w-6',       // Width of the outer circle
+            'h-6',       // Height of the outer circle
+            'border',
+            'border-gray-300',  // Border for outer circle
+            'rounded-full',     // Full outer circle
+            char === 'P' ? 'bg-blue-500' : 'bg-red-500', // Background color for the outer circle
+            'mb-1'              // Margin between circles
+        );
 
-            return container; // Return the container with circles
-        }
+        // Create a smaller white circle inside
+        const innerCircle = document.createElement('div');
+        innerCircle.classList.add(
+            'flex',
+            'items-center',
+            'justify-center',
+            'w-3',        // Width of the inner white circle
+            'h-3',        // Height of the inner white circle
+            'bg-white',   // White background for the inner circle
+            'rounded-full', // Full circle for the inner circle
+            'text-xs',
+            'text-gray-400'
+        );
+
+        // Add the number to the center of the inner white circle
+        innerCircle.textContent = circleNumber;
+
+        // Add the inner circle to the outer circle
+        circle.appendChild(innerCircle);
+
+        // Add the outer circle to the container
+        container.appendChild(circle);
+
+        circleNumber++;
+    }
+
+    return container; // Return the container with circles
+}
+
 
         function displayResults() {
             const results = "PBPBPBPBPBPBPBPBPBPBPPPPPPPBPBPBPBBBBBBBPBPBPBPBPBPBPBPBPBPBPBP".split('');

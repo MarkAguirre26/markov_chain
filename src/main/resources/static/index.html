@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baccarat App Game Tracker</title>
+    <title>Player Companion Baccarat App Game Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
@@ -34,7 +34,7 @@
 
 <body class="bg-gray-100">
     <div class="container mx-auto p-4">
-        <h1 class="text-3xl font-bold text-center my-4">Baccarat App </h1>
+        <h1 class="text-3xl font-bold text-center my-4">Player Companion </h1>
 
         <div class="flex flex-col md:flex-row">
 
@@ -43,12 +43,18 @@
                 <div id="inputsContainer">
                     <form id="gameForm">
 
-                        <div id="circleContainer" class="gap-4 mb-4 w-full overflow-x-auto hidden-scrollbar"
-                            style="height: 170px; white-space: nowrap;">
-                            <div id="handResultColumn" class="flex flex-row h-full w-full">
-                                <!-- Make this horizontally scrollable -->
+                        <div style="height: 170px;">
+                            <div id="circleContainer" class="gap-4 mb-4 w-full overflow-x-auto hidden-scrollbar"
+                                style="max-height: 170px; white-space: nowrap;">
+                                <div id="handResultColumn" class="flex flex-row h-full w-full">
+                                </div>
                             </div>
                         </div>
+                        <!-- <div id="circleContainer" class="gap-4 mb-4 overflow-auto hidden-scrollbar"
+                            style="max-height: 170px; width: 400px; white-space: nowrap;">
+                            <div id="handResultColumn" class="flex flex-row h-full w-full ">
+                            </div>
+                        </div> -->
 
 
 
@@ -56,6 +62,8 @@
                             <label for="baseBetAmount" class="text-gray-700 mr-2">Base Bet Amount:</label>
                             <input type="number" id="baseBetAmount" value="10"
                                 class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
+                            <label for="baseBetAmount" id="recommendedBetValue"
+                                class="ml-2 text-xs text-gray-500"></label>
                         </div>
 
                         <div class="flex justify-between">
@@ -72,7 +80,6 @@
                 </div>
 
                 <div id="results" class="bg-white shadow-md rounded-lg p-6 mb-4">
-                    <!-- <h2 class="text-2xl font-semibold mb-4">Results</h2> -->
                     <div id="status" class="text-gray-700 mb-4 text-center"></div>
                     <div id="bettingResults" class="text-gray-700"></div>
                     <div id="finalStats" class="mt-4 font-bold"></div>
@@ -92,12 +99,6 @@
                     </button>
                 </div>
 
-                <!-- <div>
-                    <button id="initializeButton"
-                        class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition duration-200">
-                        Initialize
-                    </button>
-                </div> -->
             </div>
 
             <!-- Second Panel -->
@@ -130,6 +131,7 @@
 
             getJournal();
             currentState();
+            getRecommendedBaseBetAmount();
             // Function to handle button click and AJAX call
             function playGame(userInput) {
                 const recommendedBetValue = $('#recommendedBet').text();
@@ -184,7 +186,7 @@
 
             });
 
-        
+
 
 
             // Event listener for RESET GAME button
@@ -198,6 +200,8 @@
 
                         // console.log(response);
                         // resetUi();
+                        $("#baseBetAmount").prop("disabled", false);
+
                         displayResultToUi(response);
 
                     },
@@ -207,6 +211,16 @@
                     }
                 });
             });
+
+
+            $("#baseBetAmount").on("change", function () {
+                const baseBetAmount = this.value;
+                baseBetAmountConfig(baseBetAmount);
+
+            });
+
+
+
         });
 
         function resetUi() {
@@ -231,8 +245,13 @@
 
 
             if (response.status.handCount > 0) {
+                $("#baseBetAmount").prop("disabled", true);
                 $('#resetButton').show();
                 $('#undoButton').show();
+            } else {
+                $("#baseBetAmount").prop("disabled", false);
+                $('#resetButton').hide();
+                $('#undoButton').hide();
             }
 
 
@@ -246,6 +265,7 @@
                 $('#status').text(response.message).css('color', 'black');
             }
 
+            $("#baseBetAmount").val(response.baseBetAmount);
 
             $('#bettingResults').html(`
             <p>Total Hands Played: ${response.status.handCount}</p>
@@ -259,7 +279,7 @@
 
             // Show or hide the RESET GAME button based on the result
             if (statusMessage.includes("profit")
-                || statusMessage.includes("loss")                
+                || statusMessage.includes("loss")
                 || statusMessage.includes("Daily")) {
 
                 $('#playerButton').prop('disabled', true);
@@ -267,7 +287,7 @@
                 $('#undoButton').hide();
                 $('#resetButton').show();
 
-                if(statusMessage.includes("Daily")){
+                if (statusMessage.includes("Daily")) {
                     $('#resetButton').hide();
                 }
 
@@ -307,12 +327,7 @@
                 }),
                 success: function (response) {
 
-                    console.log(response);
-                    if (response.message.includes("reset")) {
-                        resetUi();
-                    } else {
-                        displayResultToUi(response);
-                    }
+                    displayResultToUi(response);
 
 
                 },
@@ -336,23 +351,46 @@
             );
 
             // Create circles for each character in the group
+            let circleNumber = 1;
             for (const char of group) {
                 const circle = document.createElement('div');
                 circle.classList.add(
                     'flex',
                     'items-center',
                     'justify-center',
-                    'w-7',       // Width of the circle
-                    'h-7',       // Height of the circle
+                    'w-6',       // Width of the outer circle
+                    'h-6',       // Height of the outer circle
                     'border',
-                    'border-gray-300',
-                    'rounded-full', // Full circle
-                    'text-white',
-                    'font-bold',
-                    char === 'P' ? 'bg-blue-500' : 'bg-red-500' // Circle color                   
+                    'border-gray-300',  // Border for outer circle
+                    'rounded-full',     // Full outer circle
+                    char === 'P' ? 'bg-blue-500' : 'bg-red-500', // Background color for the outer circle
+                    'mb-1'              // Margin between circles
                 );
-                circle.textContent = char; // Add the character to the circle
-                container.appendChild(circle); // Add circle to the container
+
+                // Create a smaller white circle inside
+                const innerCircle = document.createElement('div');
+                innerCircle.classList.add(
+                    'flex',
+                    'items-center',
+                    'justify-center',
+                    'w-3',        // Width of the inner white circle
+                    'h-3',        // Height of the inner white circle
+                    'bg-white',   // White background for the inner circle
+                    'rounded-full', // Full circle for the inner circle
+                    'text-xs',
+                    'text-gray-400'
+                );
+
+                // Add the number to the center of the inner white circle
+                innerCircle.textContent = circleNumber;
+
+                // Add the inner circle to the outer circle
+                circle.appendChild(innerCircle);
+
+                // Add the outer circle to the container
+                container.appendChild(circle);
+
+                circleNumber++;
             }
 
             return container; // Return the container with circles
@@ -467,7 +505,6 @@
             });
         }
 
-
         function currentState() {
 
             const statusMessage = $('#status').text();
@@ -489,22 +526,49 @@
             });
         }
 
-        // function initializeConfig() {
+        function baseBetAmountConfig(baseBetValue) {
 
-        //     $.ajax({
-        //         url: '/api/baccarat/init-config',
-        //         type: 'POST',                
-        //         success: function (response) {
-        //             displayResultToUi(response);
-        //         },
-        //         error: function (error) {
-        //             console.error('Error fetching game state:', error);
-        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
-        //         }
-        //     });
-        // }
+            $.ajax({
+                url: '/api/baccarat/playing-base-bet',
+                type: 'POST',
+                data: {
+                    baseBetAmount: baseBetValue
+                },
+                success: function (response) {
+                },
+                error: function (error) {
+                    console.error('Error fetching game state:', error);
+                    $('#response').html('<p>Failed to fetch the current game state.</p>');
+                }
+            });
+        }
+
+        function calculatePercentage(baseAmount, capital) {
+            if (capital === 0) {
+                return 0; // Avoid division by zero
+            }
+            return (baseAmount / capital) * 100;
+        }
+
+        function getRecommendedBaseBetAmount() {
 
 
+            $.ajax({
+                url: '/api/baccarat/recommended-base-bet-amount',
+                type: 'GET',
+                success: function (response) {
+                    // console.log(response);
+                    $("#recommendedBetValue").text("Recomended amount: " + response);
+
+                },
+                error: function (error) {
+                    console.error('Error fetching game state:', error);
+                    $('#response').html('<p>Failed to fetch the current game state.</p>');
+                }
+            });
+
+
+        }
 
 
 
