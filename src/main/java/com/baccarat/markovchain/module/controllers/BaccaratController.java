@@ -288,7 +288,7 @@ public class BaccaratController {
 
         double recommendedBaseBet = getOnePercentOf(fund);
 
-        logger.info("Recommended base bet amount: {}", recommendedBaseBet);
+//        logger.info("Recommended base bet amount: {}", recommendedBaseBet);
 
         return ResponseEntity.ok(String.valueOf(recommendedBaseBet));
     }

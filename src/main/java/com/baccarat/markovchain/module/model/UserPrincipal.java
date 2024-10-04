@@ -14,21 +14,18 @@ import java.util.List;
 public class UserPrincipal implements UserDetails {
 
     private final User user;
-    // Provide getter for UUID
+
     @Getter
     private final String userUuid;
-
-
 
     public UserPrincipal(User user, String userUuid) {
         this.user = user;
         this.userUuid = userUuid;
-
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("USER"));
+        return Collections.singleton(new SimpleGrantedAuthority("ADMIN"));
     }
 
     @Override

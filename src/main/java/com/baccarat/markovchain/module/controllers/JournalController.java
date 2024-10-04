@@ -49,7 +49,7 @@ public class JournalController {
         String userUuid = userPrincipal.getUserUuid();
 
 
-        logger.info("User UUID: {}", userUuid);
+//        logger.info("User UUID: {}", userUuid);
 
         List<Journal> journals;
         journals = journalService.getJournalsByUserUuidAndDateCreated(userUuid, effectiveFrom);
@@ -57,12 +57,8 @@ public class JournalController {
 
         int dailyLimit = getDailyLimit();
 
-        List<JournalResponse> journalResponses = new ArrayList<>();
+        List<JournalResponse> journalResponses;
 
-        // Create journal responses with a sequential shoe number
-//        journalResponses = IntStream.range(0, journals.size())
-//                .mapToObj(i -> new JournalResponse(i + 1, journals.get(i).getHand(), journals.get(i).getProfit(), journals.get(i).getDateCreated()))
-//                .collect(Collectors.toList());
 
         // Create journal responses with a sequential shoe number, limited by dailyLimit
         journalResponses = IntStream.range(0, Math.min(journals.size(), dailyLimit))
