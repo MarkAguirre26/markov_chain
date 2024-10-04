@@ -1,19 +1,25 @@
 package com.baccarat.markovchain.module.controllers;
 
-import com.baccarat.markovchain.module.model.Journal;
-import com.baccarat.markovchain.module.model.Session;
+import com.baccarat.markovchain.module.common.concrete.UserConfig;
+import com.baccarat.markovchain.module.data.Config;
+import com.baccarat.markovchain.module.data.Journal;
+import com.baccarat.markovchain.module.model.UserPrincipal;
 import com.baccarat.markovchain.module.response.JournalResponse;
 import com.baccarat.markovchain.module.services.JournalService;
-import com.baccarat.markovchain.module.services.SessionService;
+import com.baccarat.markovchain.module.services.impl.UserConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -23,54 +29,49 @@ public class JournalController {
 
     private static final Logger logger = LoggerFactory.getLogger(JournalController.class);
     private final JournalService journalService;
-    private final SessionService sessionService;
+    private final UserConfigService configService;
+
 
     @Autowired
-    public JournalController(JournalService journalService, SessionService sessionService) {
+    public JournalController(JournalService journalService, UserConfigService configService) {
         this.journalService = journalService;
-        this.sessionService = sessionService;
+        this.configService = configService;
     }
-
-    @PostMapping
-    public ResponseEntity<Journal> createJournal(@RequestBody Journal journal) {
-        logger.info("Creating journal: {}", journal);
-        Journal savedJournal = journalService.saveJournal(journal);
-        logger.info("Journal created: {}", savedJournal);
-        return ResponseEntity.ok(savedJournal);
-    }
-
 
 
     @GetMapping("/dateCreated")
     public ResponseEntity<List<JournalResponse>> getJournalsByDateCreated(
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @RequestParam("dateCreated") LocalDate dateCreated) {
+            @RequestParam("dateCreated") LocalDate effectiveFrom) {
 
-        logger.info("Authorization header: {}", authorizationHeader);
-        logger.info("Date created: {}", dateCreated);
+        logger.info("Date created: {}", effectiveFrom);
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
 
 
-        String id  = "957baf71-80c4-11ef-a303-f02f748a05bf";
-        Optional<Session> session = getSession(id);
+        logger.info("User UUID: {}", userUuid);
 
         List<Journal> journals;
-        if (session.isPresent()) {
-            journals = journalService.getJournalsByUserUuidAndDateCreated(session.get().getUserUuid(), dateCreated);
-        } else {
-            // Handle the case where the session is not present
-            logger.warn("Session not found for value: {}", authorizationHeader);
-            return ResponseEntity.notFound().build();
-        }
+        journals = journalService.getJournalsByUserUuidAndDateCreated(userUuid, effectiveFrom);
 
-        int totalResponses = 10;
+
+        int dailyLimit = getDailyLimit();
+
+        List<JournalResponse> journalResponses = new ArrayList<>();
+
         // Create journal responses with a sequential shoe number
-        List<JournalResponse> journalResponses = IntStream.range(0, journals.size())
+//        journalResponses = IntStream.range(0, journals.size())
+//                .mapToObj(i -> new JournalResponse(i + 1, journals.get(i).getHand(), journals.get(i).getProfit(), journals.get(i).getDateCreated()))
+//                .collect(Collectors.toList());
+
+        // Create journal responses with a sequential shoe number, limited by dailyLimit
+        journalResponses = IntStream.range(0, Math.min(journals.size(), dailyLimit))
                 .mapToObj(i -> new JournalResponse(i + 1, journals.get(i).getHand(), journals.get(i).getProfit(), journals.get(i).getDateCreated()))
                 .collect(Collectors.toList());
 
         // Fill in remaining responses if fewer than totalResponses
         int remainingShoe = journals.size() + 1;
-        while (journalResponses.size() < totalResponses) {
+        while (journalResponses.size() < dailyLimit) {
             journalResponses.add(new JournalResponse(remainingShoe++, 0, 0.0, LocalDate.now()));
         }
 
@@ -78,10 +79,14 @@ public class JournalController {
         return ResponseEntity.ok(journalResponses);
     }
 
-    private Optional<Session> getSession(String authorizationHeader) {
-        String sessionValue = (authorizationHeader != null) ? authorizationHeader : ""; // Fallback to default session
-        int isExpired = 0; // 0 -> not expired
-        return sessionService.getSessionByValueAndExpired(sessionValue, isExpired);
+    private int getDailyLimit() {
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
+
+        // Continue with your logic using userUuid
+        return configService.getConfigsByUserUuid(userUuid).stream().filter(config -> config.getName().equals(UserConfig.DAILY_LIMIT.getValue())).map(Config::getValue).map(Integer::parseInt).findFirst().orElse(0);
+
     }
 
 }

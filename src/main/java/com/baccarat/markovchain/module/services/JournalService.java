@@ -1,9 +1,8 @@
 package com.baccarat.markovchain.module.services;
 
-import com.baccarat.markovchain.module.model.Journal;
+import com.baccarat.markovchain.module.data.Journal;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface JournalService {

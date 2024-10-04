@@ -1,13 +1,12 @@
 package com.baccarat.markovchain.module.services.impl;
 
-import com.baccarat.markovchain.module.model.Journal;
+import com.baccarat.markovchain.module.data.Journal;
 import com.baccarat.markovchain.module.repository.JournalRepository;
 import com.baccarat.markovchain.module.services.JournalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 

@@ -1,61 +1,83 @@
 package com.baccarat.markovchain.module.controllers;
 
-import com.baccarat.markovchain.module.model.Journal;
+import com.baccarat.markovchain.module.common.concrete.UserConfig;
+import com.baccarat.markovchain.module.data.Config;
+import com.baccarat.markovchain.module.data.Journal;
 import com.baccarat.markovchain.module.model.Pair;
-import com.baccarat.markovchain.module.model.Session;
-import com.baccarat.markovchain.module.services.SessionService;
+import com.baccarat.markovchain.module.model.UserPrincipal;
 import com.baccarat.markovchain.module.services.impl.JournalServiceImpl;
 import com.baccarat.markovchain.module.services.impl.MarkovChain;
 import com.baccarat.markovchain.module.services.impl.PatternRecognizer;
+import com.baccarat.markovchain.module.services.impl.UserConfigService;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/baccarat")
 public class BaccaratController {
+
+    private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
+    private static final String STOP_LOSS_REACHED = "Stop loss reached! Restart the game.";
+    private static final String DAILY_LIMIT_REACHED = "Daily limit reached! Please play again tomorrow.";
+    private static final int ZERO = 0;
+
 
     private static final Logger logger = LoggerFactory.getLogger(BaccaratController.class);
     private static final double STOP_PROFIT_PERCENTAGE = 0.40;
     private static final double STOP_LOSS_PERCENTAGE = 0.10;
     private static final double VIRTUAL_WIN_PROBABILITY = 0.5;
     private static final double BASE_BET = 10.0;
-    private static final double INITIAL_PLAYING_FUND = 1000.0;
-    private static final int MAX_DAILY_JOURNAL_LIMIT = 10;
+    private static double INITIAL_PLAYING_FUND = 0.0;
+    private static int MAX_DAILY_JOURNAL_LIMIT = 0;
     private final MarkovChain markovChain;
     private final PatternRecognizer patternRecognizer;
     private final JournalServiceImpl journalService;
-    private final SessionService sessionService;
+
+    private final UserConfigService configService;
     private String sequence = ""; // Empty starting sequence
-    private String WAIT = "Wait..";
-    private int handCount = 0, totalWins = 0, totalLosses = 0, handLimit = 60;
-    private double profit = 0, playingFund = INITIAL_PLAYING_FUND;
+    private final String WAIT = "Wait..";
+    private int handCount = 0;
+    private int totalWins = 0;
+    private int totalLosses = 0;
+    private double profit = 0, playingFund = 0;
     private boolean waitingForVirtualWin = false;
 
+
     @Autowired
-    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, SessionService sessionService) {
+    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, UserConfigService configService) {
         this.markovChain = markovChain;
         this.patternRecognizer = patternRecognizer;
         this.journalService = journalService;
-        this.sessionService = sessionService;
+        this.configService = configService;
+
+    }
+
+    //    @PostMapping("/init-config")
+    public GameResponse initialize() {
+
+        MAX_DAILY_JOURNAL_LIMIT = getDailyLimit();
+        INITIAL_PLAYING_FUND = getPlayingFund();
+        playingFund = INITIAL_PLAYING_FUND;
+
+        GameStatus gameStatus = new GameStatus(ZERO, ZERO, ZERO, ZERO, playingFund);
+        return new GameResponse("Game initialized!", sequence, gameStatus, ZERO, WAIT);
     }
 
     @PostMapping("/play")
-    public GameResponse play(@RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-                             @RequestParam String userInput,
-                             @RequestParam String recommendedBet,
-                             @RequestParam double baseBetAmount) {
+    public GameResponse play(@RequestParam String userInput, @RequestParam String recommendedBet, @RequestParam double baseBetAmount) {
+
 
         // Log input values
-        logger.info("Authorization header: {}", authorizationHeader);
         logger.info("Received user input: {}", userInput);
         logger.info("Received recommendedBet input: {}", recommendedBet);
         logger.info("Received baseBetAmount input: {}", baseBetAmount);
@@ -65,33 +87,25 @@ public class BaccaratController {
             return createErrorResponse();
         }
 
-        String id = "957baf71-80c4-11ef-a303-f02f748a05bf";
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
 
-        // Fetch session using authorization header or default session value
-        Optional<Session> session = getSession(id);
-
-        if (session.isEmpty()) {
-            return createGameLimitResponse(sequence);
-        }
-
-        // Check if the user has reached the daily journal limit
-        if (hasReachedDailyJournalLimit(session.get().getUserUuid())) {
-            return createGameLimitResponse(sequence);
-        }
 
         // Handle hand limits, stop profit/loss conditions
-        if (hasReachedHandLimit() || hasReachedStopConditions()) {
-            journalService.saveJournal(new Journal(0, "", 0, getGameStatus().getHandCount(),
-                    getGameStatus().getProfit(), LocalDateTime.now(), LocalDate.now()));
-            return new GameResponse("Game condition reached! Restart the game.", sequence, getGameStatus(), 0, WAIT);
+        if (hasReachedStopProfit()) {
+            return saveAndReturn(new GameResponse(STOP_PROFIT_REACHED, sequence, getGameStatus(), ZERO, WAIT));
+        } else if (hasReachedStopLoss()) {
+            return saveAndReturn(new GameResponse(STOP_LOSS_REACHED, sequence, getGameStatus(), ZERO, WAIT));
+        } else if (hasReachedDailyJournalLimit(userUuid)) {
+            return saveAndReturn(new GameResponse(DAILY_LIMIT_REACHED, sequence, getGameStatus(), ZERO, WAIT));
         }
 
+
+        updateSequenceAndUpdateHandCount(userInput);
         // Process virtual win if applicable
         if (waitingForVirtualWin) {
             return processVirtualWin();
         }
-
-        updateSequence(userInput);
 
 
         // Generate predictions using Markov chain and pattern recognition
@@ -106,24 +120,42 @@ public class BaccaratController {
         return handleBet(userInput, combinedPrediction, recommendedBet, baseBetAmount);
     }
 
-    private Optional<Session> getSession(String authorizationHeader) {
-        String sessionValue = (authorizationHeader != null) ? authorizationHeader : ""; // Fallback to default session
-        int isExpired = 0; // 0 -> not expired
-        return sessionService.getSessionByValueAndExpired(sessionValue, isExpired);
+    private GameResponse saveAndReturn(GameResponse response) {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
+
+        journalService.saveJournal(new Journal(ZERO, userUuid, ZERO, getGameStatus().getHandCount(), getGameStatus().getProfit(), LocalDateTime.now(), LocalDate.now()));
+        return response;
+
     }
+
+    private int getDailyLimit() {
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
+
+        // Continue with your logic using userUuid
+        return configService.getConfigsByUserUuid(userUuid).stream().filter(config -> config.getName().equals(UserConfig.DAILY_LIMIT.getValue())).map(Config::getValue).map(Integer::parseInt).findFirst().orElse(0);
+
+    }
+
+
+    private double getPlayingFund() {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
+
+        return configService.getConfigsByUserUuid(userUuid).stream().filter(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue())).map(Config::getValue).map(Double::parseDouble).findFirst().orElse(0.0);
+
+    }
+
 
     private boolean hasReachedDailyJournalLimit(String userUuid) {
         List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userUuid, LocalDate.now());
         return journals.size() >= MAX_DAILY_JOURNAL_LIMIT;
     }
 
-    private boolean hasReachedHandLimit() {
-        return handCount++ == handLimit;
-    }
 
-    private boolean hasReachedStopConditions() {
-        return hasReachedStopProfit() || hasReachedStopLoss();
-    }
+
 
     private GameResponse createErrorResponse() {
         logger.warn("Invalid input! Please enter 'p' for Player or 'b' for Banker.");
@@ -131,12 +163,6 @@ public class BaccaratController {
         return new GameResponse("Invalid input! Please enter 'p' for Player or 'b' for Banker.", sequence, gameStatus, 0, WAIT);
     }
 
-
-    private GameResponse createGameLimitResponse(String sequence) {
-        logger.warn("Daily game limit hit! Please play again tomorrow");
-        GameStatus gameStatus = new GameStatus(0, 0, 0, 0, 0);
-        return new GameResponse("Daily game limit hit! Please play again tomorrow", sequence, gameStatus, 0, WAIT);
-    }
 
     private boolean isValidInput(String input) {
         if (!input.equals("p") && !input.equals("b")) {
@@ -146,8 +172,9 @@ public class BaccaratController {
         return true;
     }
 
-    private void updateSequence(String userInput) {
+    private void updateSequenceAndUpdateHandCount(String userInput) {
         sequence += userInput;
+        handCount++;
         logger.info("Updated sequence: {}", sequence);
     }
 
@@ -235,22 +262,50 @@ public class BaccaratController {
         }
     }
 
+    @GetMapping("/current-state")
+    public GameResponse getCurrentState(@RequestParam String message) {
+        logger.info("Fetching current game state. " + message);
+
+        double fund = getGameStatus().playingFund;
+        if (fund == 0) {
+            return initialize();
+        }
+
+        return new GameResponse(message, sequence, getGameStatus(), 0, WAIT);
+    }
+
+
+    @PostMapping("/fund")
+    public ResponseEntity<String> fund(@RequestParam double playingFund) {
+        String userUuid = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUserUuid();
+        logger.info("Received request to update playing fund for user: {}", userUuid);
+
+        List<Config> userConfigList = configService.getConfigsByUserUuid(userUuid);
+
+        Config playingFundConfig = null;
+        if (userConfigList.stream().anyMatch(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue()))) {
+            logger.info("User already has a playing fund configured. Updating existing value.");
+            playingFundConfig = userConfigList.stream().filter(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue())).findFirst().orElse(null);
+        }
+
+        if (playingFundConfig == null) {
+            logger.info("No existing playing fund found. Creating a new one.");
+            playingFundConfig = new Config(); // Initialize a new Config object if not found
+            playingFundConfig.setName(UserConfig.PLAYING_FUND.getValue());
+        }
+
+        playingFundConfig.setValue(String.valueOf(playingFund));
+        configService.saveOrUpdateConfig(playingFundConfig);
+        logger.info("Playing fund updated to: {} for user: {}", playingFund, userUuid);
+
+        return ResponseEntity.ok("Playing fund updated successfully");
+    }
+
+
     @PostMapping("/back")
-    public GameResponse back(@RequestParam String recommendedBet,
-                             @RequestParam double baseBetAmount) {
+    public GameResponse back(@RequestParam String recommendedBet, @RequestParam double baseBetAmount) {
         // Check if the sequence can be undone
-//        if (sequence.length() <= 2) {
-//            throw new IllegalStateException("You are no longer able to undo");
-//        }
 
-        // Log the initial state of the sequence
-
-
-        // Remove the last two characters from the sequence if not empty
-        // Get the last character to determine user input
-//            char lastChar = sequence.charAt(sequence.length() - 1);
-//            String userInput = String.valueOf(lastChar);
-//
 //            // Update the sequence by removing the last two characters
         logger.info("Current sequence before back: {}", sequence);
         sequence = sequence.substring(0, sequence.length() - 1); // Remove last two characters
@@ -260,9 +315,6 @@ public class BaccaratController {
         if (sequence.isEmpty()) {
             return reset();
         }
-//            // Call the play method to reevaluate the game state based on the updated sequence
-//            return play(userInput, recommendedBet, baseBetAmount);
-
         return new GameResponse("Removed previous result!", sequence, getGameStatus(), 0, WAIT);
     }
 
@@ -271,8 +323,6 @@ public class BaccaratController {
     public GameResponse reset() {
         logger.info("Resetting game state to initial values.");
         // Reset all variables
-//        journalService.saveJournal(new Journal(0, "", 0, getGameStatus().getHandCount(), getGameStatus().getProfit(), LocalDateTime.now(), LocalDate.now()));
-//
         sequence = "";
         handCount = 0;
         totalWins = 0;
@@ -281,10 +331,12 @@ public class BaccaratController {
         playingFund = INITIAL_PLAYING_FUND;
         waitingForVirtualWin = false;
 
-        logger.info("Game state reset completed.");
+        initialize();
 
+        logger.info("Game state reset completed.");
         return new GameResponse("Game has been reset!", sequence, getGameStatus(), 0, null);
     }
+
 
     private Pair<Character, Double> combinePredictions(Pair<Character, Double> markovResult, String patternResult) {
         if (markovResult == null && patternResult == null) return new Pair<>(null, 0.0);
@@ -294,9 +346,7 @@ public class BaccaratController {
         char markovPrediction = markovResult.first, patternPrediction = patternResult.charAt(0);
         double markovConfidence = markovResult.second;
 
-        return (markovPrediction == patternPrediction)
-                ? new Pair<>(markovPrediction, Math.min(markovConfidence + 0.1, 1.0))
-                : (markovConfidence >= 0.5 ? markovResult : new Pair<>(patternPrediction, 0.6));
+        return (markovPrediction == patternPrediction) ? new Pair<>(markovPrediction, Math.min(markovConfidence + 0.1, 1.0)) : (markovConfidence >= 0.5 ? markovResult : new Pair<>(patternPrediction, 0.6));
     }
 
     private GameStatus getGameStatus() {

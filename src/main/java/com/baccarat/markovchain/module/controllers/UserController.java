@@ -1,6 +1,6 @@
 package com.baccarat.markovchain.module.controllers;
 
-import com.baccarat.markovchain.module.model.User;
+import com.baccarat.markovchain.module.data.User;
 import com.baccarat.markovchain.module.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

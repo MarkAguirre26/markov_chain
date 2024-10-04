@@ -1,6 +1,6 @@
 package com.baccarat.markovchain.module.services.impl;
 
-import com.baccarat.markovchain.module.model.User;
+import com.baccarat.markovchain.module.data.User;
 import com.baccarat.markovchain.module.repository.UserRepository;
 import com.baccarat.markovchain.module.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;

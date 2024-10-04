@@ -1,6 +1,6 @@
 package com.baccarat.markovchain.module.services;
 
-import com.baccarat.markovchain.module.model.User;
+import com.baccarat.markovchain.module.data.User;
 
 import java.util.List;
 

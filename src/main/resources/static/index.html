@@ -91,10 +91,17 @@
                         Undo
                     </button>
                 </div>
+
+                <!-- <div>
+                    <button id="initializeButton"
+                        class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition duration-200">
+                        Initialize
+                    </button>
+                </div> -->
             </div>
 
             <!-- Second Panel -->
-            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-6 mb-6"  style="margin: 0.5%;">
+            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-6 mb-6" style="margin: 0.5%;">
                 <h2 class="text-2xl font-semibold mb-4">Game Results Overview</h2>
                 <p class="text-gray-700">Each result below represents the
                     profit details for each shoe.</p>
@@ -122,7 +129,7 @@
         $(document).ready(function () {
 
             getJournal();
-
+            currentState();
             // Function to handle button click and AJAX call
             function playGame(userInput) {
                 const recommendedBetValue = $('#recommendedBet').text();
@@ -177,6 +184,9 @@
 
             });
 
+        
+
+
             // Event listener for RESET GAME button
             $('#resetButton').on('click', function () {
 
@@ -187,7 +197,8 @@
                     success: function (response) {
 
                         // console.log(response);
-                        resetUi();
+                        // resetUi();
+                        displayResultToUi(response);
 
                     },
                     error: function (xhr, status, error) {
@@ -227,9 +238,9 @@
 
             // Set the text and change color based on the message
             const statusMessage = response.message;
-            if (statusMessage.includes("Target profit hit!")) {
+            if (statusMessage.includes("profit")) {
                 $('#status').text(response.message).css('color', 'green'); // Set text color to red
-            } else if (response.message.includes("Stop loss hit")) {
+            } else if (response.message.includes("loss")) {
                 $('#status').text(response.message).css('color', 'red'); // Set text color to red
             } else {
                 $('#status').text(response.message).css('color', 'black');
@@ -247,20 +258,29 @@
             <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
 
             // Show or hide the RESET GAME button based on the result
-            if (statusMessage.includes("Target profit hit!")
-                || statusMessage.includes("Stop loss hit!")
-                || statusMessage.includes("Maximum")
+            if (statusMessage.includes("profit")
+                || statusMessage.includes("loss")                
                 || statusMessage.includes("Daily")) {
 
                 $('#playerButton').prop('disabled', true);
                 $('#bankerButton').prop('disabled', true);
                 $('#undoButton').hide();
+                $('#resetButton').show();
+
+                if(statusMessage.includes("Daily")){
+                    $('#resetButton').hide();
+                }
 
             } else {
 
-                $('#undoButton').show();
+
                 $('#playerButton').prop('disabled', false);
                 $('#bankerButton').prop('disabled', false);
+
+
+                if (response.sequencePlayed !== "") {
+                    $('#undoButton').show();
+                }
 
                 // Update the UI of big road
                 displayResults(response.sequencePlayed.toUpperCase())
@@ -293,12 +313,6 @@
                     } else {
                         displayResultToUi(response);
                     }
-
-                    // Handle success, display response message
-                    // $('#responseMessage').text(response.message);
-                    // console.log(response); // Log the full response for debugging
-
-
 
 
                 },
@@ -375,17 +389,17 @@
         }
 
         function getJournal() {
-         
+
             const currentDate = new Date();
 
-// Get the user's time zone
-const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            // Get the user's time zone
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-// Format the date with the user's time zone
-const options = { timeZone: userTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
-const localDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
+            // Format the date with the user's time zone
+            const options = { timeZone: userTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
+            const localDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
 
-console.log(localDate);
+            //console.log(localDate);
 
 
             // Perform the AJAX call
@@ -452,6 +466,49 @@ console.log(localDate);
                 }
             });
         }
+
+
+        function currentState() {
+
+            const statusMessage = $('#status').text();
+
+
+            $.ajax({
+                url: '/api/baccarat/current-state',
+                type: 'GET',
+                data: {
+                    message: statusMessage
+                },
+                success: function (response) {
+                    displayResultToUi(response);
+                },
+                error: function (error) {
+                    console.error('Error fetching game state:', error);
+                    $('#response').html('<p>Failed to fetch the current game state.</p>');
+                }
+            });
+        }
+
+        // function initializeConfig() {
+
+        //     $.ajax({
+        //         url: '/api/baccarat/init-config',
+        //         type: 'POST',                
+        //         success: function (response) {
+        //             displayResultToUi(response);
+        //         },
+        //         error: function (error) {
+        //             console.error('Error fetching game state:', error);
+        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
+        //         }
+        //     });
+        // }
+
+
+
+
+
+
 
     </script>
 </body>

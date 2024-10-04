@@ -1,4 +1,4 @@
-package com.baccarat.markovchain.module.model;
+package com.baccarat.markovchain.module.data;
 
 import jakarta.persistence.*;
 import lombok.Data;
