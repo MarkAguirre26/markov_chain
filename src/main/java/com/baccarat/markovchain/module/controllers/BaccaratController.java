@@ -406,7 +406,7 @@ public class BaccaratController {
         initialize();
 
         logger.info("Game state reset completed.");
-        return new GameResponse("Game has been reset!", sequence, getGameStatus(), BASE_BET, 0, INITIAL_PLAYING_FUND, null);
+        return new GameResponse("Game has been reset!", sequence, getGameStatus(), BASE_BET, 0, INITIAL_PLAYING_FUND, WAIT);
     }
 
 
