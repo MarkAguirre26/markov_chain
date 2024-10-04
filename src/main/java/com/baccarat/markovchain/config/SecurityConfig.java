@@ -3,6 +3,7 @@ package com.baccarat.markovchain.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -14,6 +15,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,12 +30,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+        http.csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/baccarat/**")
+                        .ignoringRequestMatchers("/join")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .authorizeHttpRequests(request -> request
+                        .requestMatchers("/img/**", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/authentication").permitAll() // Allow access to the custom login page
                         .requestMatchers("/logout").permitAll() // Allow access to logout
-                        .requestMatchers("/register").permitAll() // Allow access to logout
+                        .requestMatchers("/api/baccarat/**").permitAll() // Allow access to baccarat API
+                        .requestMatchers("/register").permitAll() // Allow access to registration
+                        .requestMatchers("/join").permitAll() // Allow access to join
                         .requestMatchers("/").authenticated() // Home page must be authenticated
+                        .requestMatchers(HttpMethod.POST, "/register").permitAll() // Allow POST requests to /register
+                        .requestMatchers(HttpMethod.POST, "/api/baccarat/play").permitAll() // Allow POST requests to /register
+                        .requestMatchers(HttpMethod.POST, "/join").permitAll() // Allow POST requests to /join
                         .requestMatchers("/login").denyAll() // Deny access to the default login URL
                         .anyRequest().authenticated())
                 .formLogin(form -> form
@@ -49,8 +62,19 @@ public class SecurityConfig {
                             response.sendRedirect("/authentication");
                         }));
 
+        http.cors(cors -> cors.configurationSource(request -> {
+            CorsConfiguration configuration = new CorsConfiguration();
+            configuration.setAllowedOrigins(List.of("http://localhost"));
+            configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+            configuration.setAllowCredentials(true);
+            configuration.setAllowedHeaders(List.of("X-XSRF-TOKEN", "Content-Type", "Authorization"));
+            return configuration;
+        }));
+
+
         return http.build();
     }
+
 
     @Bean
     public AuthenticationProvider authenticationProvider() {

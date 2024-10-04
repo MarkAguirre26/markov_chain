@@ -22,4 +22,14 @@ public class Config {
 
     @Column(name = "value", length = 100)
     private String value;
+
+    public Config(String userUuid, String name, String value) {
+        this.userUuid = userUuid;
+        this.name = name;
+        this.value = value;
+    }
+
+    public Config() {
+
+    }
 }

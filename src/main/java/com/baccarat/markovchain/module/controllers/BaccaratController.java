@@ -62,6 +62,10 @@ public class BaccaratController {
 
     }
 
+    public static double getOnePercentOf(double number) {
+        return number * 0.01;
+    }
+
     //    @PostMapping("/init-config")
     public GameResponse initialize() {
 
@@ -71,7 +75,7 @@ public class BaccaratController {
         playingFund = INITIAL_PLAYING_FUND;
 
         GameStatus gameStatus = new GameStatus(ZERO, ZERO, ZERO, ZERO, playingFund);
-        return new GameResponse("Game initialized!", sequence, gameStatus, BASE_BET, ZERO, WAIT);
+        return new GameResponse("Game initialized!", sequence, gameStatus, BASE_BET, ZERO, INITIAL_PLAYING_FUND, WAIT);
     }
 
     @PostMapping("/play")
@@ -94,11 +98,11 @@ public class BaccaratController {
 
         // Handle hand limits, stop profit/loss conditions
         if (hasReachedStopProfit()) {
-            return saveAndReturn(new GameResponse(STOP_PROFIT_REACHED, sequence, getGameStatus(), BASE_BET, ZERO, WAIT));
+            return saveAndReturn(new GameResponse(STOP_PROFIT_REACHED, sequence, getGameStatus(), BASE_BET, ZERO, INITIAL_PLAYING_FUND, WAIT));
         } else if (hasReachedStopLoss()) {
-            return saveAndReturn(new GameResponse(STOP_LOSS_REACHED, sequence, getGameStatus(), BASE_BET, ZERO, WAIT));
+            return saveAndReturn(new GameResponse(STOP_LOSS_REACHED, sequence, getGameStatus(), BASE_BET, ZERO, INITIAL_PLAYING_FUND, WAIT));
         } else if (hasReachedDailyJournalLimit(userUuid)) {
-            return saveAndReturn(new GameResponse(DAILY_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET, ZERO, WAIT));
+            return saveAndReturn(new GameResponse(DAILY_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET, ZERO, INITIAL_PLAYING_FUND, WAIT));
         }
 
 
@@ -140,7 +144,6 @@ public class BaccaratController {
 
     }
 
-
     private double getPlayingFund() {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
@@ -157,19 +160,16 @@ public class BaccaratController {
 
     }
 
-
     private boolean hasReachedDailyJournalLimit(String userUuid) {
         List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userUuid, LocalDate.now());
         return journals.size() >= MAX_DAILY_JOURNAL_LIMIT;
     }
 
-
     private GameResponse createErrorResponse() {
         logger.warn("Invalid input! Please enter 'p' for Player or 'b' for Banker.");
         GameStatus gameStatus = new GameStatus(0, 0, 0, 0, 0);
-        return new GameResponse("Invalid input! Please enter 'p' for Player or 'b' for Banker.", sequence, gameStatus, BASE_BET, 0, WAIT);
+        return new GameResponse("Invalid input! Please enter 'p' for Player or 'b' for Banker.", sequence, gameStatus, BASE_BET, 0, INITIAL_PLAYING_FUND, WAIT);
     }
-
 
     private boolean isValidInput(String input) {
         if (!input.equals("p") && !input.equals("b")) {
@@ -208,11 +208,11 @@ public class BaccaratController {
         if (isVirtualWin) {
             updateProfitAndFund(BASE_BET, true);
             logger.info("Virtual win! New profit: {}, New playing fund: {}", profit, playingFund);
-            return new GameResponse("You won with virtual win!", sequence, getGameStatus(), BASE_BET, 0, WAIT);
+            return new GameResponse("You won with virtual win!", sequence, getGameStatus(), BASE_BET, 0,INITIAL_PLAYING_FUND , WAIT);
         } else {
             updateProfitAndFund(BASE_BET, false);
             logger.info("Virtual win failed. New profit: {}, New playing fund: {}", profit, playingFund);
-            return new GameResponse("Virtual win failed.", sequence, getGameStatus(), BASE_BET, 0, WAIT);
+            return new GameResponse("Virtual win failed.", sequence, getGameStatus(), BASE_BET, 0, INITIAL_PLAYING_FUND, WAIT);
         }
     }
 
@@ -221,7 +221,7 @@ public class BaccaratController {
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
             logger.info("Prediction confidence too low. No bet suggested.");
 
-            return new GameResponse("Prediction confidence too low, no bet suggested.", sequence, getGameStatus(), BASE_BET, 0, WAIT);
+            return new GameResponse("Prediction confidence too low, no bet suggested.", sequence, getGameStatus(), BASE_BET, 0,INITIAL_PLAYING_FUND , WAIT);
         }
 
         double betSize = betAmount * combinedPrediction.second * 5;
@@ -229,7 +229,7 @@ public class BaccaratController {
         if (playingFund < betSize) {
             logger.warn("Not enough funds to place bet. Current Playing Fund: ${}", playingFund);
 
-            return new GameResponse("Not enough funds to place bet. Current Playing Fund: $" + String.format("%.2f", playingFund), sequence, getGameStatus(), BASE_BET, betSize, WAIT);
+            return new GameResponse("Not enough funds to place bet. Current Playing Fund: $" + String.format("%.2f", playingFund), sequence, getGameStatus(), BASE_BET, betSize, INITIAL_PLAYING_FUND, WAIT);
         }
 
         String prediction = String.valueOf(combinedPrediction.first);
@@ -241,7 +241,7 @@ public class BaccaratController {
 
     private GameResponse resolveBet(String userInput, double betSize, String recommendedBet, String predictedBet) {
         if (predictedBet.equals(WAIT) || predictedBet.isEmpty()) {
-            return new GameResponse("Place your bet", sequence, getGameStatus(), BASE_BET, betSize, recommendedBet);
+            return new GameResponse("Place your bet", sequence, getGameStatus(), BASE_BET, betSize, INITIAL_PLAYING_FUND, recommendedBet);
         }
 
         String previousPrediction = predictedBet.equals("Player") ? "p" : "b";
@@ -249,11 +249,11 @@ public class BaccaratController {
         if (previousPrediction.equals(userInput)) {
             updateProfitAndFund(betSize, true);
             logger.info("You won! New profit: {}, New playing fund: {}", profit, playingFund);
-            return new GameResponse("You won!", sequence, getGameStatus(), BASE_BET, betSize, recommendedBet);
+            return new GameResponse("You won!", sequence, getGameStatus(), BASE_BET, betSize, INITIAL_PLAYING_FUND, recommendedBet);
         } else {
             updateProfitAndFund(betSize, false);
             logger.info("You lost! New profit: {}, New playing fund: {}", profit, playingFund);
-            return new GameResponse("You lost!", sequence, getGameStatus(), BASE_BET, betSize, recommendedBet);
+            return new GameResponse("You lost!", sequence, getGameStatus(), BASE_BET, betSize,INITIAL_PLAYING_FUND, recommendedBet);
         }
     }
 
@@ -277,7 +277,7 @@ public class BaccaratController {
         if (fund == 0) {
             return initialize();
         }
-        return new GameResponse(message, sequence, getGameStatus(), getBaseBet(), 0, WAIT);
+        return new GameResponse(message, sequence, getGameStatus(), getBaseBet(), 0,INITIAL_PLAYING_FUND , WAIT);
     }
 
     @GetMapping("/recommended-base-bet-amount")
@@ -288,13 +288,8 @@ public class BaccaratController {
 
         double recommendedBaseBet = getOnePercentOf(fund);
 
-//        logger.info("Recommended base bet amount: {}", recommendedBaseBet);
 
         return ResponseEntity.ok(String.valueOf(recommendedBaseBet));
-    }
-
-    public static double getOnePercentOf(double number) {
-        return number * 0.01;
     }
 
     @PostMapping("/playing-fund-config")
@@ -351,6 +346,34 @@ public class BaccaratController {
     }
 
 
+    @PostMapping("/initial-playing-fund")
+    public ResponseEntity<String> initialPlayingFund(@RequestParam double initialPlayingFund) {
+        String userUuid = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUserUuid();
+        logger.info("Received request to update playing fund for user: {}", userUuid);
+
+        List<Config> userConfigList = configService.getConfigsByUserUuid(userUuid);
+
+        Config playingFundConfig = null;
+        if (userConfigList.stream().anyMatch(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue()))) {
+            logger.info("User already has a playing fund configured. Updating existing value.");
+            playingFundConfig = userConfigList.stream().filter(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue())).findFirst().orElse(null);
+        }
+
+        if (playingFundConfig == null) {
+            logger.info("No existing playing fund. Creating a new one.");
+            playingFundConfig = new Config(); // Initialize a new Config object if not found
+            playingFundConfig.setName(UserConfig.PLAYING_FUND.getValue());
+        }
+
+        playingFundConfig.setValue(String.valueOf(initialPlayingFund));
+        configService.saveOrUpdateConfig(playingFundConfig);
+        logger.info("Playing fund updated to: {} for user: {}", playingFund, userUuid);
+
+        INITIAL_PLAYING_FUND = Double.parseDouble(playingFundConfig.getValue());
+        return ResponseEntity.ok("" + initialPlayingFund);
+    }
+
+
     @PostMapping("/back")
     public GameResponse back(@RequestParam String recommendedBet, @RequestParam double baseBetAmount) {
         // Check if the sequence can be undone
@@ -364,7 +387,7 @@ public class BaccaratController {
         if (sequence.isEmpty()) {
             return reset();
         }
-        return new GameResponse("Removed previous result!", sequence, getGameStatus(), BASE_BET, 0, WAIT);
+        return new GameResponse("Removed previous result!", sequence, getGameStatus(), BASE_BET, 0,INITIAL_PLAYING_FUND , WAIT);
     }
 
 
@@ -383,7 +406,7 @@ public class BaccaratController {
         initialize();
 
         logger.info("Game state reset completed.");
-        return new GameResponse("Game has been reset!", sequence, getGameStatus(), BASE_BET, 0, null);
+        return new GameResponse("Game has been reset!", sequence, getGameStatus(), BASE_BET, 0, INITIAL_PLAYING_FUND, null);
     }
 
 
@@ -409,14 +432,16 @@ public class BaccaratController {
         private final GameStatus status;
         private final double baseBetAmount;
         private final double suggestedBet;
+        private final double initialPlayingFund;
         private final String recommendedBet;
 
-        public GameResponse(String message, String sequencePlayed, GameStatus status, double baseBetAmount, double suggestedBet, String recommendedBet) {
+        public GameResponse(String message, String sequencePlayed, GameStatus status, double baseBetAmount, double suggestedBet, double initialPlayingFund, String recommendedBet) {
             this.message = message;
             this.sequencePlayed = sequencePlayed;
             this.status = status;
             this.baseBetAmount = baseBetAmount;
             this.suggestedBet = suggestedBet;
+            this.initialPlayingFund = initialPlayingFund;
             this.recommendedBet = recommendedBet;
         }
     }

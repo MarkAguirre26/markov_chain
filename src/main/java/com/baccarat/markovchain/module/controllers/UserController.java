@@ -24,17 +24,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        logger.info("Creating user: {}", user);
-        user.setIsActive(0);
-        user.setUuid(java.util.UUID.randomUUID().toString());
-        user.setDateLastModified(LocalDate.now());
-        user.setDateCreated(LocalDate.now());
-        User createdUser = userService.createUser(user);
-        logger.info("User created: {}", createdUser);
-        return ResponseEntity.ok(createdUser);
-    }
+
 
     @PutMapping("/{userId}")
     public ResponseEntity<User> updateUser(@PathVariable Integer userId, @RequestBody User user) {

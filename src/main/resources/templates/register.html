@@ -27,6 +27,7 @@
                                 <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Sign up</h2>
 
                                 <form id="registrationForm">
+
                                     <!-- Username -->
                                     <div class="mb-6 flex items-center">
                                         <i class="fas fa-user text-xl text-gray-400 mr-3"></i>
@@ -88,7 +89,8 @@
                                     <div class="flex justify-center">
                                         <p class="mt-4 text-gray-600">
                                             Already have an account?
-                                            <a href="authentication.html" class="text-blue-500 hover:underline">Login</a>
+                                            <a href="authentication.html"
+                                                class="text-blue-500 hover:underline">Login</a>
                                         </p>
                                     </div>
                                 </form>
@@ -96,7 +98,7 @@
 
                             <!-- Image Section -->
                             <div class="hidden md:block md:w-1/2 bg-cover bg-center"
-                                style="background-image: url('https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-registration/draw1.webp');">
+                                style="background-image: url('/img/bg.jpg');">
                             </div>
 
                         </div>
@@ -112,6 +114,8 @@
             $('#registrationForm input').on('input', function () {
                 $('#message').text('');
             });
+
+
         });
 
         function registration() {
@@ -125,19 +129,17 @@
             // Basic validation
             if (username === '' || email === '' || password === '' || repeatPassword === '') {
                 $('#message').text('Please fill in all fields.').addClass('text-red-500').removeClass('text-gray-600');
-                return;
+                return false; // Prevent form submission
             }
 
             if (!termsChecked) {
                 $('#message').text('You must agree to the Terms of Service.').addClass('text-red-500').removeClass('text-gray-600');
-                return;
+                return false; // Prevent form submission
             }
-
-
 
             if (password !== repeatPassword) {
                 $('#message').text('Passwords do not match.').addClass('text-red-500').removeClass('text-gray-600');
-                return;
+                return false; // Prevent form submission
             }
 
             // Collect user data from the form
@@ -146,32 +148,34 @@
                 email: email,
                 password: password
                 // Add more fields as necessary based on your User model
-            };
+            };            
 
-            // Make the AJAX POST request
             $.ajax({
-                url: '/api/users/register', // Adjust the URL according to your API endpoint
-                method: 'POST',
+                url: '/join',
+                type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(userData),
                 success: function (response) {
-                    console.log('User created:', response);
 
-                $('#registrationForm')[0].reset(); // Reset the form
-                 $('#terms').prop('checked', false); // Uncheck the terms checkbox
+                    console.log(response);
 
-
-
-                    // Display success message
-                    $('#message').text('User created successfully!').addClass('text-green-500').removeClass('text-gray-600');
+                    // Handle success response
+                    $('#registrationForm')[0].reset();
+                    $('#message').addClass('text-green-500').text("created successfully! email will be sent once your account is activated.");
+                    // console.log("User created:", response);
                 },
-                error: function (jqXHR, textStatus, errorThrown) {
-                    console.error('Error creating user:', textStatus, errorThrown);
-                    // Display error message
-                    $('#message').text('Error creating user: ' + errorThrown).addClass('text-red-500').removeClass('text-gray-600');
+                error: function (xhr, status, error) {
+                    // Handle error response         
+                    // $('#message').text(xhr.responseText);
+                    $('#message').addClass('text-red-500').text(xhr.responseText);
                 }
             });
+
+
+
+            return false; // Prevent form submission
         }
+
     </script>
 
 </body>

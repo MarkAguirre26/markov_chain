@@ -39,13 +39,13 @@
         <!-- Logout Icon -->
         <div class="absolute top-4 right-4">
             <form th:action="@{/logout}" method="post">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <button type="submit" class="text-gray-600 hover:text-gray-800 transition duration-200">
                     <i class="fas fa-sign-out-alt text-2xl"></i>
                 </button>
-            </form>  
+            </form>
         </div>
-              
+
 
 
         <div class="flex flex-col md:flex-row">
@@ -63,13 +63,6 @@
                         </div>
 
 
-                        <div class="mb-4 flex items-center">
-                            <label for="baseBetAmount" class="text-gray-700 mr-2">Base Bet Amount:</label>
-                            <input type="number" id="baseBetAmount" value="10"
-                                class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
-                            <label for="baseBetAmount" id="recommendedBetValue"
-                                class="ml-2 text-xs text-gray-500"></label>
-                        </div>
 
                         <div class="flex justify-between">
                             <button type="button" id="playerButton"
@@ -84,10 +77,27 @@
                     </form>
                 </div>
 
-                <div id="results" class="bg-white shadow-md rounded-lg p-6 mb-4">
+                <div id="results" class="bg-white shadow-md rounded-lg p-4 mb-4">
                     <div id="status" class="text-gray-700 mb-4 text-center"></div>
                     <div id="bettingResults" class="text-gray-700"></div>
                     <div id="finalStats" class="mt-4 font-bold"></div>
+                </div>
+
+                <div class="bg-white shadow-md rounded-lg p-4 mb-4">
+                    <div class="flex justify-between">
+                        <div class="mb-4 flex items-center">
+                            <label for="initialPlayingFund" class="text-gray-700 mr-2">Bank Roll:</label>
+                            <input type="number" id="initialPlayingFund" value=""
+                                class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
+                        </div>
+
+                        <div class="mb-4 flex items-center">
+                            <label for="baseBetAmount" class="text-gray-700 mr-2">Base Bet:</label>
+                            <input type="number" id="baseBetAmount" value="10"
+                                class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
+                        </div>
+                    </div>
+                    <label id="recommendedBetValue" class="ml-2 text-xs text-center text-gray-500 w-full block"></label>
                 </div>
 
                 <div>
@@ -206,6 +216,7 @@
                         // console.log(response);
                         // resetUi();
                         $("#baseBetAmount").prop("disabled", false);
+                        $("#initialPlayingFund").prop("disabled", false);
 
                         displayResultToUi(response);
 
@@ -221,6 +232,13 @@
             $("#baseBetAmount").on("change", function () {
                 const baseBetAmount = this.value;
                 baseBetAmountConfig(baseBetAmount);
+
+            });
+
+            $("#initialPlayingFund").on("change", function () {
+                const initialPlayingFundValue = this.value;
+
+                initialPlayingFund(initialPlayingFundValue);
 
             });
 
@@ -247,14 +265,17 @@
 
         function displayResultToUi(response) {
 
+            // console.log(response);
 
 
             if (response.status.handCount > 0) {
                 $("#baseBetAmount").prop("disabled", true);
+                $("#initialPlayingFund").prop("disabled", true);
                 $('#resetButton').show();
                 $('#undoButton').show();
             } else {
                 $("#baseBetAmount").prop("disabled", false);
+                $("#initialPlayingFund").prop("disabled", false);
                 $('#resetButton').hide();
                 $('#undoButton').hide();
             }
@@ -271,6 +292,7 @@
             }
 
             $("#baseBetAmount").val(response.baseBetAmount);
+            $("#initialPlayingFund").val(response.initialPlayingFund);
 
             $('#bettingResults').html(`
             <p>Total Hands Played: ${response.status.handCount}</p>
@@ -355,7 +377,9 @@
                 'h-full'       // Full height of the main container               
             );
 
-            // Create circles for each character in the group
+
+
+            // Create circles for each character in the group         
             let circleNumber = 1;
             for (const char of group) {
                 const circle = document.createElement('div');
@@ -422,6 +446,8 @@
                     group = currentChar; // Start a new group
                 }
             }
+
+
             // Append the last group after the loop
             column.appendChild(addContainer(group));
 
@@ -548,12 +574,25 @@
             });
         }
 
-        function calculatePercentage(baseAmount, capital) {
-            if (capital === 0) {
-                return 0; // Avoid division by zero
-            }
-            return (baseAmount / capital) * 100;
+        function initialPlayingFund(value) {
+
+            $.ajax({
+                url: '/api/baccarat/initial-playing-fund',
+                type: 'POST',
+                data: {
+                    initialPlayingFund: value
+                },
+                success: function (response) {
+                    getRecommendedBaseBetAmount();
+                },
+                error: function (error) {
+                    console.error('Error fetching game state:', error);
+                    $('#response').html('<p>Failed to fetch the current game state.</p>');
+                }
+            });
         }
+
+
 
         function getRecommendedBaseBetAmount() {
 

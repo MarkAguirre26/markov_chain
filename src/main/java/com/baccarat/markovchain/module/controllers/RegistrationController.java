@@ -1,15 +1,72 @@
 package com.baccarat.markovchain.module.controllers;
 
+import com.baccarat.markovchain.module.common.concrete.UserConfig;
+import com.baccarat.markovchain.module.common.concrete.UserRole;
+import com.baccarat.markovchain.module.data.Config;
+import com.baccarat.markovchain.module.data.User;
+import com.baccarat.markovchain.module.services.impl.UserConfigService;
+import com.baccarat.markovchain.module.services.impl.UserServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.time.LocalDate;
 
 @Controller
 public class RegistrationController {
 
-    @GetMapping("/register")
-    public String showRegistrationPage(Model model) {
-        // Add any model attributes if needed
-        return "register";  // Return the name of your registration page (register.html)
+    private static final Logger logger = LoggerFactory.getLogger(RegistrationController.class);
+    private final UserServiceImpl userService;
+    private final UserConfigService userConfigService;
+
+    @Autowired
+    public RegistrationController(UserServiceImpl userService, UserConfigService userConfigService) {
+        this.userService = userService;
+        this.userConfigService = userConfigService;
+    }
+
+
+    @PostMapping("/join")
+    public ResponseEntity<?> join(@RequestBody User user) {
+        logger.info("Creating user: {}", user);
+
+        User existingUsername = userService.findUserByUsername(user.getUsername());
+        if (existingUsername != null) {
+            logger.warn("Username already exists: {}", user.getUsername());
+            return ResponseEntity.badRequest().body("username is not available!");
+        }
+
+        User existingUserEmailAddress = userService.findUserByEmail(user.getEmail());
+        if (existingUserEmailAddress != null) {
+            logger.warn("Email address already exists: {}", user.getEmail());
+            return ResponseEntity.badRequest().body("email address is not available!");
+        }
+
+
+        user.setUuid(java.util.UUID.randomUUID().toString());
+        user.setIsActive(0);
+        user.setRole(UserRole.USER.getValue());
+        user.setDateLastModified(LocalDate.now());
+        user.setDateCreated(LocalDate.now());
+        User createdUser = userService.createUser(user);
+
+        Config playingFundsConfig = new Config(createdUser.getUuid(), UserConfig.PLAYING_FUND.getValue(), "1000");
+        userConfigService.saveOrUpdateConfig(playingFundsConfig);
+        logger.info("Saving base bet config for {}", createdUser.getUsername());
+
+        Config baseBetConfig = new Config(createdUser.getUuid(), UserConfig.BASE_BET.getValue(), "10.0");
+        userConfigService.saveOrUpdateConfig(baseBetConfig);
+        logger.info("Saving base bet config for {}", createdUser.getUsername());
+
+        Config dailyLimitConfig = new Config(createdUser.getUuid(), UserConfig.DAILY_LIMIT.getValue(), "10");
+        userConfigService.saveOrUpdateConfig(dailyLimitConfig);
+        logger.info("Saving daily limit config for {}", createdUser.getUsername());
+
+        logger.info("User created: {}", createdUser);
+        return ResponseEntity.ok("Created user" + user.getUsername());
     }
 }
