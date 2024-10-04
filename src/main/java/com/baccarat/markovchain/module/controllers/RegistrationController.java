@@ -54,13 +54,13 @@ public class RegistrationController {
         user.setDateCreated(LocalDate.now());
         User createdUser = userService.createUser(user);
 
-        Config playingFundsConfig = new Config(createdUser.getUuid(), UserConfig.PLAYING_FUND.getValue(), "1000");
+        Config playingFundsConfig = new Config(createdUser.getUuid(), UserConfig.PLAYING_FUND.getValue(), "100");
         userConfigService.saveOrUpdateConfig(playingFundsConfig);
         logger.info("Saving base bet config for {}", createdUser.getUsername());
 
-        Config baseBetConfig = new Config(createdUser.getUuid(), UserConfig.BASE_BET.getValue(), "10.0");
+        Config baseBetConfig = new Config(createdUser.getUuid(), UserConfig.BASE_BET.getValue(), "1");
         userConfigService.saveOrUpdateConfig(baseBetConfig);
-        logger.info("Saving base bet config for {}", createdUser.getUsername());
+        logger.info("Saving base bet unit config for {}", createdUser.getUsername());
 
         Config dailyLimitConfig = new Config(createdUser.getUuid(), UserConfig.DAILY_LIMIT.getValue(), "10");
         userConfigService.saveOrUpdateConfig(dailyLimitConfig);

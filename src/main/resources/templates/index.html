@@ -83,22 +83,21 @@
                     <div id="finalStats" class="mt-4 font-bold"></div>
                 </div>
 
-                <div class="bg-white shadow-md rounded-lg p-4 mb-4">
+                <!-- <div class="bg-white shadow-md rounded-lg p-4 mb-4">
                     <div class="flex justify-between">
-                        <div class="mb-4 flex items-center">
-                            <label for="initialPlayingFund" class="text-gray-700 mr-2">Bank Roll:</label>
-                            <input type="number" id="initialPlayingFund" value=""
+                         <div class="mb-4 flex items-center">
+                            <label for="initialPlayingUnit" class="text-gray-700 mr-2">Playing Units:</label>
+                            <input type="number" id="initialPlayingUnit" value=""
                                 class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
-                        </div>
-
+                        </div> 
                         <div class="mb-4 flex items-center">
-                            <label for="baseBetAmount" class="text-gray-700 mr-2">Base Bet:</label>
-                            <input type="number" id="baseBetAmount" value="10"
+                            <label for="baseBetUnit" class="text-gray-700 mr-2">Base Bet:</label>
+                            <input type="number" id="baseBetUnit" value="10"
                                 class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
                         </div>
                     </div>
-                    <label id="recommendedBetValue" class="ml-2 text-xs text-center text-gray-500 w-full block"></label>
-                </div>
+                  <label id="recommendedBetValue" class="ml-2 text-xs text-center text-gray-500 w-full block"></label> 
+                </div> -->
 
                 <div>
                     <button id="resetButton" style="display: none;"
@@ -124,7 +123,7 @@
 
                 <!-- Main Card -->
                 <div class="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
-                    <h3 class="font-semibold">Total Profit: <span id="totalProfit"></span></h3>
+                    <h3 class="font-semibold">Total Profit(u): <span id="totalProfit"></span></h3>
                     <p class="text-gray-700">Date/Time: <span id="dateTime"></span></p>
                 </div>
 
@@ -146,11 +145,11 @@
 
             getJournal();
             currentState();
-            getRecommendedBaseBetAmount();
+            // getRecommendedbaseBetUnit();
             // Function to handle button click and AJAX call
             function playGame(userInput) {
-                const recommendedBetValue = $('#recommendedBet').text();
-                const baseBetAmount = $('#baseBetAmount').val();
+                const recommendedBetUnit = $('#recommendedBet').text();
+                // const baseBetUnit = $('#baseBetUnit').val();
                 // AJAX call to simulate the game
                 $.ajax({
                     url: '/api/baccarat/play',
@@ -158,8 +157,8 @@
                     contentType: 'application/x-www-form-urlencoded',
                     data: $.param({
                         userInput: userInput,
-                        recommendedBet: recommendedBetValue,
-                        baseBetAmount: baseBetAmount
+                        recommendedBet: recommendedBetUnit,
+                        baseBetUnit: 1
                     }),
                     success: function (response) {
 
@@ -213,10 +212,9 @@
                     method: 'POST',
                     success: function (response) {
 
-                        // console.log(response);
-                        // resetUi();
-                        $("#baseBetAmount").prop("disabled", false);
-                        $("#initialPlayingFund").prop("disabled", false);
+                        $("#handResultColumn").html("");
+
+                        $("#initialPlayingUnit").prop("disabled", false);
 
                         displayResultToUi(response);
 
@@ -229,38 +227,38 @@
             });
 
 
-            $("#baseBetAmount").on("change", function () {
-                const baseBetAmount = this.value;
-                baseBetAmountConfig(baseBetAmount);
+            // $("#baseBetUnit").on("change", function () {
+            //     const baseBetUnitValue = this.value;
+            //     baseBetUnitConfig(baseBetUnitValue);
 
-            });
+            // });
 
-            $("#initialPlayingFund").on("change", function () {
-                const initialPlayingFundValue = this.value;
+            // $("#initialPlayingUnit").on("change", function () {
+            //     const initialPlayingUnitValue = this.value;
 
-                initialPlayingFund(initialPlayingFundValue);
+            //     initialPlayingUnit(initialPlayingUnitValue);
 
-            });
+            // });
 
 
 
         });
 
-        function resetUi() {
-            // Update the UI with the response message   
-            $('#status').text("");
-            $('#bettingResults').html('');
-            $('#handResultColumn').html('');
+        // function resetUi() {
+        //     // Update the UI with the response message   
+        //     $('#status').text("");
+        //     $('#bettingResults').html('');
+        //     $('#handResultColumn').html('');
 
-            $('#resetButton').hide();
-            $('#undoButton').hide();
+        //     $('#resetButton').hide();
+        //     $('#undoButton').hide();
 
 
 
-            $('#playerButton').prop('disabled', false);
-            $('#bankerButton').prop('disabled', false);
-            getJournal();
-        }
+        //     $('#playerButton').prop('disabled', false);
+        //     $('#bankerButton').prop('disabled', false);
+        //     getJournal();
+        // }
 
 
         function displayResultToUi(response) {
@@ -268,14 +266,16 @@
             // console.log(response);
 
 
+
+
             if (response.status.handCount > 0) {
-                $("#baseBetAmount").prop("disabled", true);
-                $("#initialPlayingFund").prop("disabled", true);
+                $("#baseBetUnit").prop("disabled", true);
+                $("#initialPlayingUnit").prop("disabled", true);
                 $('#resetButton').show();
                 $('#undoButton').show();
             } else {
-                $("#baseBetAmount").prop("disabled", false);
-                $("#initialPlayingFund").prop("disabled", false);
+                $("#baseBetUnit").prop("disabled", false);
+                $("#initialPlayingUnit").prop("disabled", false);
                 $('#resetButton').hide();
                 $('#undoButton').hide();
             }
@@ -291,23 +291,25 @@
                 $('#status').text(response.message).css('color', 'black');
             }
 
-            $("#baseBetAmount").val(response.baseBetAmount);
-            $("#initialPlayingFund").val(response.initialPlayingFund);
+            $("#baseBetUnit").val(response.baseBetUnit);
+            $("#initialPlayingUnit").val(response.initialPlayingUnit);
 
             $('#bettingResults').html(`
-            <p>Total Hands Played: ${response.status.handCount}</p>
-            <p>Total Wins: ${response.status.totalWins}</p>
-            <p>Total Losses: ${response.status.totalLosses}</p>
-            <p>Playing Fund: $${response.status.playingFund.toFixed(2)}</p>
-            <p>Net Profit: <span class="${response.status.profit >= 0 ? 'text-green-500' : 'text-red-500'}">$${response.status.profit.toFixed(2)}</span></p>
-            <p>Suggested Bet Amount: $${response.suggestedBet.toFixed(2)}</p>
-            <p>Recommended Bet: ${response.recommendedBet}</p>
+            <p>Hands: ${response.status.handCount}</p>
+            <p>Wins: ${response.status.totalWins}</p>
+            <p>Losses: ${response.status.totalLosses}</p>
+            <p>Units: ${response.status.playingFund.toFixed(0)}</p>
+            <p>Net Profit: <span class="${response.status.profit >= 0 ? 'text-green-500' : 'text-red-500'}">${response.status.profit.toFixed(0)}</span></p>
+            <p>Suggested Unit: ${response.suggestedBet.toFixed(0)}</p>
+            <p>Next Bet: ${response.recommendedBet}</p>
             <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
 
+
+            displayResults(response.sequencePlayed.toUpperCase())
+
+
             // Show or hide the RESET GAME button based on the result
-            if (statusMessage.includes("profit")
-                || statusMessage.includes("loss")
-                || statusMessage.includes("Daily")) {
+            if (statusMessage.includes("reached")) {
 
                 $('#playerButton').prop('disabled', true);
                 $('#bankerButton').prop('disabled', true);
@@ -330,30 +332,22 @@
                 }
 
                 // Update the UI of big road
-                displayResults(response.sequencePlayed.toUpperCase())
+
             }
         }
-        function back(userInput, recommendedBetValue) {
-
-
-            const baseBetAmount = parseFloat($('#baseBetAmount').val());
-
-            // Validate input
-            if (!userInput || !recommendedBet || isNaN(baseBetAmount)) {
-                $('#responseMessage').text("Please fill in all fields correctly.");
-                return;
-            }
+        function back(userInputValue, recommendedBetValue) {
+         
 
             $.ajax({
                 url: '/api/baccarat/back',
                 method: 'POST',
                 contentType: 'application/x-www-form-urlencoded',
-                data: $.param({
-                    recommendedBet: recommendedBetValue,
-                    baseBetAmount: baseBetAmount
-                }),
+                data: {
+                    userInput: userInputValue,
+                    recommendedBet: recommendedBetValue
+                },
                 success: function (response) {
-
+                    // console.log(response);
                     displayResultToUi(response);
 
 
@@ -427,7 +421,14 @@
 
         function displayResults(playerAndBankerCollections) {
 
+            // console.log(playerAndBankerCollections);
+
             const results = playerAndBankerCollections.split('');
+
+            if (results.length === 0) {
+                return;
+            }
+
             // Clear previous results
             document.getElementById('handResultColumn').innerHTML = '';
 
@@ -455,6 +456,7 @@
             setTimeout(() => {
                 circleContainer.scrollLeft = circleContainer.scrollWidth;
             }, 0); // Using a timeout to ensure rendering is complete before scrolling
+
         }
 
         function getJournal() {
@@ -557,13 +559,13 @@
             });
         }
 
-        function baseBetAmountConfig(baseBetValue) {
+        function baseBetUnitConfig(baseBetUnitValue) {
 
             $.ajax({
                 url: '/api/baccarat/playing-base-bet',
                 type: 'POST',
                 data: {
-                    baseBetAmount: baseBetValue
+                    baseBetUnit: baseBetUnitValue
                 },
                 success: function (response) {
                 },
@@ -574,16 +576,16 @@
             });
         }
 
-        function initialPlayingFund(value) {
+        function initialPlayingUnit(value) {
 
             $.ajax({
                 url: '/api/baccarat/initial-playing-fund',
                 type: 'POST',
                 data: {
-                    initialPlayingFund: value
+                    initialPlayingUnit: value
                 },
                 success: function (response) {
-                    getRecommendedBaseBetAmount();
+                    // getRecommendedbaseBetUnit();
                 },
                 error: function (error) {
                     console.error('Error fetching game state:', error);
@@ -594,25 +596,25 @@
 
 
 
-        function getRecommendedBaseBetAmount() {
+        // function getRecommendedbaseBetUnit() {
 
 
-            $.ajax({
-                url: '/api/baccarat/recommended-base-bet-amount',
-                type: 'GET',
-                success: function (response) {
-                    // console.log(response);
-                    $("#recommendedBetValue").text("Recommended Bet: " + response);
+        //     $.ajax({
+        //         url: '/api/baccarat/recommended-base-bet-amount',
+        //         type: 'GET',
+        //         success: function (response) {
+        //             // console.log(response);
+        //             $("#recommendedBetValue").text("Recommended unit: " + response);
 
-                },
-                error: function (error) {
-                    console.error('Error fetching game state:', error);
-                    $('#response').html('<p>Failed to fetch the current game state.</p>');
-                }
-            });
+        //         },
+        //         error: function (error) {
+        //             console.error('Error fetching game state:', error);
+        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
+        //         }
+        //     });
 
 
-        }
+        // }
 
 
 

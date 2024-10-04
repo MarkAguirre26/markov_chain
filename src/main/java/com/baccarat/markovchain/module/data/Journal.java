@@ -31,7 +31,7 @@ public class Journal {
     private Integer hand;
 
     @Column(name = "profit")
-    private Double profit;
+    private Integer profit;
 
     @Column(name = "date_last_modified")
     private LocalDateTime dateLastModified;

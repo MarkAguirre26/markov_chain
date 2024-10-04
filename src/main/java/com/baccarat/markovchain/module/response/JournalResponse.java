@@ -13,10 +13,10 @@ public class JournalResponse {
 
     private Integer shoe;
     private Integer hand;
-    private Double profit;
+    private Integer profit;
     private LocalDate dateCreated;
 
-    public JournalResponse(Integer shoe, Integer hand, Double profit, LocalDate dateCreated) {
+    public JournalResponse(Integer shoe, Integer hand, Integer profit, LocalDate dateCreated) {
         this.shoe = shoe;
         this.hand = hand;
         this.profit = profit;

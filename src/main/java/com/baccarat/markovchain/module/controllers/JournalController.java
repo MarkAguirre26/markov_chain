@@ -68,7 +68,7 @@ public class JournalController {
         // Fill in remaining responses if fewer than totalResponses
         int remainingShoe = journals.size() + 1;
         while (journalResponses.size() < dailyLimit) {
-            journalResponses.add(new JournalResponse(remainingShoe++, 0, 0.0, LocalDate.now()));
+            journalResponses.add(new JournalResponse(remainingShoe++, 0, 0, LocalDate.now()));
         }
 
         logger.info("Journals fetched: {}", journals.size());
