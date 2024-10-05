@@ -164,7 +164,7 @@
 
                         // console.log(response);
                         displayResultToUi(response);
-                        getJournal();
+                        
                     },
                     error: function (xhr, status, error) {
                         // Handle error
@@ -212,7 +212,7 @@
                     method: 'POST',
                     success: function (response) {
 
-                        $("#handResultColumn").html("");
+
 
                         $("#initialPlayingUnit").prop("disabled", false);
 
@@ -283,12 +283,17 @@
 
             // Set the text and change color based on the message
             const statusMessage = response.message;
-            if (statusMessage.includes("profit")) {
-                $('#status').text(response.message).css('color', 'green'); // Set text color to red
-            } else if (response.message.includes("loss")) {
-                $('#status').text(response.message).css('color', 'red'); // Set text color to red
+
+            if (statusMessage.includes("profit")) {              
+                $('#status').text(statusMessage).css('color', 'green'); // Set text color to red
+            } else if (statusMessage.includes("loss")) {              
+                $('#status').text(statusMessage).css('color', 'red'); // Set text color to red
+            } else if (statusMessage.includes("reset")) {                
+                $("#handResultColumn").html("");
+                $('#status').text("");
+                getJournal();
             } else {
-                $('#status').text(response.message).css('color', 'black');
+                $('#status').text(statusMessage).css('color', 'black');
             }
 
             $("#baseBetUnit").val(response.baseBetUnit);
@@ -310,7 +315,7 @@
 
             // Show or hide the RESET GAME button based on the result
             if (statusMessage.includes("reached")) {
-
+                getJournal();
                 $('#playerButton').prop('disabled', true);
                 $('#bankerButton').prop('disabled', true);
                 $('#undoButton').hide();
@@ -325,8 +330,6 @@
 
                 $('#playerButton').prop('disabled', false);
                 $('#bankerButton').prop('disabled', false);
-
-
                 if (response.sequencePlayed !== "") {
                     $('#undoButton').show();
                 }
@@ -336,7 +339,7 @@
             }
         }
         function back(userInputValue, recommendedBetValue) {
-         
+
 
             $.ajax({
                 url: '/api/baccarat/back',

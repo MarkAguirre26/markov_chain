@@ -55,7 +55,7 @@ public class BaccaratController {
     private int totalLosses = 0;
     private int profit = 0, playingUnit = 0;
 
-    private boolean waitingForVirtualWin = false;
+//    private boolean waitingForVirtualWin = false;
 
 
     @Autowired
@@ -81,6 +81,12 @@ public class BaccaratController {
         logger.info(userPrincipal.getUsername()+ ": Received recommendedBet input: {}", recommendedBet);
         logger.info(userPrincipal.getUsername()+ ": Received baseBetAmount input: {}", baseBetUnit);
 
+        if(hasReachedDailyJournalLimit(userPrincipal.getUserUuid())){
+            return new GameResponse(DAILY_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT);
+
+        }
+
+
         // Validate user input
         if (!isValidInput(userInput)) {
             return createErrorResponse();
@@ -89,9 +95,9 @@ public class BaccaratController {
         updateSequenceAndUpdateHandCount(userInput,userPrincipal.getUsername());
 
         // Process virtual win if applicable
-        if (waitingForVirtualWin) {
-            return processVirtualWin();
-        }
+//        if (waitingForVirtualWin) {
+//            return processVirtualWin();
+//        }
 
 
         // Generate predictions using Markov chain and pattern recognition
@@ -175,7 +181,7 @@ public class BaccaratController {
     private void updateSequenceAndUpdateHandCount(String userInput,String username) {
         sequence += userInput;
         handCount++;
-        logger.info(username+ ": Updated sequence: {}", sequence);
+        logger.info(username+ ": Sequence: {}", sequence);
     }
 
     private boolean hasReachedStopProfit() {
@@ -198,20 +204,20 @@ public class BaccaratController {
         return handCount >= MAX_HANDS;
     }
 
-    private GameResponse processVirtualWin() {
-        waitingForVirtualWin = false;
-        boolean isVirtualWin = Math.random() < VIRTUAL_WIN_PROBABILITY;
-
-        if (isVirtualWin) {
-            updateProfitAndFund(BASE_BET_UNIT, true);
-            logger.info("Virtual win! New profit: {}, New playing fund: {}", profit, playingUnit);
-            return new GameResponse("You won with virtual win!", sequence, getGameStatus(), BASE_BET_UNIT, 0, INITIAL_PLAYING_UNITS, WAIT);
-        } else {
-            updateProfitAndFund(BASE_BET_UNIT, false);
-            logger.info("Virtual win failed. New profit: {}, New playing fund: {}", profit, playingUnit);
-            return new GameResponse("Virtual win failed.", sequence, getGameStatus(), BASE_BET_UNIT, 0, INITIAL_PLAYING_UNITS, WAIT);
-        }
-    }
+//    private GameResponse processVirtualWin() {
+//        waitingForVirtualWin = false;
+//        boolean isVirtualWin = Math.random() < VIRTUAL_WIN_PROBABILITY;
+//
+//        if (isVirtualWin) {
+//            updateProfitAndFund(BASE_BET_UNIT, true);
+//            logger.info("Virtual win! New profit: {}, New playing fund: {}", profit, playingUnit);
+//            return new GameResponse("You won with virtual win!", sequence, getGameStatus(), BASE_BET_UNIT, 0, INITIAL_PLAYING_UNITS, WAIT);
+//        } else {
+//            updateProfitAndFund(BASE_BET_UNIT, false);
+//            logger.info("Virtual win failed. New profit: {}, New playing fund: {}", profit, playingUnit);
+//            return new GameResponse("Virtual win failed.", sequence, getGameStatus(), BASE_BET_UNIT, 0, INITIAL_PLAYING_UNITS, WAIT);
+//        }
+//    }
 
     private GameResponse handleBet(UserPrincipal userPrincipal, String userInput, Pair<Character, Double> combinedPrediction, String predictedBet, int betUnit) {
     String username = userPrincipal.getUsername();
@@ -269,9 +275,6 @@ public class BaccaratController {
         } else if (hasReachedStopLoss()) {
             logger.warn(username+": Reached stop loss. New profit: {}, New playing fund: {}", profit, playingUnit);
             return saveAndReturn(new GameResponse(STOP_LOSS_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
-        } else if (hasReachedDailyJournalLimit(userUuid)) {
-            logger.warn(username+": Reached daily journal limit. New profit: {}, New playing fund: {}", profit, playingUnit);
-            return saveAndReturn(new GameResponse(DAILY_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
         } else if (hasReachedHandsLimit()) {
             logger.warn(username+": Reached max hand limit. New profit: {}, New playing fund: {}", profit, playingUnit);
             return saveAndReturn(new GameResponse(MAX_HAND_LIMIT_REACHED, sequence, getGameStatus(), BASE_BET_UNIT, ZERO, INITIAL_PLAYING_UNITS, WAIT));
@@ -427,11 +430,12 @@ public class BaccaratController {
         totalLosses = 0;
         profit = 0;
         playingUnit = INITIAL_PLAYING_UNITS;
-        waitingForVirtualWin = false;
+//        waitingForVirtualWin = false;
 
         initialize();
 
-        logger.info("Game state reset completed.");
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        logger.info(userPrincipal.getUsername()+": Game state reset completed.");
         return new GameResponse("Game has been reset!", sequence, getGameStatus(), BASE_BET_UNIT, 0, INITIAL_PLAYING_UNITS, WAIT);
     }
 
@@ -474,6 +478,7 @@ public class BaccaratController {
 
     @Getter
     public static class GameStatus {
+
         private final int handCount;
         private final int totalWins;
         private final int totalLosses;
