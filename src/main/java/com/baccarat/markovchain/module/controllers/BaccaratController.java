@@ -466,14 +466,15 @@ public class BaccaratController {
 //    }
 
 
-    @PostMapping("/back")
+    @PostMapping("/undo")
     public GameResultResponse back() {
         // Check if the sequence can be undone
 
         GameResultResponse gameResultResponse = getGameResponse();
-        GameResultStatus gameResultStatus = gameResultResponse.getGameStatus();
+//        GameResultStatus gameResultStatus = gameResultResponse.getGameStatus();
+        int hand = gameResultResponse.getSequence().length();
 
-        if (gameResultStatus.getHandCount() == 1) {
+        if (hand == 1) {
             gameResultResponse.setMessage("You may use RESET button.");
             return gameResultResponse;
         }
@@ -483,22 +484,38 @@ public class BaccaratController {
 //            // Update the sequence by removing the last two characters
         logger.info("Current sequence before back: {}", sequence);
         sequence = sequence.substring(0, sequence.length() - 1); // Remove last two characters
-//            logger.info("Updated sequence after back: {}", sequence);
         logger.info("Current sequence after back : {}", sequence);
 
-//        if (sequence.isEmpty()) {
-//            return reset();
-//        }
 
-        gameResultResponse.setMessage("Removed previous result!");
-        gameResultResponse.setSequence(sequence);
-        gameResultResponse.setRecommendedBet(WAIT);
+        reset();
+
+        GameResultResponse inGame = new GameResultResponse();
+
+        for (int i = 0; i < sequence.length(); i++) {
+
+            try {
+                Thread.sleep(10);
+                char ch = sequence.charAt(i);
+                String userInput = String.valueOf(ch);
+                inGame = play(userInput, i == 0 ? WAIT : inGame.getRecommendedBet(), gameResultResponse.getBaseBetUnit());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
 
 
-        gameResultStatus.setHandCount(gameResultStatus.getHandCount() - 1);
-        gameResultResponse.setGameStatus(gameResultStatus);
+        }
 
-        return provideGameResponse(gameResultResponse);
+        return inGame;
+
+//        gameResultResponse.setMessage("Removed previous result!");
+//        gameResultResponse.setSequence(sequence);
+//        gameResultResponse.setRecommendedBet(WAIT);
+//
+//        gameResultStatus.setHandCount(hand-1);
+//        gameResultResponse.setGameStatus(gameResultStatus);
+//        return provideGameResponse(gameResultResponse);
+
+
     }
 
 
@@ -512,7 +529,6 @@ public class BaccaratController {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
         GameStatus gameStatus = gameStatusService.findByUserUuid(userUuid).orElse(null);
-//        com.baccarat.markovchain.module.data.GameResponse gameResponse = gameResponseService.getGameResponseByUserUuid(userUuid);
 
 
         gameStatus.setHandCount(0);
@@ -525,7 +541,7 @@ public class BaccaratController {
 
         gameResultResponse.setSequence("");
         gameResultResponse.setMessage("Game has been reset!");
-        gameResultResponse.setBaseBetUnit(0);
+        gameResultResponse.setBaseBetUnit(1);
         gameResultResponse.setInitialPlayingUnits(100);
         gameResultResponse.setSuggestedBetUnit(1);
         gameResultResponse.setRecommendedBet(WAIT);

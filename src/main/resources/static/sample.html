@@ -4,125 +4,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Container on Button Click</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Hide scrollbars but still allow scrolling */
-        .hidden-scrollbar {
-            scrollbar-width: none;
-            /* For Firefox */
-            -ms-overflow-style: none;
-            /* For Internet Explorer and Edge */
-        }
+    <title>Player Companion Baccarat App Game Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-        .hidden-scrollbar::-webkit-scrollbar {
-            display: none;
-            /* For Chrome, Safari, and Opera */
-        }
-    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
-<body class="p-6">
+<style>
+    /* Hide scrollbars but still allow scrolling */
+    .hidden-scrollbar {
+        scrollbar-width: none;
+        /* For Firefox */
+        -ms-overflow-style: none;
+        /* For Internet Explorer and Edge */
+    }
 
-    <div id="circleContainer" class="gap-4 mb-4 overflow-auto hidden-scrollbar"
-        style="max-height: 165px; width: 400px; white-space: nowrap;">
-        <div id="handResultColumn" class="flex flex-row h-full w-full ">          
+    .hidden-scrollbar::-webkit-scrollbar {
+        display: none;
+        /* For Chrome, Safari, and Opera */
+    }
+
+    .glow {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        /* Gold glow */
+        transition: box-shadow 0.3s ease-in-out;
+    }
+</style>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <!-- <h1 class="text-3xl font-bold text-center my-4">Player Companion </h1> -->
+
+        <!-- Logout Icon -->
+        <div class="absolute top-4 right-4">
+            <form th:action="@{/logout}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <button type="submit" class="text-gray-600 hover:text-gray-800 transition duration-200">
+                    <i class="fas fa-sign-out-alt text-2xl"></i>
+                </button>
+            </form>
+        </div>
+
+
+
+        <div class="flex flex-col md:flex-row">
+            <!-- First Panel (Inputs, Results, Reset Button) -->
+            <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg p-6 mb-6" style="margin: 0.5%;">
+                <div id="inputsContainer">
+                    <form id="gameForm">
+
+                        <div style="height: 170px;">
+                            <div id="circleContainer" class="gap-4 mb-4 w-full overflow-x-auto hidden-scrollbar"
+                                style="max-height: 170px; white-space: nowrap;">
+                                <div id="handResultColumn" class="grid grid-cols-3 gap-4 h-full w-full">
+                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
+                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
+                                    </div>
+                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
+                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
+                                    </div>
+                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
+                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
+                                    </div>
+                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
+                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
+                                    </div>
+                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
+                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
+                                    </div>
+                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
+                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+
+                        <div class="flex justify-between">
+                            <button type="button" id="playerButton"
+                                class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-200 mr-2">
+                                PLAYER
+                            </button>
+                            <button type="button" id="bankerButton"
+                                class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition duration-200 ml-2">
+                                BANKER
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="results" class="bg-white shadow-md rounded-lg p-4 mb-4">
+                    <div id="status" class="text-gray-700 mb-4 text-center"></div>
+                    <div id="bettingResults" class="text-gray-700"></div>
+                    <div id="finalStats" class="mt-4 font-bold"></div>
+                </div>
+                
+
+                <div>
+                    <button id="resetButton" style="display: none;"
+                        class="mt-4 w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 transition duration-200">
+                        Reset Game
+                    </button>
+
+                </div>
+                <div>
+                    <button id="undoButton" style="display: none;"
+                        class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition duration-200">
+                        Undo
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Second Panel -->
+            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-6 mb-6" style="margin: 0.5%;">
+                <h2 class="text-2xl font-semibold mb-4">Game Results Overview</h2>
+                <p class="text-gray-700">Each result below represents the
+                    profit details for each shoe.</p>
+
+                <!-- Main Card -->
+                <div class="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
+                    <h3 class="font-semibold">Total Profit(u): <span id="totalProfit"></span></h3>
+                    <p class="text-gray-700">Date/Time: <span id="dateTime"></span></p>
+                </div>
+
+
+                <!-- Sub Card Container -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="journalContainer">
+                    <!-- Journal entries will be populated here -->
+                </div>
+            </div>
+
+
+
+
         </div>
     </div>
 
-    <button id="btnSimulate" class="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600">
-        Simulate
-    </button>
-
-    <script>
-      function addContainer(group) {
-    const container = document.createElement('div');
-    container.classList.add(
-        'flex',
-        'flex-col',    // Align circles vertically
-        'items-start',  // Align items to the top (use 'items-center' if you want centered)
-        'justify-start', // Optional: ensures content starts from the top
-        'h-full'       // Full height of the main container
-    );
-
-    // Create circles for each character in the group
-    let circleNumber = 1;
-    for (const char of group) {
-        const circle = document.createElement('div');
-        circle.classList.add(
-            'flex',
-            'items-center',
-            'justify-center',
-            'w-6',       // Width of the outer circle
-            'h-6',       // Height of the outer circle
-            'border',
-            'border-gray-300',  // Border for outer circle
-            'rounded-full',     // Full outer circle
-            char === 'P' ? 'bg-blue-500' : 'bg-red-500', // Background color for the outer circle
-            'mb-1'              // Margin between circles
-        );
-
-        // Create a smaller white circle inside
-        const innerCircle = document.createElement('div');
-        innerCircle.classList.add(
-            'flex',
-            'items-center',
-            'justify-center',
-            'w-3',        // Width of the inner white circle
-            'h-3',        // Height of the inner white circle
-            'bg-white',   // White background for the inner circle
-            'rounded-full', // Full circle for the inner circle
-            'text-xs',
-            'text-gray-400'
-        );
-
-        // Add the number to the center of the inner white circle
-        innerCircle.textContent = circleNumber;
-
-        // Add the inner circle to the outer circle
-        circle.appendChild(innerCircle);
-
-        // Add the outer circle to the container
-        container.appendChild(circle);
-
-        circleNumber++;
-    }
-
-    return container; // Return the container with circles
-}
-
-
-        function displayResults() {
-            const results = "PBPBPBPBPBPBPBPBPBPBPPPPPPPBPBPBPBBBBBBBPBPBPBPBPBPBPBPBPBPBPBP".split('');
-            // Clear previous results
-            document.getElementById('handResultColumn').innerHTML = '';
-
-            let currentChar = results[0];
-            let group = currentChar; // Initialize the group with the first character
-            const column = document.getElementById('handResultColumn');
-            const circleContainer = document.getElementById('circleContainer'); // Reference to the outer container
-
-            for (let i = 1; i < results.length; i++) {
-                if (results[i] === currentChar) {
-                    group += results[i]; // Add to the current group if same
-                } else {
-                    // Create and append the container for the current group
-                    column.appendChild(addContainer(group));
-                    currentChar = results[i]; // Update currentChar
-                    group = currentChar; // Start a new group
-                }
-            }
-            // Append the last group after the loop
-            column.appendChild(addContainer(group));
-
-            // Auto-scroll the circleContainer to the right after adding new content
-            setTimeout(() => {
-                circleContainer.scrollLeft = circleContainer.scrollWidth;
-            }, 0); // Using a timeout to ensure rendering is complete before scrolling
-        }
-
-        document.getElementById('btnSimulate').addEventListener('click', displayResults);
-    </script>
+   
 </body>
 
 </html>

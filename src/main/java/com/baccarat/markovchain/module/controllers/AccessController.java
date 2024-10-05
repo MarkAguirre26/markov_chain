@@ -32,7 +32,7 @@ public class AccessController {
         return "register";  // Return the name of your registration page (register.html)
     }
 
-    @GetMapping("/authentication")
+    @GetMapping("/auth")
     public String authenticationPage(Model model, CsrfToken csrfToken) {
 
         // Get the current authentication status
@@ -47,12 +47,12 @@ public class AccessController {
 
         // If not authenticated, proceed to the login page
         model.addAttribute("_csrf", csrfToken);
-        return "authentication"; // Return the name of the HTML file without the .html extension
+        return "auth"; // Return the name of the HTML file without the .html extension
     }
 
 
     // Handle the login request
-    @PostMapping("/authentication")
+    @PostMapping("/auth")
     public String authenticateUser(@RequestParam String username,
                                    @RequestParam String password,
                                    Model model) {
@@ -67,7 +67,7 @@ public class AccessController {
 
             // Authentication failed
             model.addAttribute("error", "Invalid username or password");
-            return "authentication"; // Return to login page
+            return "auth"; // Return to login page
         }
     }
 

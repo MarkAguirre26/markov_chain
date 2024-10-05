@@ -62,8 +62,6 @@
                             </div>
                         </div>
 
-
-
                         <div class="flex justify-between">
                             <button type="button" id="playerButton"
                                 class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-200 mr-2">
@@ -82,22 +80,7 @@
                     <div id="bettingResults" class="text-gray-700"></div>
                     <div id="finalStats" class="mt-4 font-bold"></div>
                 </div>
-
-                <!-- <div class="bg-white shadow-md rounded-lg p-4 mb-4">
-                    <div class="flex justify-between">
-                         <div class="mb-4 flex items-center">
-                            <label for="initialPlayingUnit" class="text-gray-700 mr-2">Playing Units:</label>
-                            <input type="number" id="initialPlayingUnit" value=""
-                                class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
-                        </div> 
-                        <div class="mb-4 flex items-center">
-                            <label for="baseBetUnit" class="text-gray-700 mr-2">Base Bet:</label>
-                            <input type="number" id="baseBetUnit" value="10"
-                                class="w-24 border-gray-300 rounded-md focus:ring focus:ring-blue-200">
-                        </div>
-                    </div>
-                  <label id="recommendedBetValue" class="ml-2 text-xs text-center text-gray-500 w-full block"></label> 
-                </div> -->
+                
 
                 <div>
                     <button id="resetButton" style="display: none;"
@@ -194,9 +177,8 @@
 
             $('#undoButton').on('click', function () {
 
-                const recommendedBetValue = $('#recommendedBet').text();
-                const userInput = recommendedBetValue === "Player" ? "p" : "b";
-                back(userInput, recommendedBetValue);
+
+                undo();
 
             });
 
@@ -263,19 +245,20 @@
 
         function displayResultToUi(response) {
 
-            // console.log(response);
+            console.log(response);
 
 
 
 
             if (response.gameStatus.handCount > 0) {
-                // $("#baseBetUnit").prop("disabled", true);
-                // $("#initialPlayingUnit").prop("disabled", true);
+
                 $('#resetButton').show();
                 $('#undoButton').show();
+                if (response.gameStatus.handCount === 1) {
+                    $('#undoButton').hide();
+                }
             } else {
-                // $("#baseBetUnit").prop("disabled", false);
-                // $("#initialPlayingUnit").prop("disabled", false);
+                
                 $('#resetButton').hide();
                 $('#undoButton').hide();
             }
@@ -293,7 +276,7 @@
                 $('#status').text("");
                 getJournal();
             } else {
-          
+
                 $('#status').text(statusMessage).css('color', 'black');
             }
 
@@ -331,9 +314,9 @@
 
                 $('#playerButton').prop('disabled', false);
                 $('#bankerButton').prop('disabled', false);
-                if (response.sequence !== "") {
-                    $('#undoButton').show();
-                }
+                // if (response.sequence !== "") {
+                //     $('#undoButton').show();
+                // }
 
                 // Update the UI of big road
 
@@ -344,17 +327,13 @@
                 $('#resetButton').hide();
             }
         }
-        function back(userInputValue, recommendedBetValue) {
+        function undo() {
 
 
             $.ajax({
-                url: '/api/baccarat/back',
+                url: '/api/baccarat/undo',
                 method: 'POST',
                 contentType: 'application/x-www-form-urlencoded',
-                // data: {
-                //     userInput: userInputValue,
-                //     recommendedBet: recommendedBetValue
-                // },
                 success: function (response) {
                     // console.log(response);
                     displayResultToUi(response);

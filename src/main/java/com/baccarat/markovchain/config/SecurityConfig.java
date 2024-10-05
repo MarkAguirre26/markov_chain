@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/img/**", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/authentication").permitAll() // Allow access to the custom login page
+                        .requestMatchers("/auth").permitAll() // Allow access to the custom login page
                         .requestMatchers("/logout").permitAll() // Allow access to logout
                         .requestMatchers("/api/baccarat/**").permitAll() // Allow access to baccarat API
                         .requestMatchers("/register").permitAll() // Allow access to registration
@@ -48,18 +48,18 @@ public class SecurityConfig {
                         .requestMatchers("/login").denyAll() // Deny access to the default login URL
                         .anyRequest().authenticated())
                 .formLogin(form -> form
-                        .loginPage("/authentication") // Specify the custom login page
+                        .loginPage("/auth") // Specify the custom login page
                         .defaultSuccessUrl("/", true) // Redirect to homepage after login
-                        .failureUrl("/authentication") // Redirect to login page on failure
+                        .failureUrl("/auth") // Redirect to login page on failure
                         .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/authentication") // Redirect to login page after logout
+                        .logoutSuccessUrl("/auth") // Redirect to login page after logout
                         .permitAll())
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint((request, response, authException) -> {
                             // Redirect to custom login page on 403 or 401
-                            response.sendRedirect("/authentication");
+                            response.sendRedirect("/auth");
                         }));
 
         http.cors(cors -> cors.configurationSource(request -> {
