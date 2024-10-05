@@ -263,7 +263,7 @@
 
         function displayResultToUi(response) {
 
-            console.log(response);
+            // console.log(response);
 
 
 
@@ -293,6 +293,7 @@
                 $('#status').text("");
                 getJournal();
             } else {
+          
                 $('#status').text(statusMessage).css('color', 'black');
             }
 
@@ -350,10 +351,10 @@
                 url: '/api/baccarat/back',
                 method: 'POST',
                 contentType: 'application/x-www-form-urlencoded',
-                data: {
-                    userInput: userInputValue,
-                    recommendedBet: recommendedBetValue
-                },
+                // data: {
+                //     userInput: userInputValue,
+                //     recommendedBet: recommendedBetValue
+                // },
                 success: function (response) {
                     // console.log(response);
                     displayResultToUi(response);

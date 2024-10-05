@@ -49,7 +49,6 @@ public class BaccaratController {
     private final String WAIT = "Wait..";
 
 
-
     @Autowired
     public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, GameStatusService gameStatusService, GameResponseService gameResponseService, UserConfigService configService) {
         this.markovChain = markovChain;
@@ -83,12 +82,6 @@ public class BaccaratController {
             gameResultResponseInitial.setRecommendedBet(recommendedBet);
             return provideGameResponse(gameResultResponseInitial);
         }
-
-
-//        // Validate user input
-//        if (!isValidInput(userInput)) {
-//            return createErrorResponse();
-//        }
 
         GameResultResponse gameResultResponse = updateSequenceAndUpdateHandCount(gameResultResponseInitial, userInput);
 
@@ -239,23 +232,27 @@ public class BaccaratController {
                                          String predictedBet,
                                          int betUnit) {
 
+
         String username = userPrincipal.getUsername();
+
+        int betSize = (int) Math.ceil(betUnit * combinedPrediction.second * 5);
+        int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
+
+
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
+
+
             logger.info(username + ": Prediction confidence too low. No bet suggested.");
-
-
             gameResultResponse.setMessage("Prediction confidence too low, no bet suggested.");
+
             gameResultResponse.setSequence(gameResultResponse.getSequence());
             gameResultResponse.setRecommendedBet(WAIT);
 
-            return provideGameResponse(gameResultResponse);
+//            return provideGameResponse(gameResultResponse);
+            return validateGameResult(predictedBet, userInput, username, gameResultResponse, betSize, gameResultResponse.getRecommendedBet());
 
         }
 
-        int betSize = (int) Math.ceil(betUnit * combinedPrediction.second * 5);
-
-
-        int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
 
         if (playingUnit < betSize) {
 
@@ -264,7 +261,8 @@ public class BaccaratController {
             gameResultResponse.setSequence(gameResultResponse.getSequence());
             gameResultResponse.setRecommendedBet(WAIT);
 
-            return provideGameResponse(gameResultResponse);
+//            return provideGameResponse(gameResultResponse);
+            return validateGameResult(predictedBet, userInput, username, gameResultResponse, betSize, gameResultResponse.getRecommendedBet());
         }
 
         String prediction = String.valueOf(combinedPrediction.first);
@@ -289,17 +287,29 @@ public class BaccaratController {
             return provideGameResponse(gameResultResponse);
         }
 
-        String previousPrediction = predictedBet.equals("Player") ? "p" : "b";
+        return validateGameResult(predictedBet, userInput, username, gameResultResponse, betSize, recommendedBet);
 
+//        String previousPrediction = predictedBet.equals("Player") ? "p" : "b";
+//        if (previousPrediction.equals(userInput)) {
+//            logger.info(username + ": You won!");
+//            return settleLimitAndValidation(updateProfitAndFund(gameResultResponse, betSize, true), recommendedBet, true);
+//        } else {
+//            logger.info(username + ": You lost!");
+//            return settleLimitAndValidation(updateProfitAndFund(gameResultResponse, betSize, false), recommendedBet, false);
+//        }
+
+    }
+
+    private GameResultResponse validateGameResult(String predictedBet, String userInput, String username,
+                                                  GameResultResponse gameResultResponse, int betSize, String recommendedBet) {
+        String previousPrediction = predictedBet.equals("Player") ? "p" : "b";
         if (previousPrediction.equals(userInput)) {
             logger.info(username + ": You won!");
             return settleLimitAndValidation(updateProfitAndFund(gameResultResponse, betSize, true), recommendedBet, true);
         } else {
-
             logger.info(username + ": You lost!");
             return settleLimitAndValidation(updateProfitAndFund(gameResultResponse, betSize, false), recommendedBet, false);
         }
-
     }
 
     private GameResultResponse settleLimitAndValidation(GameResultResponse gameResultResponse, String recommendedBet, boolean isWon) {
@@ -307,7 +317,7 @@ public class BaccaratController {
 
         int profit = gameResultResponse.getGameStatus().getProfit();
         int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
-        String sequence = gameResultResponse.getSequence();
+//        String sequence = gameResultResponse.getSequence();
 
         gameResultResponse.setSequence(gameResultResponse.getSequence());
 
@@ -354,10 +364,10 @@ public class BaccaratController {
         GameResultStatus gameResultStatus = gameResultResponse.getGameStatus();
         gameResultStatus.setProfit(profit);
         gameResultStatus.setPlayingUnits(playingUnit);
-        gameResultResponse.setGameStatus(gameResultStatus);
         gameResultStatus.setWins(totalWins);
         gameResultStatus.setLosses(totalLosses);
 
+        gameResultResponse.setGameStatus(gameResultStatus);
         gameResultResponse.setSuggestedBetUnit(betSize);
 
         return gameResultResponse;
@@ -457,10 +467,17 @@ public class BaccaratController {
 
 
     @PostMapping("/back")
-    public GameResultResponse back(@RequestParam String userInput, @RequestParam String recommendedBet) {
+    public GameResultResponse back() {
         // Check if the sequence can be undone
 
         GameResultResponse gameResultResponse = getGameResponse();
+        GameResultStatus gameResultStatus = gameResultResponse.getGameStatus();
+
+        if (gameResultStatus.getHandCount() == 1) {
+            gameResultResponse.setMessage("You may use RESET button.");
+            return gameResultResponse;
+        }
+
         String sequence = gameResultResponse.getSequence();
 
 //            // Update the sequence by removing the last two characters
@@ -469,14 +486,17 @@ public class BaccaratController {
 //            logger.info("Updated sequence after back: {}", sequence);
         logger.info("Current sequence after back : {}", sequence);
 
-        if (sequence.isEmpty()) {
-            return reset();
-        }
+//        if (sequence.isEmpty()) {
+//            return reset();
+//        }
 
         gameResultResponse.setMessage("Removed previous result!");
         gameResultResponse.setSequence(sequence);
         gameResultResponse.setRecommendedBet(WAIT);
 
+
+        gameResultStatus.setHandCount(gameResultStatus.getHandCount() - 1);
+        gameResultResponse.setGameStatus(gameResultStatus);
 
         return provideGameResponse(gameResultResponse);
     }
