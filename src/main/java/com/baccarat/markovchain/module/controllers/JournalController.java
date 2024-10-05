@@ -63,7 +63,10 @@ public class JournalController {
 
         // Create journal responses with a sequential shoe number, limited by dailyLimit
         journalResponses = IntStream.range(0, Math.min(journals.size(), dailyLimit))
-                .mapToObj(i -> new JournalResponse(i + 1, journals.get(i).getHand(), journals.get(i).getProfit(), journals.get(i).getDateCreated()))
+                .mapToObj(i -> new JournalResponse(i + 1,
+                        journals.get(i).getHand(),
+                        journals.get(i).getProfit(),
+                        journals.get(i).getDateCreated()))
                 .collect(Collectors.toList());
 
         // Fill in remaining responses if fewer than totalResponses

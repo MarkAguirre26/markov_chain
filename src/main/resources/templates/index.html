@@ -214,7 +214,7 @@
 
 
 
-                        $("#initialPlayingUnit").prop("disabled", false);
+                        // $("#initialPlayingUnit").prop("disabled", false);
 
                         displayResultToUi(response);
 
@@ -268,14 +268,14 @@
 
 
 
-            if (response.status.handCount > 0) {
-                $("#baseBetUnit").prop("disabled", true);
-                $("#initialPlayingUnit").prop("disabled", true);
+            if (response.gameStatus.handCount > 0) {
+                // $("#baseBetUnit").prop("disabled", true);
+                // $("#initialPlayingUnit").prop("disabled", true);
                 $('#resetButton').show();
                 $('#undoButton').show();
             } else {
-                $("#baseBetUnit").prop("disabled", false);
-                $("#initialPlayingUnit").prop("disabled", false);
+                // $("#baseBetUnit").prop("disabled", false);
+                // $("#initialPlayingUnit").prop("disabled", false);
                 $('#resetButton').hide();
                 $('#undoButton').hide();
             }
@@ -297,20 +297,20 @@
             }
 
             $("#baseBetUnit").val(response.baseBetUnit);
-            $("#initialPlayingUnit").val(response.initialPlayingUnit);
+            $("#initialPlayingUnit").val(response.initialPlayingUnits);
 
             $('#bettingResults').html(`
-            <p>Hands: ${response.status.handCount}</p>
-            <p>Wins: ${response.status.totalWins}</p>
-            <p>Losses: ${response.status.totalLosses}</p>
-            <p>Units: ${response.status.playingFund.toFixed(0)}</p>
-            <p>Net Profit: <span class="${response.status.profit >= 0 ? 'text-green-500' : 'text-red-500'}">${response.status.profit.toFixed(0)}</span></p>
-            <p>Suggested Unit: ${response.suggestedBet.toFixed(0)}</p>
+            <p>Hands: ${response.gameStatus.handCount}</p>
+            <p>Wins: ${response.gameStatus.wins}</p>
+            <p>Losses: ${response.gameStatus.losses}</p>
+            <p>Units: ${response.gameStatus.playingUnits.toFixed(0)}</p>
+            <p>Net Profit: <span class="${response.gameStatus.profit >= 0 ? 'text-green-500' : 'text-red-500'}">${response.gameStatus.profit.toFixed(0)}</span></p>
+            <p>Suggested Unit: ${response.suggestedBetUnit.toFixed(0)}</p>
             <p>Next Bet: ${response.recommendedBet}</p>
             <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
 
 
-            displayResults(response.sequencePlayed.toUpperCase())
+            displayResults(response.sequence.toUpperCase())
 
 
             // Show or hide the RESET GAME button based on the result
@@ -330,7 +330,7 @@
 
                 $('#playerButton').prop('disabled', false);
                 $('#bankerButton').prop('disabled', false);
-                if (response.sequencePlayed !== "") {
+                if (response.sequence !== "") {
                     $('#undoButton').show();
                 }
 
@@ -562,40 +562,40 @@
             });
         }
 
-        function baseBetUnitConfig(baseBetUnitValue) {
+        // function baseBetUnitConfig(baseBetUnitValue) {
 
-            $.ajax({
-                url: '/api/baccarat/playing-base-bet',
-                type: 'POST',
-                data: {
-                    baseBetUnit: baseBetUnitValue
-                },
-                success: function (response) {
-                },
-                error: function (error) {
-                    console.error('Error fetching game state:', error);
-                    $('#response').html('<p>Failed to fetch the current game state.</p>');
-                }
-            });
-        }
+        //     $.ajax({
+        //         url: '/api/baccarat/playing-base-bet',
+        //         type: 'POST',
+        //         data: {
+        //             baseBetUnit: baseBetUnitValue
+        //         },
+        //         success: function (response) {
+        //         },
+        //         error: function (error) {
+        //             console.error('Error fetching game state:', error);
+        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
+        //         }
+        //     });
+        // }
 
-        function initialPlayingUnit(value) {
+        // function initialPlayingUnit(value) {
 
-            $.ajax({
-                url: '/api/baccarat/initial-playing-fund',
-                type: 'POST',
-                data: {
-                    initialPlayingUnit: value
-                },
-                success: function (response) {
-                    // getRecommendedbaseBetUnit();
-                },
-                error: function (error) {
-                    console.error('Error fetching game state:', error);
-                    $('#response').html('<p>Failed to fetch the current game state.</p>');
-                }
-            });
-        }
+        //     $.ajax({
+        //         url: '/api/baccarat/initial-playing-fund',
+        //         type: 'POST',
+        //         data: {
+        //             initialPlayingUnit: value
+        //         },
+        //         success: function (response) {
+        //             // getRecommendedbaseBetUnit();
+        //         },
+        //         error: function (error) {
+        //             console.error('Error fetching game state:', error);
+        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
+        //         }
+        //     });
+        // }
 
 
 

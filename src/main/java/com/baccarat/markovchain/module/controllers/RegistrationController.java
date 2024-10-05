@@ -48,19 +48,19 @@ public class RegistrationController {
 
 
         user.setUuid(java.util.UUID.randomUUID().toString());
-        user.setIsActive(0);
+        user.setIsActive(1);
         user.setRole(UserRole.USER.getValue());
         user.setDateLastModified(LocalDate.now());
         user.setDateCreated(LocalDate.now());
         User createdUser = userService.createUser(user);
 
-        Config playingFundsConfig = new Config(createdUser.getUuid(), UserConfig.PLAYING_FUND.getValue(), "100");
-        userConfigService.saveOrUpdateConfig(playingFundsConfig);
-        logger.info("Saving base bet config for {}", createdUser.getUsername());
-
-        Config baseBetConfig = new Config(createdUser.getUuid(), UserConfig.BASE_BET.getValue(), "1");
-        userConfigService.saveOrUpdateConfig(baseBetConfig);
-        logger.info("Saving base bet unit config for {}", createdUser.getUsername());
+//        Config playingFundsConfig = new Config(createdUser.getUuid(), UserConfig.PLAYING_FUND.getValue(), "100");
+//        userConfigService.saveOrUpdateConfig(playingFundsConfig);
+//        logger.info("Saving base bet config for {}", createdUser.getUsername());
+//
+//        Config baseBetConfig = new Config(createdUser.getUuid(), UserConfig.BASE_BET.getValue(), "1");
+//        userConfigService.saveOrUpdateConfig(baseBetConfig);
+//        logger.info("Saving base bet unit config for {}", createdUser.getUsername());
 
         Config dailyLimitConfig = new Config(createdUser.getUuid(), UserConfig.DAILY_LIMIT.getValue(), "10");
         userConfigService.saveOrUpdateConfig(dailyLimitConfig);
