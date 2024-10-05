@@ -28,7 +28,7 @@ public class BaccaratController {
 
     private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
     private static final String STOP_LOSS_REACHED = "Stop loss reached! Restart the game.";
-    private static final String DAILY_LIMIT_REACHED = "Daily limit reached! Please play again tomorrow.";
+    private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again tomorrow.";
     private static final String MAX_HAND_LIMIT_REACHED = "Hands limit reached! Restart the game";
     private static final int ZERO = 0;
 
@@ -37,7 +37,7 @@ public class BaccaratController {
 
     private static final double STOP_PROFIT_PERCENTAGE = 0.40;
     private static final double STOP_LOSS_PERCENTAGE = 0.10;
-    private static final int MAX_HANDS = 59;
+    private static final int MAX_HANDS = 60;
 
     private final MarkovChain markovChain;
     private final PatternRecognizer patternRecognizer;
@@ -47,10 +47,7 @@ public class BaccaratController {
 
     private final UserConfigService configService;
     private final String WAIT = "Wait..";
-    //    private String sequence = ""; // Empty starting sequence
-//    private int handCount = 0;
-//    private int totalWins = 0;
-//    private int totalLosses = 0;
+
 
 
     @Autowired
@@ -80,17 +77,18 @@ public class BaccaratController {
         logger.info(userPrincipal.getUsername() + ": Received recommendedBet input: {}", recommendedBet);
         logger.info(userPrincipal.getUsername() + ": Received baseBetAmount input: {}", baseBetUnit);
 
-        if (hasReachedDailyJournalLimit(userPrincipal.getUserUuid())) {
+        if (hasReachedDailyJournalLimit()) {
+            gameResultResponseInitial.setDailyLimitReached(true);
             gameResultResponseInitial.setMessage(DAILY_LIMIT_REACHED);
             gameResultResponseInitial.setRecommendedBet(recommendedBet);
             return provideGameResponse(gameResultResponseInitial);
         }
 
 
-        // Validate user input
-        if (!isValidInput(userInput)) {
-            return createErrorResponse();
-        }
+//        // Validate user input
+//        if (!isValidInput(userInput)) {
+//            return createErrorResponse();
+//        }
 
         GameResultResponse gameResultResponse = updateSequenceAndUpdateHandCount(gameResultResponseInitial, userInput);
 
@@ -166,8 +164,9 @@ public class BaccaratController {
     }
 
 
-    private boolean hasReachedDailyJournalLimit(String userUuid) {
-        List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userUuid, LocalDate.now());
+    private boolean hasReachedDailyJournalLimit() {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userPrincipal.getUserUuid(), LocalDate.now());
         int maxDailyJournalLimit = getDailyLimit();
         return journals.size() >= maxDailyJournalLimit;
     }
@@ -184,13 +183,6 @@ public class BaccaratController {
         return provideGameResponse(gameResultResponse);
     }
 
-    private boolean isValidInput(String input) {
-        if (!input.equals("p") && !input.equals("b")) {
-            logger.warn("Invalid input received: {}. Must be 'p' or 'b'.", input);
-            return false;
-        }
-        return true;
-    }
 
     private GameResultResponse updateSequenceAndUpdateHandCount(GameResultResponse gameResultResponse, String userInput) {
 
@@ -202,6 +194,7 @@ public class BaccaratController {
         int handCount = gameStatus == null ? 1 : gameStatus.getHandCount() + 1;
 
         assert gameStatus != null;
+
         gameStatus.setHandCount(handCount);
         gameResultResponse.setGameStatus(gameStatus);
         gameResultResponse.setSequence(sequence);
@@ -234,7 +227,8 @@ public class BaccaratController {
     private boolean hasReachedHandsLimit(GameResultResponse gameResultResponse) {
 //        GameResultResponse gameResultResponse = getGameResponse();
         int handCount = gameResultResponse.getGameStatus().getHandCount(); // th is because the first hand is not counted. Do not touch this
-        return handCount >= MAX_HANDS;
+        int sequenceLength = gameResultResponse.getSequence().length();
+        return handCount >= MAX_HANDS || sequenceLength >= MAX_HANDS;
     }
 
 
@@ -248,7 +242,6 @@ public class BaccaratController {
         String username = userPrincipal.getUsername();
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
             logger.info(username + ": Prediction confidence too low. No bet suggested.");
-//            return new GameResponse("Prediction confidence too low, no bet suggested.", sequence, getGameStatus(), BASE_BET_UNIT, 0, INITIAL_PLAYING_UNITS, WAIT);
 
 
             gameResultResponse.setMessage("Prediction confidence too low, no bet suggested.");
@@ -260,6 +253,7 @@ public class BaccaratController {
         }
 
         int betSize = (int) Math.ceil(betUnit * combinedPrediction.second * 5);
+
 
         int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
 
@@ -287,8 +281,7 @@ public class BaccaratController {
 
         String username = userPrincipal.getUsername();
 
-        int profit = gameResultResponse.getGameStatus().getProfit();
-        int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
+        gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
 
         if (predictedBet.equals(WAIT) || predictedBet.isEmpty()) {
             gameResultResponse.setMessage("Place your bet");
@@ -299,12 +292,11 @@ public class BaccaratController {
         String previousPrediction = predictedBet.equals("Player") ? "p" : "b";
 
         if (previousPrediction.equals(userInput)) {
-
-            logger.info(username + ": You won! New profit: {}, New playing fund: {}", profit, playingUnit);
+            logger.info(username + ": You won!");
             return settleLimitAndValidation(updateProfitAndFund(gameResultResponse, betSize, true), recommendedBet, true);
         } else {
 
-            logger.info(username + ": You lost! New profit: {}, New playing fund: {}", profit, playingUnit);
+            logger.info(username + ": You lost!");
             return settleLimitAndValidation(updateProfitAndFund(gameResultResponse, betSize, false), recommendedBet, false);
         }
 
@@ -318,9 +310,9 @@ public class BaccaratController {
         String sequence = gameResultResponse.getSequence();
 
         gameResultResponse.setSequence(gameResultResponse.getSequence());
-//        gameResultResponse.setSequence(sequence);
-        gameResultResponse.setRecommendedBet(WAIT);
 
+        gameResultResponse.setRecommendedBet(WAIT);
+        gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
 
         if (hasReachedStopProfit(gameResultResponse)) {
             logger.warn(": Reached stop profit. New profit: {}, New playing fund: {}", profit, playingUnit);
@@ -365,6 +357,8 @@ public class BaccaratController {
         gameResultResponse.setGameStatus(gameResultStatus);
         gameResultStatus.setWins(totalWins);
         gameResultStatus.setLosses(totalLosses);
+
+        gameResultResponse.setSuggestedBetUnit(betSize);
 
         return gameResultResponse;
     }
@@ -505,6 +499,7 @@ public class BaccaratController {
         gameStatus.setWins(0);
         gameStatus.setLosses(0);
         gameStatus.setProfit(0);
+
         gameStatus.setPlayingUnits(100);
         gameStatusService.updateGameStatus(gameStatus.getGameStatusId(), gameStatus);
 
@@ -512,7 +507,7 @@ public class BaccaratController {
         gameResultResponse.setMessage("Game has been reset!");
         gameResultResponse.setBaseBetUnit(0);
         gameResultResponse.setInitialPlayingUnits(100);
-        gameResultResponse.setSuggestedBetUnit(0);
+        gameResultResponse.setSuggestedBetUnit(1);
         gameResultResponse.setRecommendedBet(WAIT);
 
 
@@ -614,7 +609,7 @@ public class BaccaratController {
         gameResponse.setRecommendedBet(gameResultResponse.getRecommendedBet());
         gameResponse.setSequence(gameResultResponse.getSequence());
         gameResponse.setMessage(gameResultResponse.getMessage());
-
+        gameResponse.setDateLastUpdated(LocalDateTime.now());
 
         // Persist the updated game response
         gameResponseService.createOrUpdateGameResponse(gameResponse);

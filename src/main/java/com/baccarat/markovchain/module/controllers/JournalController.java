@@ -55,7 +55,6 @@ public class JournalController {
         List<Journal> journals;
         journals = journalService.getJournalsByUserUuidAndDateCreated(userUuid, effectiveFrom);
 
-
         int dailyLimit = getDailyLimit();
 
         List<JournalResponse> journalResponses;

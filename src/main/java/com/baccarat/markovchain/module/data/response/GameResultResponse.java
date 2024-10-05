@@ -16,8 +16,10 @@ public class GameResultResponse {
     private int suggestedBetUnit;
     private int initialPlayingUnits;
     private String recommendedBet;
+    private boolean isDailyLimitReached;
 
-    public GameResultResponse(String message, String sequence, GameResultStatus gameStatus, int baseBetUnit, int suggestedBetUnit, int initialPlayingUnits, String recommendedBet) {
+    public GameResultResponse(String message, String sequence, GameResultStatus gameStatus, int baseBetUnit,
+                              int suggestedBetUnit, int initialPlayingUnits, String recommendedBet, boolean isDailyLimitReached) {
         this.message = message;
         this.sequence = sequence.replace("1111","");
         this.gameStatus = gameStatus;
@@ -25,6 +27,19 @@ public class GameResultResponse {
         this.suggestedBetUnit = suggestedBetUnit;
         this.initialPlayingUnits = initialPlayingUnits;
         this.recommendedBet = recommendedBet;
+        this.isDailyLimitReached = isDailyLimitReached;
+    }
+
+    public GameResultResponse(String message, String sequence, GameResultStatus gameStatus, int baseBetUnit,
+                              int suggestedBetUnit, int initialPlayingUnits, String recommendedBet) {
+        this.message = message;
+        this.sequence = sequence.replace("1111","");
+        this.gameStatus = gameStatus;
+        this.baseBetUnit = baseBetUnit;
+        this.suggestedBetUnit = suggestedBetUnit;
+        this.initialPlayingUnits = initialPlayingUnits;
+        this.recommendedBet = recommendedBet;
+
     }
 
     public GameResultResponse() {

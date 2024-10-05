@@ -66,7 +66,7 @@ public class RegistrationController {
         userConfigService.saveOrUpdateConfig(dailyLimitConfig);
         logger.info("Saving daily limit config for {}", createdUser.getUsername());
 
-        logger.info("User created: {}", createdUser);
+//        logger.info("User created: {}", createdUser);
         return ResponseEntity.ok("Created user" + user.getUsername());
     }
 }
