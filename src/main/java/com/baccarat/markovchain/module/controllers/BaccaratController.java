@@ -211,8 +211,7 @@ public class BaccaratController {
     private boolean hasReachedHandsLimit(GameResultResponse gameResultResponse) {
 //        GameResultResponse gameResultResponse = getGameResponse();
         int handCount = gameResultResponse.getGameStatus().getHandCount(); // th is because the first hand is not counted. Do not touch this
-        int sequenceLength = gameResultResponse.getSequence().length();
-        return handCount >= MAX_HANDS || sequenceLength >= MAX_HANDS;
+        return handCount >= MAX_HANDS;
     }
 
 
@@ -461,30 +460,45 @@ public class BaccaratController {
     @PostMapping("/reset")
     public GameResultResponse reset() {
         logger.info("Resetting game state to initial values.");
-        // Reset all variables
-
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
-        //Delete all items to GameResponse and GameStatus table
+        try {
+            deleteGamesByUserUuid(userUuid);
+
+            GameStatus gameStatus = createInitialGameStatus();
+            GameResultResponse gameResultResponse = createInitialGameResultResponse(gameStatus);
+
+            initialize(gameResultResponse);
+
+            logger.info(userPrincipal.getUsername() + ": Game state reset!");
+            return gameResultResponse;
+        } catch (Exception e) {
+            logger.error("Error resetting game state", e);
+            throw new RuntimeException("Failed to reset game state", e);
+        }
+    }
+
+    private void deleteGamesByUserUuid(String userUuid) {
         List<GameResponse> games = gameResponseService.findAllByUserUuid(userUuid);
         for (GameResponse game : games) {
             gameResponseService.deleteGameResponse(game.getGameResponseId());
-
-            GameStatus gameStatusToDelete = gameStatusService.findByGameResponseId(game.getGameResponseId()).get();
-            gameStatusService.deleteById(gameStatusToDelete.getGameStatusId());
+            gameStatusService.deleteById(gameStatusService.findByGameResponseId(game.getGameResponseId()).get().getGameStatusId());
         }
+    }
 
-
+    private GameStatus createInitialGameStatus() {
         GameStatus gameStatus = new GameStatus();
         gameStatus.setHandCount(0);
         gameStatus.setWins(0);
         gameStatus.setLosses(0);
         gameStatus.setProfit(0);
         gameStatus.setPlayingUnits(100);
+        return gameStatus;
+    }
 
-
+    private GameResultResponse createInitialGameResultResponse(GameStatus gameStatus) {
         GameResultResponse gameResultResponse = new GameResultResponse();
         gameResultResponse.setSequence("1111");
         gameResultResponse.setMessage("Game reset!");
@@ -493,12 +507,15 @@ public class BaccaratController {
         gameResultResponse.setSuggestedBetUnit(1);
         gameResultResponse.setRecommendedBet(WAIT);
 
-        GameResultStatus gameResultStatus = new GameResultStatus(gameStatus.getHandCount(), gameStatus.getWins(), gameStatus.getLosses(), gameStatus.getProfit(), gameStatus.getPlayingUnits());
+        GameResultStatus gameResultStatus = new GameResultStatus(
+                gameStatus.getHandCount(),
+                gameStatus.getWins(),
+                gameStatus.getLosses(),
+                gameStatus.getProfit(),
+                gameStatus.getPlayingUnits()
+        );
         gameResultResponse.setGameStatus(gameResultStatus);
 
-        initialize(gameResultResponse);
-
-        logger.info(userPrincipal.getUsername() + ": Game state reset!");
         return gameResultResponse;
     }
 
