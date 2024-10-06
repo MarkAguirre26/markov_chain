@@ -221,15 +221,7 @@
             $("#baseBetUnit").val(response.baseBetUnit);
             $("#initialPlayingUnit").val(response.initialPlayingUnits);
 
-            // $('#bettingResults').html(`
-            //     <p>Hands: ${response.gameStatus.handCount}</p>
-            //     <p>Wins: ${response.gameStatus.wins}</p>
-            //     <p>Losses: ${response.gameStatus.losses}</p>
-            //     <p>Units: ${response.gameStatus.playingUnits.toFixed(0)}</p>
-            //     <p>Net Profit: <span class="${response.gameStatus.profit >= 0 ? 'text-green-500' : 'text-red-500'}">${response.gameStatus.profit.toFixed(0)}</span></p>
-            //     <p>Suggested Unit: ${response.suggestedBetUnit.toFixed(0)}</p>
-            //     <p>Next Bet: ${response.recommendedBet}</p>
-            //     <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
+         
             $('#bettingResults').html(`
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <div class="bg-gray-200 text-gray-800 text-sm font-semibold p-2">

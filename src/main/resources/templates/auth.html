@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Login Page">
-    <meta name="keywords" content="login, registration, user account">
+    <meta name="keywords" content="login, user account">
     <title>Player Companion Baccarat App Game Tracker</title>
     <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -15,66 +15,49 @@
 
 <body class="bg-gray-200 min-h-screen flex items-center justify-center">
 
-    <section class="w-full h-full">
-        <div class="container mx-auto h-full">
-            <div class="flex justify-center items-center h-full">
-                <div class="w-full lg:w-10/12 xl:w-11/12">
-                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
-                        <div class="flex flex-col md:flex-row justify-center">
+    <section class="w-full h-full flex items-center justify-center">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden" style="max-width: 400px; width: 100%;">
 
-                            <!-- Form Section -->
-                            <div class="md:w-1/2 p-8">
-                                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Login</h2>
+            <div class="p-8">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Sign-In</h2>
 
-                                <form th:action="@{/auth}" method="POST">
-                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                                    <div class="mb-6 flex items-center">
-                                        <i class="fas fa-user text-xl text-gray-400 mr-3"></i>
-                                        <div class="flex-grow">
-                                            <input type="text" id="username" name="username" aria-label="Username" 
-                                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                placeholder="Your username" required>
-                                        </div>
-                                    </div>
+                <form th:action="@{/auth}" method="POST">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
-                                    <div class="mb-6 flex items-center">
-                                        <i class="fas fa-lock text-xl text-gray-400 mr-3"></i>
-                                        <div class="flex-grow">
-                                            <input type="password" id="password" name="password" aria-label="Password" 
-                                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                placeholder="Password" required>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex justify-center">
-                                        <button type="submit"
-                                            class="bg-blue-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-blue-600 transition duration-300">Login</button>
-                                    </div>
-
-                                    <div class="flex justify-center">
-                                        <p class="mt-4 text-gray-600">
-                                            No account yet?
-                                            <a th:href="@{/register}" class="text-blue-500 hover:underline">Sign up</a>
-                                        </p>
-                                    </div>
-
-                                    <div th:if="${param.error}" class="mt-4 text-red-500 text-center">
-                                        <p>Invalid username or password</p>
-                                    </div>
-                                </form>
-
-
-
-                            </div>
-
-                            <div class="hidden md:block md:w-1/2 bg-cover bg-center"
-                                style="background-image: url('/img/bg.jpg');">
-                            </div>
-                           
-
+                    <!-- Email Field -->
+                    <div class="mb-6 flex items-center">
+                        <i class="fas fa-envelope text-xl text-gray-400 mr-3"></i>
+                        <div class="flex-grow">
+                            <input type="text" id="username" name="username" aria-label="username" 
+                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="username or email" required>
                         </div>
                     </div>
-                </div>
+
+                    <!-- Password Field -->
+                    <div class="mb-6 flex items-center">
+                        <i class="fas fa-lock text-xl text-gray-400 mr-3"></i>
+                        <div class="flex-grow">
+                            <input type="password" id="password" name="password" aria-label="Password" 
+                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="Password" required>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-center">
+                        <button type="submit"
+                            class="bg-yellow-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-yellow-600 transition duration-300">Sign-In</button>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <p class="mt-4 text-gray-600">
+                            New Here?
+                            <a th:href="@{/register}" class="text-yellow-500 hover:underline cursor-pointer">Create your Player Companion Account</a>
+                        </p>
+                    </div>
+                </form>
+
             </div>
         </div>
     </section>
