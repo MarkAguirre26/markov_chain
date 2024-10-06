@@ -72,6 +72,7 @@ public class AccessController {
     }
 
 
+
     private boolean passwordMatches(String rawPassword, String encodedPassword) {
         return rawPassword.equals(encodedPassword); // Replace this with proper password encoding comparison
     }

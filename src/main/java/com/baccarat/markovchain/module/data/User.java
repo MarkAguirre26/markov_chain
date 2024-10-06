@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user")
@@ -38,10 +39,10 @@ public class User {
     private int isActive;
 
     @Column(name = "date_last_modified")
-    private LocalDate dateLastModified;
+    private LocalDateTime dateLastModified;
 
     @Column(name = "date_created",  updatable = false, columnDefinition = "datetime default current_timestamp()")
-    private LocalDate dateCreated;
+    private LocalDateTime dateCreated;
 
 
 }

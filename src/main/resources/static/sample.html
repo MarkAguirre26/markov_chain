@@ -57,30 +57,10 @@
                         <div style="height: 170px;">
                             <div id="circleContainer" class="gap-4 mb-4 w-full overflow-x-auto hidden-scrollbar"
                                 style="max-height: 170px; white-space: nowrap;">
-                                <div id="handResultColumn" class="grid grid-cols-3 gap-4 h-full w-full">
-                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
-                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
-                                    </div>
-                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
-                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
-                                    </div>
-                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
-                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
-                                    </div>
-                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
-                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
-                                    </div>
-                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
-                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
-                                    </div>
-                                    <div class="flex items-center justify-center h-24 w-24 bg-gray-200 rounded-lg">
-                                        <div class="h-20 w-20 bg-blue-400 rounded-full"></div> <!-- Circle -->
-                                    </div>
+                                <div id="handResultColumn" class="flex flex-row h-full w-full">
                                 </div>
                             </div>
                         </div>
-                        
-                        
 
                         <div class="flex justify-between">
                             <button type="button" id="playerButton"
@@ -143,7 +123,399 @@
         </div>
     </div>
 
-   
+    <script>
+        $(document).ready(function () {
+
+            getJournal();
+            currentState();
+    
+            function playGame(userInput) {
+                const recommendedBetUnit = $('#recommendedBet').text();               
+                $.ajax({
+                    url: '/api/baccarat/play',
+                    method: 'POST',
+                    contentType: 'application/x-www-form-urlencoded',
+                    data: $.param({
+                        userInput: userInput,
+                        recommendedBet: recommendedBetUnit,
+                        baseBetUnit: 1
+                    }),
+                    success: function (response) {
+
+                        // console.log(response);
+                        displayResultToUi(response);
+
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error
+                        $('#status').text(`Error: ${xhr.responseText}`);
+                    }
+                });
+            }
+
+            // Event listener for PLAYER button
+            $('#playerButton').on('click', function () {
+
+
+                playGame('p');
+
+
+
+            });
+
+            // Event listener for BANKER button
+            $('#bankerButton').on('click', function () {
+
+
+                playGame('b');
+            });
+
+            //Event listener for UNDO button
+
+            $('#undoButton').on('click', function () {
+
+
+                undo();
+
+            });
+
+
+
+
+            // Event listener for RESET GAME button
+            $('#resetButton').on('click', function () {
+
+                // AJAX call to reset the game
+                $.ajax({
+                    url: '/api/baccarat/reset', // Update the URL to your reset endpoint
+                    method: 'POST',
+                    success: function (response) {
+
+
+
+                      
+                        displayResultToUi(response);
+
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle error
+                        $('#status').text(`Error: ${xhr.responseText}`);
+                    }
+                });
+            });
+
+
+           
+
+
+        });
+
+
+
+        function displayResultToUi(response) {
+
+            console.log(response);
+
+
+
+
+            if (response.gameStatus.handCount > 0) {
+
+                $('#resetButton').show();
+                $('#undoButton').show();
+                if (response.gameStatus.handCount === 1) {
+                    $('#undoButton').hide();
+                }
+            } else {
+                
+                $('#resetButton').hide();
+                $('#undoButton').hide();
+            }
+
+
+            // Set the text and change color based on the message
+            const statusMessage = response.message;
+
+            if (statusMessage.includes("profit")) {
+                $('#status').text(statusMessage).css('color', 'green'); // Set text color to red
+            } else if (statusMessage.includes("loss")) {
+                $('#status').text(statusMessage).css('color', 'red'); // Set text color to red
+            } else if (statusMessage.includes("reset")) {
+                $("#handResultColumn").html("");
+                $('#status').text("");
+                getJournal();
+            } else {
+
+                $('#status').text(statusMessage).css('color', 'black');
+            }
+
+            $("#baseBetUnit").val(response.baseBetUnit);
+            $("#initialPlayingUnit").val(response.initialPlayingUnits);
+
+            $('#bettingResults').html(`
+            <p>Hands: ${response.gameStatus.handCount}</p>
+            <p>Wins: ${response.gameStatus.wins}</p>
+            <p>Losses: ${response.gameStatus.losses}</p>
+            <p>Units: ${response.gameStatus.playingUnits.toFixed(0)}</p>
+            <p>Net Profit: <span class="${response.gameStatus.profit >= 0 ? 'text-green-500' : 'text-red-500'}">${response.gameStatus.profit.toFixed(0)}</span></p>
+            <p>Suggested Unit: ${response.suggestedBetUnit.toFixed(0)}</p>
+            <p>Next Bet: ${response.recommendedBet}</p>
+            <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
+
+
+            displayResults(response.sequence.toUpperCase())
+
+
+
+
+
+            // Show or hide the RESET GAME button based on the result
+            if (statusMessage.includes("reached")) {
+
+                $('#playerButton').prop('disabled', true);
+                $('#bankerButton').prop('disabled', true);
+                $('#undoButton').hide();
+                $('#resetButton').show();
+                getJournal();
+
+            } else {
+
+
+                $('#playerButton').prop('disabled', false);
+                $('#bankerButton').prop('disabled', false);
+                
+            }
+
+
+            if (response.dailyLimitReached) {
+                $('#resetButton').hide();
+            }
+        }
+        function undo() {
+
+
+            $.ajax({
+                url: '/api/baccarat/undo',
+                method: 'POST',
+                contentType: 'application/x-www-form-urlencoded',
+                success: function (response) {
+                    // console.log(response);
+                    displayResultToUi(response);
+
+
+                },
+                error: function (xhr, status, error) {
+                    // Handle errors
+                    $('#responseMessage').text("An error occurred: " + xhr.responseText);
+                    console.error("Error details:", error);
+                }
+            });
+        }
+
+        function addContainer(group) {
+
+            const container = document.createElement('div');
+            container.classList.add(
+                'flex',
+                'flex-col',    // Align circles vertically
+                'items-start',  // Align items to the top
+                'justify-start', // Optional: ensures content starts from top
+                'h-full'       // Full height of the main container               
+            );
+
+
+
+            // Create circles for each character in the group         
+            let circleNumber = 1;
+            for (const char of group) {
+                const circle = document.createElement('div');
+                circle.classList.add(
+                    'flex',
+                    'items-center',
+                    'justify-center',
+                    'w-6',       // Width of the outer circle
+                    'h-6',       // Height of the outer circle
+                    'border',
+                    'border-gray-300',  // Border for outer circle
+                    'rounded-full',     // Full outer circle
+                    char === 'P' ? 'bg-blue-500' : 'bg-red-500', // Background color for the outer circle
+                    'mb-1'              // Margin between circles
+                );
+
+                // Create a smaller white circle inside
+                const innerCircle = document.createElement('div');
+                innerCircle.classList.add(
+                    'flex',
+                    'items-center',
+                    'justify-center',
+                    'w-3',        // Width of the inner white circle
+                    'h-3',        // Height of the inner white circle
+                    'bg-white',   // White background for the inner circle
+                    'rounded-full', // Full circle for the inner circle
+                    'text-xs',
+                    'text-gray-400'
+                );
+
+                // Add the number to the center of the inner white circle
+                innerCircle.textContent = circleNumber;
+
+                // Add the inner circle to the outer circle
+                circle.appendChild(innerCircle);
+
+                // Add the outer circle to the container
+                container.appendChild(circle);
+
+                circleNumber++;
+            }
+
+            return container; // Return the container with circles
+        }
+
+        function displayResults(playerAndBankerCollections) {
+
+            // console.log(playerAndBankerCollections);
+
+            const results = playerAndBankerCollections.split('');
+
+            if (results.length === 0) {
+                return;
+            }
+
+            // Clear previous results
+            document.getElementById('handResultColumn').innerHTML = '';
+
+            let currentChar = results[0];
+            let group = currentChar; // Initialize the group with the first character
+            const column = document.getElementById('handResultColumn');
+            const circleContainer = document.getElementById('circleContainer'); // Reference to the outer container
+
+            for (let i = 1; i < results.length; i++) {
+                if (results[i] === currentChar) {
+                    group += results[i]; // Add to the current group if same
+                } else {
+                    // Create and append the container for the current group
+                    column.appendChild(addContainer(group));
+                    currentChar = results[i]; // Update currentChar
+                    group = currentChar; // Start a new group
+                }
+            }
+
+
+            // Append the last group after the loop
+            column.appendChild(addContainer(group));
+
+            // Auto-scroll the circleContainer to the right after adding new content
+            setTimeout(() => {
+                circleContainer.scrollLeft = circleContainer.scrollWidth;
+            }, 0); // Using a timeout to ensure rendering is complete before scrolling
+
+        }
+
+        function getJournal() {
+
+            const currentDate = new Date();
+
+            // Get the user's time zone
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            // Format the date with the user's time zone
+            const options = { timeZone: userTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
+            const localDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
+
+            //console.log(localDate);
+
+
+            // Perform the AJAX call
+            $.ajax({
+                url: '/api/journals/dateCreated',
+                type: 'GET',
+                data: {
+                    dateCreated: localDate
+                },
+                success: function (response) {
+
+                    // console.log(response.length);
+
+                    $('#journalContainer').html('');
+
+                    $('#dateTime').text(localDate);
+
+                    const journalContainer = document.getElementById('journalContainer');
+                    let totalProfit = 0;
+                    let lastValidIndex = -1;
+
+                    response.forEach((journal, index) => {
+                        if (journal.hand !== 0) {
+                            lastValidIndex = index; // Update lastValidIndex if Hand is not 0
+                        }
+                    });
+
+                    response.forEach((journal, index) => {
+                        const journalDiv = document.createElement('div');
+                        journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-4');
+
+                        const shoeHeading = document.createElement('h4');
+                        shoeHeading.classList.add('font-semibold');
+                        shoeHeading.textContent = `Shoe: ${journal.shoe}`;
+
+                        const handParagraph = document.createElement('p');
+                        handParagraph.classList.add('text-gray-700');
+                        handParagraph.textContent = `Hand: ${journal.hand}`;
+
+                        const profitParagraph = document.createElement('p');
+                        profitParagraph.classList.add('text-gray-700');
+                        profitParagraph.textContent = `Profit: ${journal.profit}`;
+
+                        totalProfit += journal.profit;
+
+                        journalDiv.appendChild(shoeHeading);
+                        journalDiv.appendChild(handParagraph);
+                        journalDiv.appendChild(profitParagraph);
+
+                        journalContainer.appendChild(journalDiv);
+
+                        // Add a glowing effect to the last card with Hand not equal to 0
+                        if (index === lastValidIndex) {
+                            journalDiv.classList.add('glow'); // Add a class for glowing effect
+                        }
+                    });
+
+
+                    $('#totalProfit').text(totalProfit);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching journals:', error);
+                    alert('An error occurred while fetching journals. Please try again.');
+                }
+            });
+        }
+
+        function currentState() {
+
+            const statusMessage = $('#status').text();
+
+
+            $.ajax({
+                url: '/api/baccarat/current-state',
+                type: 'GET',
+                data: {
+                    message: statusMessage
+                },
+                success: function (response) {
+                    displayResultToUi(response);
+                },
+                error: function (error) {
+                    console.error('Error fetching game state:', error);
+                    $('#response').html('<p>Failed to fetch the current game state.</p>');
+                }
+            });
+        }
+
+
+
+
+
+    </script>
 </body>
 
 </html>

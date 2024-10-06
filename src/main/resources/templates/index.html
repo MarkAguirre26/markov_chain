@@ -80,21 +80,21 @@
                     <div id="bettingResults" class="text-gray-700"></div>
                     <div id="finalStats" class="mt-4 font-bold"></div>
                 </div>
-                
 
-                <div>
-                    <button id="resetButton" style="display: none;"
-                        class="mt-4 w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 transition duration-200">
+
+
+                <div class="flex justify-between">
+                    <button type="button" id="resetButton" style="display: none;"
+                        class="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 transition duration-200 mr-2">
                         Reset Game
                     </button>
-
-                </div>
-                <div>
-                    <button id="undoButton" style="display: none;"
-                        class="mt-4 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition duration-200">
+                    <button type="button" id="undoButton" style="display: none;"
+                        class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition duration-200 ml-2">
                         Undo
                     </button>
                 </div>
+
+
 
             </div>
 
@@ -125,282 +125,209 @@
 
     <script>
         $(document).ready(function () {
+            (async () => {
+                await getJournal();
+                await currentState();
+            })();
 
-            getJournal();
-            currentState();
-            // getRecommendedbaseBetUnit();
-            // Function to handle button click and AJAX call
-            function playGame(userInput) {
+            async function playGame(userInput) {
                 const recommendedBetUnit = $('#recommendedBet').text();
-                // const baseBetUnit = $('#baseBetUnit').val();
-                // AJAX call to simulate the game
-                $.ajax({
-                    url: '/api/baccarat/play',
-                    method: 'POST',
-                    contentType: 'application/x-www-form-urlencoded',
-                    data: $.param({
-                        userInput: userInput,
-                        recommendedBet: recommendedBetUnit,
-                        baseBetUnit: 1
-                    }),
-                    success: function (response) {
 
-                        // console.log(response);
-                        displayResultToUi(response);
+                try {
+                    const response = await $.ajax({
+                        url: '/api/baccarat/play',
+                        method: 'POST',
+                        contentType: 'application/x-www-form-urlencoded',
+                        data: $.param({
+                            userInput: userInput,
+                            recommendedBet: recommendedBetUnit,
+                            baseBetUnit: 1
+                        })
+                    });
+                    displayResultToUi(response);
+                } catch (xhr) {
+                    
+                    $('#playerButton').prop('disabled', false);     
+                    $('#bankerButton').prop('disabled', false);
 
-                    },
-                    error: function (xhr, status, error) {
-                        // Handle error
-                        $('#status').text(`Error: ${xhr.responseText}`);
-                    }
-                });
+                    $('#status').text(`Error: ${xhr.responseText}`);
+                }
             }
 
             // Event listener for PLAYER button
             $('#playerButton').on('click', function () {
-
-
+                $('#playerButton').prop('disabled', true);
                 playGame('p');
-
-
-
             });
 
             // Event listener for BANKER button
             $('#bankerButton').on('click', function () {
-
-
+                $('#bankerButton').prop('disabled', true);
                 playGame('b');
             });
 
-            //Event listener for UNDO button
-
-            $('#undoButton').on('click', function () {
-
-
-                undo();
-
+            // Event listener for UNDO button
+            $('#undoButton').on('click', async function () {
+                $('#undoButton').prop('disabled', true); 
+                await undo();
             });
-
-
-
 
             // Event listener for RESET GAME button
-            $('#resetButton').on('click', function () {
+            $('#resetButton').on('click', async function () {
+                $('#resetButton').prop('disabled', true); 
+                try {
+                    const response = await $.ajax({
+                        url: '/api/baccarat/reset',
+                        method: 'POST'
+                    });
+                    displayResultToUi(response);
+                } catch (xhr) {
+                    $('#resetButton').prop('disabled', false); 
 
-                // AJAX call to reset the game
-                $.ajax({
-                    url: '/api/baccarat/reset', // Update the URL to your reset endpoint
-                    method: 'POST',
-                    success: function (response) {
-
-
-
-                        // $("#initialPlayingUnit").prop("disabled", false);
-
-                        displayResultToUi(response);
-
-                    },
-                    error: function (xhr, status, error) {
-                        // Handle error
-                        $('#status').text(`Error: ${xhr.responseText}`);
-                    }
-                });
+                    $('#status').text(`Error: ${xhr.responseText}`);
+                }
             });
-
-
-            // $("#baseBetUnit").on("change", function () {
-            //     const baseBetUnitValue = this.value;
-            //     baseBetUnitConfig(baseBetUnitValue);
-
-            // });
-
-            // $("#initialPlayingUnit").on("change", function () {
-            //     const initialPlayingUnitValue = this.value;
-
-            //     initialPlayingUnit(initialPlayingUnitValue);
-
-            // });
-
-
-
         });
 
-        // function resetUi() {
-        //     // Update the UI with the response message   
-        //     $('#status').text("");
-        //     $('#bettingResults').html('');
-        //     $('#handResultColumn').html('');
+        async function displayResultToUi(response) {
+            // console.log(response);
 
-        //     $('#resetButton').hide();
-        //     $('#undoButton').hide();
-
-
-
-        //     $('#playerButton').prop('disabled', false);
-        //     $('#bankerButton').prop('disabled', false);
-        //     getJournal();
-        // }
-
-
-        function displayResultToUi(response) {
-
-            console.log(response);
-
-
-
+            $('#playerButton').prop('disabled', false);     
+            $('#bankerButton').prop('disabled', false);
+            $('#resetButton').prop('disabled', false);
+            $('#undoButton').prop('disabled', false); 
 
             if (response.gameStatus.handCount > 0) {
-
                 $('#resetButton').show();
                 $('#undoButton').show();
                 if (response.gameStatus.handCount === 1) {
                     $('#undoButton').hide();
                 }
             } else {
-                
                 $('#resetButton').hide();
                 $('#undoButton').hide();
             }
 
-
             // Set the text and change color based on the message
             const statusMessage = response.message;
+            $('#status').text(statusMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
 
-            if (statusMessage.includes("profit")) {
-                $('#status').text(statusMessage).css('color', 'green'); // Set text color to red
-            } else if (statusMessage.includes("loss")) {
-                $('#status').text(statusMessage).css('color', 'red'); // Set text color to red
-            } else if (statusMessage.includes("reset")) {
+            if (statusMessage.includes("reset")) {
                 $("#handResultColumn").html("");
                 $('#status').text("");
-                getJournal();
-            } else {
-
-                $('#status').text(statusMessage).css('color', 'black');
+                await getJournal();
             }
 
             $("#baseBetUnit").val(response.baseBetUnit);
             $("#initialPlayingUnit").val(response.initialPlayingUnits);
 
+            // $('#bettingResults').html(`
+            //     <p>Hands: ${response.gameStatus.handCount}</p>
+            //     <p>Wins: ${response.gameStatus.wins}</p>
+            //     <p>Losses: ${response.gameStatus.losses}</p>
+            //     <p>Units: ${response.gameStatus.playingUnits.toFixed(0)}</p>
+            //     <p>Net Profit: <span class="${response.gameStatus.profit >= 0 ? 'text-green-500' : 'text-red-500'}">${response.gameStatus.profit.toFixed(0)}</span></p>
+            //     <p>Suggested Unit: ${response.suggestedBetUnit.toFixed(0)}</p>
+            //     <p>Next Bet: ${response.recommendedBet}</p>
+            //     <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
             $('#bettingResults').html(`
-            <p>Hands: ${response.gameStatus.handCount}</p>
-            <p>Wins: ${response.gameStatus.wins}</p>
-            <p>Losses: ${response.gameStatus.losses}</p>
-            <p>Units: ${response.gameStatus.playingUnits.toFixed(0)}</p>
-            <p>Net Profit: <span class="${response.gameStatus.profit >= 0 ? 'text-green-500' : 'text-red-500'}">${response.gameStatus.profit.toFixed(0)}</span></p>
-            <p>Suggested Unit: ${response.suggestedBetUnit.toFixed(0)}</p>
-            <p>Next Bet: ${response.recommendedBet}</p>
-            <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>`);
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="bg-gray-200 text-gray-800 text-sm font-semibold p-2">
+            Betting Results
+        </div>
+        <div class="p-4">
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="font-bold">Hands:</span>
+                    <span>${response.gameStatus.handCount}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-bold">Wins:</span>
+                    <span>${response.gameStatus.wins}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-bold">Losses:</span>
+                    <span>${response.gameStatus.losses}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-bold">Units:</span>
+                    <span>${response.gameStatus.playingUnits.toFixed(0)}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-bold">Net Profit:</span>
+                    <span class="${response.gameStatus.profit >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${response.gameStatus.profit.toFixed(0)}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-bold">Suggested Unit:</span>
+                    <span>${response.suggestedBetUnit.toFixed(0)}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-bold">Next Bet:</span>
+                    <span>${response.recommendedBet}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>
+`);
 
 
-            displayResults(response.sequence.toUpperCase())
 
-
-
-
+            displayResults(response.sequence.toUpperCase());
 
             // Show or hide the RESET GAME button based on the result
             if (statusMessage.includes("reached")) {
-
-                $('#playerButton').prop('disabled', true);
-                $('#bankerButton').prop('disabled', true);
+                $('#playerButton, #bankerButton').prop('disabled', true);
                 $('#undoButton').hide();
                 $('#resetButton').show();
-                getJournal();
-
+                await getJournal();
             } else {
-
-
-                $('#playerButton').prop('disabled', false);
-                $('#bankerButton').prop('disabled', false);
-                // if (response.sequence !== "") {
-                //     $('#undoButton').show();
-                // }
-
-                // Update the UI of big road
-
+                $('#playerButton, #bankerButton').prop('disabled', false);
             }
-
 
             if (response.dailyLimitReached) {
                 $('#resetButton').hide();
             }
         }
-        function undo() {
 
+        async function undo() {
+            try {
+             
 
-            $.ajax({
-                url: '/api/baccarat/undo',
-                method: 'POST',
-                contentType: 'application/x-www-form-urlencoded',
-                success: function (response) {
-                    // console.log(response);
-                    displayResultToUi(response);
-
-
-                },
-                error: function (xhr, status, error) {
-                    // Handle errors
-                    $('#responseMessage').text("An error occurred: " + xhr.responseText);
-                    console.error("Error details:", error);
-                }
-            });
+                const response = await $.ajax({
+                    url: '/api/baccarat/undo',
+                    method: 'POST',
+                    contentType: 'application/x-www-form-urlencoded'
+                });
+                displayResultToUi(response);
+            } catch (xhr) {
+                $('#undoButton').prop('disabled', false); 
+                $('#responseMessage').text("An error occurred: " + xhr.responseText);
+                console.error("Error details:", xhr);
+            }
         }
 
         function addContainer(group) {
-
             const container = document.createElement('div');
-            container.classList.add(
-                'flex',
-                'flex-col',    // Align circles vertically
-                'items-start',  // Align items to the top
-                'justify-start', // Optional: ensures content starts from top
-                'h-full'       // Full height of the main container               
-            );
-
-
+            container.classList.add('flex', 'flex-col', 'items-start', 'justify-start', 'h-full');
 
             // Create circles for each character in the group         
             let circleNumber = 1;
             for (const char of group) {
                 const circle = document.createElement('div');
-                circle.classList.add(
-                    'flex',
-                    'items-center',
-                    'justify-center',
-                    'w-6',       // Width of the outer circle
-                    'h-6',       // Height of the outer circle
-                    'border',
-                    'border-gray-300',  // Border for outer circle
-                    'rounded-full',     // Full outer circle
-                    char === 'P' ? 'bg-blue-500' : 'bg-red-500', // Background color for the outer circle
-                    'mb-1'              // Margin between circles
-                );
+                circle.classList.add('flex', 'items-center', 'justify-center', 'w-6', 'h-6', 'border', 'border-gray-300', 'rounded-full', char === 'P' ? 'bg-blue-500' : 'bg-red-500', 'mb-1');
 
                 // Create a smaller white circle inside
                 const innerCircle = document.createElement('div');
-                innerCircle.classList.add(
-                    'flex',
-                    'items-center',
-                    'justify-center',
-                    'w-3',        // Width of the inner white circle
-                    'h-3',        // Height of the inner white circle
-                    'bg-white',   // White background for the inner circle
-                    'rounded-full', // Full circle for the inner circle
-                    'text-xs',
-                    'text-gray-400'
-                );
-
-                // Add the number to the center of the inner white circle
+                innerCircle.classList.add('flex', 'items-center', 'justify-center', 'w-3', 'h-3', 'bg-white', 'rounded-full', 'text-xs', 'text-gray-400');
                 innerCircle.textContent = circleNumber;
 
                 // Add the inner circle to the outer circle
                 circle.appendChild(innerCircle);
-
                 // Add the outer circle to the container
                 container.appendChild(circle);
-
                 circleNumber++;
             }
 
@@ -408,11 +335,7 @@
         }
 
         function displayResults(playerAndBankerCollections) {
-
-            // console.log(playerAndBankerCollections);
-
             const results = playerAndBankerCollections.split('');
-
             if (results.length === 0) {
                 return;
             }
@@ -436,7 +359,6 @@
                 }
             }
 
-
             // Append the last group after the loop
             column.appendChild(addContainer(group));
 
@@ -444,171 +366,87 @@
             setTimeout(() => {
                 circleContainer.scrollLeft = circleContainer.scrollWidth;
             }, 0); // Using a timeout to ensure rendering is complete before scrolling
-
         }
 
-        function getJournal() {
-
+        async function getJournal() {
             const currentDate = new Date();
-
-            // Get the user's time zone
             const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-            // Format the date with the user's time zone
             const options = { timeZone: userTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
             const localDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
 
-            //console.log(localDate);
+            try {
+                const response = await $.ajax({
+                    url: '/api/journals/dateCreated',
+                    type: 'GET',
+                    data: { dateCreated: localDate }
+                });
 
+                $('#journalContainer').html('');
+                $('#dateTime').text(localDate);
+                const journalContainer = document.getElementById('journalContainer');
+                let totalProfit = 0;
+                let lastValidIndex = -1;
 
-            // Perform the AJAX call
-            $.ajax({
-                url: '/api/journals/dateCreated',
-                type: 'GET',
-                data: {
-                    dateCreated: localDate
-                },
-                success: function (response) {
+                response.forEach((journal, index) => {
+                    if (journal.hand !== 0) {
+                        lastValidIndex = index; // Update lastValidIndex if Hand is not 0
+                    }
+                });
 
-                    // console.log(response.length);
+                response.forEach((journal, index) => {
+                    const journalDiv = document.createElement('div');
+                    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-4');
 
-                    $('#journalContainer').html('');
+                    const shoeHeading = document.createElement('h4');
+                    shoeHeading.classList.add('font-semibold');
+                    shoeHeading.textContent = `Shoe: ${journal.shoe}`;
 
-                    $('#dateTime').text(localDate);
+                    const handParagraph = document.createElement('p');
+                    handParagraph.classList.add('text-gray-700');
+                    handParagraph.textContent = `Hand: ${journal.hand}`;
 
-                    const journalContainer = document.getElementById('journalContainer');
-                    let totalProfit = 0;
-                    let lastValidIndex = -1;
+                    const profitParagraph = document.createElement('p');
+                    profitParagraph.classList.add('text-gray-700');
+                    profitParagraph.textContent = `Profit: ${journal.profit}`;
 
-                    response.forEach((journal, index) => {
-                        if (journal.hand !== 0) {
-                            lastValidIndex = index; // Update lastValidIndex if Hand is not 0
-                        }
-                    });
+                    totalProfit += journal.profit;
 
-                    response.forEach((journal, index) => {
-                        const journalDiv = document.createElement('div');
-                        journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-4');
+                    journalDiv.appendChild(shoeHeading);
+                    journalDiv.appendChild(handParagraph);
+                    journalDiv.appendChild(profitParagraph);
 
-                        const shoeHeading = document.createElement('h4');
-                        shoeHeading.classList.add('font-semibold');
-                        shoeHeading.textContent = `Shoe: ${journal.shoe}`;
+                    journalContainer.appendChild(journalDiv);
 
-                        const handParagraph = document.createElement('p');
-                        handParagraph.classList.add('text-gray-700');
-                        handParagraph.textContent = `Hand: ${journal.hand}`;
+                    // Add a glowing effect to the last card with Hand not equal to 0
+                    if (index === lastValidIndex) {
+                        journalDiv.classList.add('glow'); // Add a class for glowing effect
+                    }
+                });
 
-                        const profitParagraph = document.createElement('p');
-                        profitParagraph.classList.add('text-gray-700');
-                        profitParagraph.textContent = `Profit: ${journal.profit}`;
-
-                        totalProfit += journal.profit;
-
-                        journalDiv.appendChild(shoeHeading);
-                        journalDiv.appendChild(handParagraph);
-                        journalDiv.appendChild(profitParagraph);
-
-                        journalContainer.appendChild(journalDiv);
-
-                        // Add a glowing effect to the last card with Hand not equal to 0
-                        if (index === lastValidIndex) {
-                            journalDiv.classList.add('glow'); // Add a class for glowing effect
-                        }
-                    });
-
-
-                    $('#totalProfit').text(totalProfit);
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error fetching journals:', error);
-                    alert('An error occurred while fetching journals. Please try again.');
-                }
-            });
+                $('#totalProfit').text(totalProfit);
+            } catch (xhr) {
+                console.error('Error fetching journals:', xhr);
+                alert('An error occurred while fetching journals. Please try again.');
+            }
         }
 
-        function currentState() {
-
+        async function currentState() {
             const statusMessage = $('#status').text();
 
-
-            $.ajax({
-                url: '/api/baccarat/current-state',
-                type: 'GET',
-                data: {
-                    message: statusMessage
-                },
-                success: function (response) {
-                    displayResultToUi(response);
-                },
-                error: function (error) {
-                    console.error('Error fetching game state:', error);
-                    $('#response').html('<p>Failed to fetch the current game state.</p>');
-                }
-            });
+            try {
+                const response = await $.ajax({
+                    url: '/api/baccarat/current-state',
+                    type: 'GET',
+                    data: { message: statusMessage }
+                });
+                displayResultToUi(response);
+            } catch (xhr) {
+                console.error('Error fetching current state:', xhr);
+                $('#status').text(`Error: ${xhr.responseText}`);
+            }
         }
-
-        // function baseBetUnitConfig(baseBetUnitValue) {
-
-        //     $.ajax({
-        //         url: '/api/baccarat/playing-base-bet',
-        //         type: 'POST',
-        //         data: {
-        //             baseBetUnit: baseBetUnitValue
-        //         },
-        //         success: function (response) {
-        //         },
-        //         error: function (error) {
-        //             console.error('Error fetching game state:', error);
-        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
-        //         }
-        //     });
-        // }
-
-        // function initialPlayingUnit(value) {
-
-        //     $.ajax({
-        //         url: '/api/baccarat/initial-playing-fund',
-        //         type: 'POST',
-        //         data: {
-        //             initialPlayingUnit: value
-        //         },
-        //         success: function (response) {
-        //             // getRecommendedbaseBetUnit();
-        //         },
-        //         error: function (error) {
-        //             console.error('Error fetching game state:', error);
-        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
-        //         }
-        //     });
-        // }
-
-
-
-        // function getRecommendedbaseBetUnit() {
-
-
-        //     $.ajax({
-        //         url: '/api/baccarat/recommended-base-bet-amount',
-        //         type: 'GET',
-        //         success: function (response) {
-        //             // console.log(response);
-        //             $("#recommendedBetValue").text("Recommended unit: " + response);
-
-        //         },
-        //         error: function (error) {
-        //             console.error('Error fetching game state:', error);
-        //             $('#response').html('<p>Failed to fetch the current game state.</p>');
-        //         }
-        //     });
-
-
-        // }
-
-
-
-
-
     </script>
+
 </body>
 
 </html>
