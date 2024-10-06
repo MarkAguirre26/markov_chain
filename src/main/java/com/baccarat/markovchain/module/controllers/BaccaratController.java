@@ -66,14 +66,14 @@ public class BaccaratController {
     }
 
     @PostMapping("/play")
-    public GameResultResponse play(@RequestParam String userInput, @RequestParam String recommendedBet, @RequestParam int baseBetUnit) {
+    public GameResultResponse play(@RequestParam String userInput, @RequestParam String recommendedBet, @RequestParam int suggestedUnit) {
 
 
-        return processGame(userInput, recommendedBet, baseBetUnit, false);
+        return processGame(userInput, recommendedBet, suggestedUnit, false);
     }
 
 
-    public GameResultResponse processGame(String userInput, String recommendedBet, int baseBetUnit, boolean isUndo) {
+    public GameResultResponse processGame(String userInput, String recommendedBet, int suggestedUnit, boolean isUndo) {
 
         if (!isUndo) {
             initialize();
@@ -85,7 +85,7 @@ public class BaccaratController {
 
         logger.info(userPrincipal.getUsername() + ": Received user input: {}", userInput);
         logger.info(userPrincipal.getUsername() + ": Received recommendedBet input: {}", recommendedBet);
-        logger.info(userPrincipal.getUsername() + ": Received baseBetAmount input: {}", baseBetUnit);
+        logger.info(userPrincipal.getUsername() + ": Received suggestedUnit input: {}", suggestedUnit);
 
         if (hasReachedDailyJournalLimit()) {
             gameResultResponseInitial.setDailyLimitReached(true);
@@ -103,12 +103,12 @@ public class BaccaratController {
         Pair<Character, Double> markovPrediction = markovChain.predictNext(sequence.charAt(sequence.length() - 1));
         String patternPrediction = patternRecognizer.findPattern(sequence);
 
-        logger.info(userPrincipal.getUsername() + ": Markov Prediction: {}, Pattern Prediction: {}", markovPrediction, patternPrediction);
+        logger.info(userPrincipal.getUsername() + ":Pattern Prediction: {}", patternPrediction);
 
         // Combine predictions and handle the bet
         Pair<Character, Double> combinedPrediction = combinePredictions(markovPrediction, patternPrediction);
 
-        return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, baseBetUnit);
+        return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, suggestedUnit);
     }
 
 
@@ -242,13 +242,13 @@ public class BaccaratController {
                                          String userInput,
                                          Pair<Character, Double> combinedPrediction,
                                          String predictedBet,
-                                         int betUnit) {
+                                         int suggestedUnit) {
 
 
         String username = userPrincipal.getUsername();
 
-        int betSize = (int) Math.ceil(betUnit * combinedPrediction.second * 5);
-        int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
+        int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
+//        int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
 
 
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
@@ -259,30 +259,21 @@ public class BaccaratController {
 
             gameResultResponse.setSequence(gameResultResponse.getSequence());
             gameResultResponse.setRecommendedBet(WAIT);
-            return validateGameResult(predictedBet, userInput, username, gameResultResponse, betSize, gameResultResponse.getRecommendedBet());
+            return validateGameResult(suggestedUnit,betSize ,predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
 
         }
 
-
-        if (playingUnit < betSize) {
-
-            logger.warn(username + ": Not enough funds to place bet. Current Playing Fund: ${}", playingUnit);
-            gameResultResponse.setMessage("Not enough funds to place bet. Current Playing Fund: $" + String.format("%d", playingUnit));
-            gameResultResponse.setSequence(gameResultResponse.getSequence());
-            gameResultResponse.setRecommendedBet(WAIT);
-
-            return validateGameResult(predictedBet, userInput, username, gameResultResponse, betSize, gameResultResponse.getRecommendedBet());
-        }
 
         String prediction = String.valueOf(combinedPrediction.first);
         String recommendedBet = Objects.equals(prediction, "p") ? "Player" : "Banker";
-        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, recommendedBet, predictedBet);
+        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize,suggestedUnit, recommendedBet, predictedBet);
     }
 
     private GameResultResponse resolveBet(GameResultResponse gameResultResponse,
                                           UserPrincipal userPrincipal,
                                           String userInput,
                                           int betSize,
+                                          int suggestedUnit,
                                           String recommendedBet,
                                           String predictedBet) {
 
@@ -291,21 +282,21 @@ public class BaccaratController {
         gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
 
         if (predictedBet.equals(WAIT) || predictedBet.isEmpty()) {
+            gameResultResponse.setSuggestedBetUnit(suggestedUnit);
             gameResultResponse.setMessage("Place your bet");
             gameResultResponse.setRecommendedBet(recommendedBet);
-            return provideGameResponse(gameResultResponse);
+//            return provideGameResponse(gameResultResponse);
+            return validateGameResult(suggestedUnit,betSize ,predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
         }
 
-        return validateGameResult(predictedBet, userInput, username, gameResultResponse, betSize, recommendedBet);
+        return validateGameResult(suggestedUnit,betSize ,predictedBet, userInput, username, gameResultResponse, recommendedBet);
 
     }
 
-    private GameResultResponse validateGameResult(String predictedBet, String userInput, String username,
-                                                  GameResultResponse gameResultResponse, int betSize, String nextPredictedBet) {
+    private GameResultResponse validateGameResult(int suggestedUnit, int betSize, String predictedBet, String userInput, String username,
+                                                  GameResultResponse gameResultResponse,  String nextPredictedBet) {
 
-//        if (!isToValidate) {
-//            return settleLimitAndValidation(updateProfitAndFund(false,gameResultResponse, betSize, true), recommendedBet, true);
-//        }
+
 
         if (!predictedBet.equals(WAIT)) {
 
@@ -313,14 +304,14 @@ public class BaccaratController {
             if (previousPrediction.equals(userInput)) {
                 logger.info(username + ": You won!");
                 gameResultResponse.setMessage("You won!");
-                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, betSize, true), nextPredictedBet, true);
+                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit,betSize, true), nextPredictedBet, true);
             } else {
                 logger.info(username + ": You lost!");
                 gameResultResponse.setMessage("You lost!");
-                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, betSize, false), nextPredictedBet, false);
+                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit, betSize,false), nextPredictedBet, false);
             }
         }else{
-            return settleLimitAndValidation(updateProfitAndFund(false,gameResultResponse, betSize, true), nextPredictedBet, true);
+            return settleLimitAndValidation(updateProfitAndFund(false,gameResultResponse, suggestedUnit,betSize, true), nextPredictedBet, true);
         }
 
 
@@ -358,7 +349,7 @@ public class BaccaratController {
 
     }
 
-    private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse, int betSize, boolean isWin) {
+    private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse, int suggestedUnit, int betSize,boolean isWin) {
 
         int profit = gameResultResponse.getGameStatus().getProfit();
         int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
@@ -367,12 +358,12 @@ public class BaccaratController {
 
         if (isToValidate) {
             if (isWin) {
-                profit += betSize;
-                playingUnit += betSize;
+                profit += suggestedUnit;
+                playingUnit += suggestedUnit;
                 totalWins++;
             } else {
-                profit -= betSize;
-                playingUnit -= betSize;
+                profit -= suggestedUnit;
+                playingUnit -= suggestedUnit;
                 totalLosses++;
             }
         }
