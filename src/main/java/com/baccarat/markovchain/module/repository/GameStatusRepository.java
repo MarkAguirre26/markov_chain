@@ -5,5 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameStatusRepository extends JpaRepository<GameStatus, Integer> {
     // Additional query methods (if needed) can be defined here
-    GameStatus findByUserUuid(String userUuid);
+    void deleteByGameResponseId(Integer gameResponseId);
+
+    GameStatus findByGameResponseId(Integer gameResponseId);
+
 }

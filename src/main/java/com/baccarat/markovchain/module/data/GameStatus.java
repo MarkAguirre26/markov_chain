@@ -22,8 +22,8 @@ public class GameStatus {
     @Column(name = "game_status_id")
     private Integer gameStatusId;
 
-    @Column(name = "useruuid", length = 254)
-    private String userUuid;
+    @Column(name = "game_response_id", columnDefinition = "int default 0")
+    private int gameResponseId;
 
     @Column(name = "hand_count", columnDefinition = "int default 0")
     private Integer handCount;

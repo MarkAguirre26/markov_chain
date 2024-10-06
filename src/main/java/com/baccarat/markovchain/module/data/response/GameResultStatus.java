@@ -26,6 +26,9 @@ public class GameResultStatus {
         this.playingUnits = playingUnits;
     }
 
+    public GameResultStatus() {
+    }
+
 
 
 }

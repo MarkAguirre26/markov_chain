@@ -38,6 +38,20 @@ public class GameResponseService {
         return gameResponseRepository.findByUserUuid(userUuid);
     }
 
+    public Optional<GameResponse> findFirstByUserUuidOrderByGameResponseIdDesc(String userUuid) {
+        return gameResponseRepository.findFirstByUserUuidOrderByGameResponseIdDesc(userUuid);
+    }
+
+
+
+
+    public List<GameResponse> findAllByUserUuid(String userUuid) {
+        return gameResponseRepository.findAllByUserUuid(userUuid);
+    }
+
+    public void deleteByUserUuid(String userUuid) {
+        gameResponseRepository.deleteByUserUuid(userUuid);
+    }
 
     /**
      * Create a new GameResponse and save it to the database.
@@ -52,8 +66,8 @@ public class GameResponseService {
     /**
      * Update an existing GameResponse in the database.
      *
-     * @param id           The ID of the GameResponse to update
-     * @param newResponse  The updated GameResponse entity
+     * @param id          The ID of the GameResponse to update
+     * @param newResponse The updated GameResponse entity
      * @return The updated GameResponse entity, or throws an exception if not found
      */
     @Transactional

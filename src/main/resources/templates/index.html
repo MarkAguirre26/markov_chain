@@ -30,6 +30,43 @@
         /* Gold glow */
         transition: box-shadow 0.3s ease-in-out;
     }
+
+    /* The overlay that covers the whole screen */
+    .overlay {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.158); 
+        /* Semi-transparent background */
+        justify-content: center;
+        align-items: center;
+        z-index: 10 00;
+    }
+
+    /* The smaller spinner */
+    .spinner {
+        width: 30px;
+        height: 30px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 2s linear infinite;
+    }
+
+    /* Spinner animation */
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 
 <body class="bg-gray-100">
@@ -92,7 +129,7 @@
 
 
 
-                <div class="mt-6"  style="display: none;">
+                <div class="mt-6" style="display: none;">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-4 mb-4">
                         <h3 class="font-semibold">Subscription Plan: TRIAL</h3>
                         <p class="text-gray-700">
@@ -130,7 +167,26 @@
         </div>
     </div>
 
+    <div class="overlay" id="spinnerOverlay">
+        <div class="spinner"></div>
+    </div>
+
     <script>
+
+        function showSpinner() {
+            // Show the overlay and spinner
+            document.getElementById("spinnerOverlay").style.display = "flex";
+
+            // Hide the spinner after 3 seconds (adjust as needed)
+            // setTimeout(hideSpinner, 3000);
+        }
+
+        function hideSpinner() {
+            // Hide the overlay and spinner
+            document.getElementById("spinnerOverlay").style.display = "none";
+        }
+
+
         $(document).ready(function () {
             (async () => {
                 await getJournal();
@@ -140,7 +196,7 @@
             async function playGame(userInput) {
                 const recommendedBetUnit = $('#recommendedBet').text();
                 const suggestedBetUnitValue = $('#suggestedBetUnit').text();
-                
+
                 try {
                     const response = await $.ajax({
                         url: '/api/baccarat/play',
@@ -165,24 +221,28 @@
             // Event listener for PLAYER button
             $('#playerButton').on('click', function () {
                 $('#playerButton').prop('disabled', true);
+                showSpinner();
                 playGame('p');
             });
 
             // Event listener for BANKER button
             $('#bankerButton').on('click', function () {
                 $('#bankerButton').prop('disabled', true);
+                showSpinner();
                 playGame('b');
             });
 
             // Event listener for UNDO button
             $('#undoButton').on('click', async function () {
                 $('#undoButton').prop('disabled', true);
+                showSpinner();
                 await undo();
             });
 
             // Event listener for RESET GAME button
             $('#resetButton').on('click', async function () {
                 $('#resetButton').prop('disabled', true);
+                showSpinner();
                 try {
                     const response = await $.ajax({
                         url: '/api/baccarat/reset',
@@ -199,7 +259,7 @@
 
         async function displayResultToUi(response) {
             // console.log(response);
-
+            hideSpinner();
             $('#playerButton').prop('disabled', false);
             $('#bankerButton').prop('disabled', false);
             $('#resetButton').prop('disabled', false);
@@ -220,7 +280,7 @@
             const statusMessage = response.message;
             $('#status').text(statusMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
 
-            if (statusMessage.includes("reset")) {
+            if (statusMessage.includes("reset") || statusMessage.includes("Initialized")) {
                 $("#handResultColumn").html("");
                 $('#status').text("");
                 await getJournal();
@@ -336,7 +396,8 @@
         }
 
         function displayResults(playerAndBankerCollections) {
-            const results = playerAndBankerCollections.split('');
+
+            const results = playerAndBankerCollections.replace("1111", "").split('');
             if (results.length === 0) {
                 return;
             }

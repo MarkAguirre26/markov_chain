@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "game_response", schema = "markov_chain")
+@Table(name = "game_response")
 public class GameResponse {
 
     @Id

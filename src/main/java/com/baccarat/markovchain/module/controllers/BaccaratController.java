@@ -61,40 +61,34 @@ public class BaccaratController {
 
     }
 
-    public static int getOnePercentOf(int number) {
-        return (int) (number * 0.01);
-    }
 
     @PostMapping("/play")
     public GameResultResponse play(@RequestParam String userInput, @RequestParam String recommendedBet, @RequestParam int suggestedUnit) {
 
-
-        return processGame(userInput, recommendedBet, suggestedUnit, false);
+        return processGame(userInput, recommendedBet, suggestedUnit);
     }
 
 
-    public GameResultResponse processGame(String userInput, String recommendedBet, int suggestedUnit, boolean isUndo) {
-
-        if (!isUndo) {
-            initialize();
-        }
+    public GameResultResponse processGame(String userInput, String recommendedBet, int suggestedUnit) {
 
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        GameResultResponse gameResultResponseInitial = getGameResponse();
+        String userName = userPrincipal.getUsername();
 
-        logger.info(userPrincipal.getUsername() + ": Received user input: {}", userInput);
-        logger.info(userPrincipal.getUsername() + ": Received recommendedBet input: {}", recommendedBet);
-        logger.info(userPrincipal.getUsername() + ": Received suggestedUnit input: {}", suggestedUnit);
+        GameResultResponse existingGame = getGameResponse(userPrincipal);
+
+        logger.info(userName + ": Received user input: {}", userInput);
+        logger.info(userName + ": Received recommendedBet input: {}", recommendedBet);
+        logger.info(userName + ": Received suggestedUnit input: {}", suggestedUnit);
 
         if (hasReachedDailyJournalLimit()) {
-            gameResultResponseInitial.setDailyLimitReached(true);
-            gameResultResponseInitial.setMessage(DAILY_LIMIT_REACHED);
-            gameResultResponseInitial.setRecommendedBet(recommendedBet);
-            return provideGameResponse(gameResultResponseInitial);
+            existingGame.setDailyLimitReached(true);
+            existingGame.setMessage(DAILY_LIMIT_REACHED);
+            existingGame.setRecommendedBet(recommendedBet);
+            return existingGame;
         }
 
-        GameResultResponse gameResultResponse = updateSequenceAndUpdateHandCount(gameResultResponseInitial, userInput);
+        GameResultResponse gameResultResponse = updateSequenceAndUpdateHandCount(existingGame, userInput);
 
 
         // Generate predictions using Markov chain and pattern recognition
@@ -113,40 +107,37 @@ public class BaccaratController {
 
 
     //        @PostMapping("/init-config")
-    public void initialize() {
+    public void initialize(GameResultResponse game) {
 
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        com.baccarat.markovchain.module.data.GameResponse gameResponse = gameResponseService.getGameResponseByUserUuid(userPrincipal.getUserUuid());
+        String userUuid = userPrincipal.getUserUuid();
 
-        if (gameResponse == null) {
+        GameResponse gameResponse;
 
-            gameResponse = new com.baccarat.markovchain.module.data.GameResponse();
-            gameResponse.setUserUuid(userPrincipal.getUserUuid());
-            gameResponse.setBaseBetUnit(1);
-            gameResponse.setSuggestedBetUnit(1);
-            gameResponse.setInitialPlayingUnits(100);
-            gameResponse.setRecommendedBet(WAIT);
-            gameResponse.setSequence("1111");
-            gameResponse.setMessage("Game initialized!");
-            gameResponseService.createOrUpdateGameResponse(gameResponse);
+        gameResponse = new com.baccarat.markovchain.module.data.GameResponse();
+        gameResponse.setUserUuid(userUuid);
+        gameResponse.setBaseBetUnit(game.getBaseBetUnit());
+        gameResponse.setSuggestedBetUnit(game.getSuggestedBetUnit());
+        gameResponse.setInitialPlayingUnits(game.getInitialPlayingUnits());
+        gameResponse.setRecommendedBet(game.getRecommendedBet());
+        gameResponse.setSequence(game.getSequence());
+        gameResponse.setMessage("Initialized");
+        gameResponseService.createOrUpdateGameResponse(gameResponse);
 
-        }
+        GameResponse g = gameResponseService.getGameResponseByUserUuid(userUuid);
 
-        Optional<GameStatus> gameStatus = gameStatusService.findByUserUuid(userPrincipal.getUserUuid());
-        if (gameStatus.isEmpty()) {
-            GameStatus s = new GameStatus();
-            s.setUserUuid(userPrincipal.getUserUuid());
-            s.setHandCount(0);
-            s.setWins(0);
-            s.setLosses(0);
-            s.setProfit(0);
-            s.setPlayingUnits(100);
-            s.setDateLastUpdated(LocalDateTime.now());
-            gameStatusService.save(s);
-        }
+        GameStatus s = new GameStatus();
+        s.setGameResponseId(g.getGameResponseId());
+        s.setHandCount(game.getGameStatus().getHandCount());
+        s.setWins(game.getGameStatus().getWins());
+        s.setLosses(game.getGameStatus().getLosses());
+        s.setProfit(game.getGameStatus().getProfit());
+        s.setPlayingUnits(game.getGameStatus().getPlayingUnits());
+        s.setDateLastUpdated(LocalDateTime.now());
+        gameStatusService.save(s);
 
-//        return provideGameResponse(gameResponse.getMessage(), gameResponse.getSequence(), WAIT);
+
     }
 
     private GameResultResponse saveAndReturn(GameResultResponse response) {
@@ -176,35 +167,23 @@ public class BaccaratController {
         return journals.size() >= maxDailyJournalLimit;
     }
 
-    private GameResultResponse createErrorResponse() {
-        logger.warn("Invalid input! Please enter 'p' for Player or 'b' for Banker.");
-        // GameStatus gameStatus = new GameStatus(0, 0, 0, 0, 0);
-        GameResultResponse gameResultResponse = getGameResponse();
 
-        gameResultResponse.setMessage("Invalid input! Please enter 'p' for Player or 'b' for Banker.");
-        gameResultResponse.setSequence(gameResultResponse.getSequence());
-        gameResultResponse.setRecommendedBet(WAIT);
-
-        return provideGameResponse(gameResultResponse);
-    }
-
-
-    private GameResultResponse updateSequenceAndUpdateHandCount(GameResultResponse gameResultResponse, String userInput) {
+    private GameResultResponse updateSequenceAndUpdateHandCount(GameResultResponse existingGame, String userInput) {
 
         // Fetch the current game response once
 
-        GameResultStatus gameStatus = gameResultResponse.getGameStatus();
+        GameResultStatus gameStatus = existingGame.getGameStatus();
         // Update the sequence and hand count
-        String sequence = gameResultResponse.getSequence() == null ? "1111" : gameResultResponse.getSequence() + userInput;
+        String sequence = existingGame.getSequence() == null ? "1111" : existingGame.getSequence() + userInput;
         int handCount = gameStatus == null ? 1 : gameStatus.getHandCount() + 1;
 
         assert gameStatus != null;
 
         gameStatus.setHandCount(handCount);
-        gameResultResponse.setGameStatus(gameStatus);
-        gameResultResponse.setSequence(sequence);
+        existingGame.setGameStatus(gameStatus);
+        existingGame.setSequence(sequence);
 
-        return gameResultResponse;
+        return existingGame;
     }
 
     private boolean hasReachedStopProfit(GameResultResponse gameResultResponse) {
@@ -237,12 +216,7 @@ public class BaccaratController {
     }
 
 
-    private GameResultResponse handleBet(GameResultResponse gameResultResponse,
-                                         UserPrincipal userPrincipal,
-                                         String userInput,
-                                         Pair<Character, Double> combinedPrediction,
-                                         String predictedBet,
-                                         int suggestedUnit) {
+    private GameResultResponse handleBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal, String userInput, Pair<Character, Double> combinedPrediction, String predictedBet, int suggestedUnit) {
 
 
         String username = userPrincipal.getUsername();
@@ -259,23 +233,17 @@ public class BaccaratController {
 
             gameResultResponse.setSequence(gameResultResponse.getSequence());
             gameResultResponse.setRecommendedBet(WAIT);
-            return validateGameResult(suggestedUnit,betSize ,predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
+            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
 
         }
 
 
         String prediction = String.valueOf(combinedPrediction.first);
         String recommendedBet = Objects.equals(prediction, "p") ? "Player" : "Banker";
-        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize,suggestedUnit, recommendedBet, predictedBet);
+        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet);
     }
 
-    private GameResultResponse resolveBet(GameResultResponse gameResultResponse,
-                                          UserPrincipal userPrincipal,
-                                          String userInput,
-                                          int betSize,
-                                          int suggestedUnit,
-                                          String recommendedBet,
-                                          String predictedBet) {
+    private GameResultResponse resolveBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal, String userInput, int betSize, int suggestedUnit, String recommendedBet, String predictedBet) {
 
         String username = userPrincipal.getUsername();
 
@@ -286,16 +254,14 @@ public class BaccaratController {
             gameResultResponse.setMessage("Place your bet");
             gameResultResponse.setRecommendedBet(recommendedBet);
 //            return provideGameResponse(gameResultResponse);
-            return validateGameResult(suggestedUnit,betSize ,predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
+            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
         }
 
-        return validateGameResult(suggestedUnit,betSize ,predictedBet, userInput, username, gameResultResponse, recommendedBet);
+        return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet);
 
     }
 
-    private GameResultResponse validateGameResult(int suggestedUnit, int betSize, String predictedBet, String userInput, String username,
-                                                  GameResultResponse gameResultResponse,  String nextPredictedBet) {
-
+    private GameResultResponse validateGameResult(int suggestedUnit, int betSize, String predictedBet, String userInput, String username, GameResultResponse gameResultResponse, String nextPredictedBet) {
 
 
         if (!predictedBet.equals(WAIT)) {
@@ -304,14 +270,14 @@ public class BaccaratController {
             if (previousPrediction.equals(userInput)) {
                 logger.info(username + ": You won!");
                 gameResultResponse.setMessage("You won!");
-                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit,betSize, true), nextPredictedBet, true);
+                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet, true);
             } else {
                 logger.info(username + ": You lost!");
                 gameResultResponse.setMessage("You lost!");
-                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit, betSize,false), nextPredictedBet, false);
+                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit, betSize, false), nextPredictedBet, false);
             }
-        }else{
-            return settleLimitAndValidation(updateProfitAndFund(false,gameResultResponse, suggestedUnit,betSize, true), nextPredictedBet, true);
+        } else {
+            return settleLimitAndValidation(updateProfitAndFund(false, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet, true);
         }
 
 
@@ -349,7 +315,7 @@ public class BaccaratController {
 
     }
 
-    private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse, int suggestedUnit, int betSize,boolean isWin) {
+    private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse, int suggestedUnit, int betSize, boolean isWin) {
 
         int profit = gameResultResponse.getGameStatus().getProfit();
         int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
@@ -384,10 +350,10 @@ public class BaccaratController {
     public GameResultResponse getCurrentState(@RequestParam String message) {
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         logger.info(userPrincipal.getUsername() + ": Fetching current game state. " + message);
 
-        return getGameResponse();
+
+        return getGameResponse(userPrincipal);
     }
 
 
@@ -475,50 +441,19 @@ public class BaccaratController {
 
     @PostMapping("/undo")
     public GameResultResponse back() {
-        // Check if the sequence can be undone
 
-        GameResultResponse gameResultResponse = getGameResponse();
-//        GameResultStatus gameResultStatus = gameResultResponse.getGameStatus();
-        int hand = gameResultResponse.getSequence().length();
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        if (hand == 1) {
-            gameResultResponse.setMessage("You may use RESET button.");
-            return gameResultResponse;
-        }
+        Optional<GameResponse> g2 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
+        GameResponse gameResponseToDelete = g2.get();
 
-        String sequence = gameResultResponse.getSequence();
+        gameResponseService.deleteGameResponse(gameResponseToDelete.getGameResponseId());
 
-//            // Update the sequence by removing the last two characters
-        logger.info("Current sequence before back: {}", sequence);
-        sequence = sequence.substring(0, sequence.length() - 1); // Remove last two characters
-        logger.info("Current sequence after back : {}", sequence);
+        GameStatus gameStatus = gameStatusService.findByGameResponseId(gameResponseToDelete.getGameResponseId()).get();
+        gameStatusService.deleteById(gameStatus.getGameStatusId());
 
 
-        reset();
-
-        GameResultResponse inGame = new GameResultResponse();
-
-        for (int i = 0; i < sequence.length(); i++) {
-
-
-            char ch = sequence.charAt(i);
-            String userInput = String.valueOf(ch);
-            logger.info("Processing character: " + ch);
-            inGame = processGame(userInput, i == 0 ? WAIT : inGame.getRecommendedBet(), gameResultResponse.getBaseBetUnit(), true);
-
-
-        }
-
-        return inGame;
-
-//        gameResultResponse.setMessage("Removed previous result!");
-//        gameResultResponse.setSequence(sequence);
-//        gameResultResponse.setRecommendedBet(WAIT);
-//
-//        gameResultStatus.setHandCount(hand-1);
-//        gameResultResponse.setGameStatus(gameResultStatus);
-//        return provideGameResponse(gameResultResponse);
-
+        return getGameResponse(userPrincipal);
 
     }
 
@@ -528,39 +463,43 @@ public class BaccaratController {
         logger.info("Resetting game state to initial values.");
         // Reset all variables
 
-        GameResultResponse gameResultResponse = getGameResponse();
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
-        GameStatus gameStatus = gameStatusService.findByUserUuid(userUuid).orElse(null);
+
+        //Delete all items to GameResponse and GameStatus table
+        List<GameResponse> games = gameResponseService.findAllByUserUuid(userUuid);
+        for (GameResponse game : games) {
+            gameResponseService.deleteGameResponse(game.getGameResponseId());
+
+            GameStatus gameStatusToDelete = gameStatusService.findByGameResponseId(game.getGameResponseId()).get();
+            gameStatusService.deleteById(gameStatusToDelete.getGameStatusId());
+        }
 
 
+        GameStatus gameStatus = new GameStatus();
         gameStatus.setHandCount(0);
         gameStatus.setWins(0);
         gameStatus.setLosses(0);
         gameStatus.setProfit(0);
-
         gameStatus.setPlayingUnits(100);
-        gameStatusService.updateGameStatus(gameStatus.getGameStatusId(), gameStatus);
 
-        gameResultResponse.setSequence("");
-        gameResultResponse.setMessage("Game has been reset!");
+
+        GameResultResponse gameResultResponse = new GameResultResponse();
+        gameResultResponse.setSequence("1111");
+        gameResultResponse.setMessage("Game reset!");
         gameResultResponse.setBaseBetUnit(1);
         gameResultResponse.setInitialPlayingUnits(100);
         gameResultResponse.setSuggestedBetUnit(1);
         gameResultResponse.setRecommendedBet(WAIT);
 
-
         GameResultStatus gameResultStatus = new GameResultStatus(gameStatus.getHandCount(), gameStatus.getWins(), gameStatus.getLosses(), gameStatus.getProfit(), gameStatus.getPlayingUnits());
         gameResultResponse.setGameStatus(gameResultStatus);
 
-
-//        initialize();
-
+        initialize(gameResultResponse);
 
         logger.info(userPrincipal.getUsername() + ": Game state reset!");
-
-        return provideGameResponse(gameResultResponse);
+        return gameResultResponse;
     }
 
 
@@ -575,35 +514,31 @@ public class BaccaratController {
         return (markovPrediction == patternPrediction) ? new Pair<>(markovPrediction, Math.min(markovConfidence + 0.1, 1.0)) : (markovConfidence >= 0.5 ? markovResult : new Pair<>(patternPrediction, 0.6));
     }
 
-    private GameResultResponse getGameResponse() {
-        // Retrieve the current authenticated user
-        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
+    private GameResultResponse getGameResponse(UserPrincipal userPrincipal) {
 
         // Get the GameResponse for the user
-        com.baccarat.markovchain.module.data.GameResponse gameResponse = gameResponseService.getGameResponseByUserUuid(userPrincipal.getUserUuid());
+        Optional<GameResponse> g1 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
+        if (g1.isEmpty()) {
+            reset();
+        }
+
+        Optional<GameResponse> g2 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
+        GameResponse latesGameResponse = g2.get();
+
 
         // Create the GameResultResponse and populate it with default values if gameResponse is null
         GameResultResponse response = new GameResultResponse();
-        if (gameResponse != null) {
-            response.setBaseBetUnit(gameResponse.getBaseBetUnit());
-            response.setSuggestedBetUnit(gameResponse.getSuggestedBetUnit());
-            response.setInitialPlayingUnits(gameResponse.getInitialPlayingUnits());
-            response.setRecommendedBet(gameResponse.getRecommendedBet());
-            response.setSequence(gameResponse.getSequence().replace("1111", ""));
-            response.setMessage(gameResponse.getMessage());
-        } else {
-            response.setBaseBetUnit(1);
-            response.setSuggestedBetUnit(0);
-            response.setInitialPlayingUnits(100);
-            response.setRecommendedBet(WAIT);
-            response.setSequence("");
-            response.setMessage("");
-        }
+
+        response.setBaseBetUnit(latesGameResponse.getBaseBetUnit());
+        response.setSuggestedBetUnit(latesGameResponse.getSuggestedBetUnit());
+        response.setInitialPlayingUnits(latesGameResponse.getInitialPlayingUnits());
+        response.setRecommendedBet(latesGameResponse.getRecommendedBet());
+        response.setSequence(latesGameResponse.getSequence());
+        response.setMessage(latesGameResponse.getMessage());
+
 
         // Get the GameStatus for the user
-        GameStatus gameStatus = gameStatusService.findByUserUuid(userPrincipal.getUserUuid())
-                .orElse(null);
+        GameStatus gameStatus = gameStatusService.findByGameResponseId(latesGameResponse.getGameResponseId()).orElse(null);
         GameResultStatus gameResultStatus;
 
         if (gameStatus != null) {
@@ -614,6 +549,7 @@ public class BaccaratController {
         }
 
         response.setGameStatus(gameResultStatus);
+
 
         // Log the response
         logger.info("{}: Game Response-> {}", userPrincipal.getUsername(), response);
@@ -627,22 +563,10 @@ public class BaccaratController {
 
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        GameStatus gameStatus = gameStatusService.findByUserUuid(userPrincipal.getUserUuid())
-                .orElseThrow(() -> new RuntimeException("No game status found for user: " + userPrincipal.getUserUuid()));
-
-
-        gameStatus.setHandCount(gameResultResponse.getGameStatus().getHandCount());
-        gameStatus.setWins(gameResultResponse.getGameStatus().getWins());
-        gameStatus.setLosses(gameResultResponse.getGameStatus().getLosses());
-        gameStatus.setProfit(gameResultResponse.getGameStatus().getProfit());
-        gameStatus.setPlayingUnits(gameResultResponse.getGameStatus().getPlayingUnits());
-        gameStatus.setDateLastUpdated(LocalDateTime.now());
-
-
-        GameResponse gameResponse = gameResponseService.getGameResponseByUserUuid(userPrincipal.getUserUuid());
+        GameResponse gameResponse = new GameResponse();// gameResponseService.getGameResponseByUserUuid(userPrincipal.getUserUuid());
 
         // Update the game response fields
+        gameResponse.setUserUuid(userPrincipal.getUserUuid());
         gameResponse.setBaseBetUnit(gameResultResponse.getBaseBetUnit());
         gameResponse.setSuggestedBetUnit(gameResultResponse.getSuggestedBetUnit());
         gameResponse.setInitialPlayingUnits(gameResultResponse.getInitialPlayingUnits());
@@ -650,9 +574,37 @@ public class BaccaratController {
         gameResponse.setSequence(gameResultResponse.getSequence());
         gameResponse.setMessage(gameResultResponse.getMessage());
         gameResponse.setDateLastUpdated(LocalDateTime.now());
-
         // Persist the updated game response
-        gameResponseService.createOrUpdateGameResponse(gameResponse);
+        GameResponse newOneGameResponse = gameResponseService.createOrUpdateGameResponse(gameResponse);
+
+//        Optional<GameResponse> g = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
+//        GameResponse latestGameResponse = g.get();
+
+//        GameStatus gameStatus = gameStatusService.findByGameResponseId(latestGameResponse.getGameResponseId())
+//                .orElseThrow(() -> new RuntimeException("No game status found for user: " + userPrincipal.getUserUuid()));
+
+
+        GameResultStatus gameResultStatus = new GameResultStatus();
+
+        gameResultStatus.setHandCount(gameResultResponse.getGameStatus().getHandCount());
+        gameResultStatus.setWins(gameResultResponse.getGameStatus().getWins());
+        gameResultStatus.setLosses(gameResultResponse.getGameStatus().getLosses());
+        gameResultStatus.setProfit(gameResultResponse.getGameStatus().getProfit());
+        gameResultStatus.setPlayingUnits(gameResultResponse.getGameStatus().getPlayingUnits());
+
+
+        GameStatus gameStatus = new GameStatus();
+        gameStatus.setGameResponseId(newOneGameResponse.getGameResponseId());
+        gameStatus.setHandCount(gameResultResponse.getGameStatus().getHandCount());
+        gameStatus.setWins(gameResultResponse.getGameStatus().getWins());
+        gameStatus.setLosses(gameResultResponse.getGameStatus().getLosses());
+        gameStatus.setProfit(gameResultResponse.getGameStatus().getProfit());
+        gameStatus.setPlayingUnits(gameResultResponse.getGameStatus().getPlayingUnits());
+        gameStatus.setDateLastUpdated(LocalDateTime.now());
+        gameStatusService.save(gameStatus);
+
+        gameResultResponse.setGameStatus(gameResultStatus);
+
 
         return gameResultResponse;
     }

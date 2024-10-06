@@ -27,8 +27,8 @@ public class GameStatusService {
         return gameStatusRepository.findById(gameResponseId);
     }
 
-    public Optional<GameStatus> findByUserUuid(String userUuid) {
-        return Optional.ofNullable(gameStatusRepository.findByUserUuid(userUuid));
+    public Optional<GameStatus> findByGameResponseId(Integer gameId) {
+        return Optional.ofNullable(gameStatusRepository.findByGameResponseId(gameId));
     }
 
     // Save a new or updated game status
@@ -41,20 +41,6 @@ public class GameStatusService {
         gameStatusRepository.deleteById(gameResponseId);
     }
 
-    // Update game status data
-    public GameStatus updateGameStatus(Integer gameResponseId, GameStatus updatedGameStatus) {
-        Optional<GameStatus> existingGameStatus = gameStatusRepository.findById(gameResponseId);
-        if (existingGameStatus.isPresent()) {
-            GameStatus gameStatus = existingGameStatus.get();
-            gameStatus.setUserUuid(updatedGameStatus.getUserUuid());
-            gameStatus.setHandCount(updatedGameStatus.getHandCount());
-            gameStatus.setWins(updatedGameStatus.getWins());
-            gameStatus.setLosses(updatedGameStatus.getLosses());
-            gameStatus.setProfit(updatedGameStatus.getProfit());
-            gameStatus.setPlayingUnits(updatedGameStatus.getPlayingUnits());
-            gameStatus.setDateLastUpdated(updatedGameStatus.getDateLastUpdated());
-            return gameStatusRepository.save(gameStatus);
-        }
-        return null;  // Or handle not-found case as appropriate
-    }
+
+
 }
