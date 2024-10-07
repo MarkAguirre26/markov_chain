@@ -40,7 +40,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(255, 255, 255, 0.158); 
+        background-color: rgba(255, 255, 255, 0.158);
         /* Semi-transparent background */
         justify-content: center;
         align-items: center;
@@ -70,98 +70,93 @@
 </style>
 
 <body class="bg-gray-100">
-    <div class="container mx-auto p-4">
-        <!-- <h1 class="text-3xl font-bold text-center my-4">Player Companion </h1> -->
-
-        <!-- Logout Icon -->
-        <div class="absolute top-4 right-4">
+    <div class="container mx-auto p-2 relative">
+        <!-- Logout Icon - Improved -->
+        <div class="absolute top-4 right-4 z-10">
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                <button type="submit" class="text-gray-600 hover:text-gray-800 transition duration-200">
-                    <i class="fas fa-sign-out-alt text-2xl"></i>
+                <button type="submit"
+                    class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200 shadow-md"
+                    style="background-color: rgb(75 85 99 / 42%);"> <!-- Less transparent -->
+                    <i class="fas fa-sign-out-alt text-base"></i>
                 </button>
             </form>
         </div>
 
+
+
         <div class="flex flex-col md:flex-row">
-            <!-- First Panel (Inputs, Results, Reset Button) -->
-            <div class="w-full md:w-2/5 bg-white shadow-lg rounded-lg p-8 mb-6" style="margin: 0.5%;">
+            <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg p-4 mb-4" style="margin: 0.25%;">
                 <div id="inputsContainer">
                     <form id="gameForm">
-                        <div class="relative h-40">
-                            <div id="circleContainer" class="flex gap-4 mb-4 w-full overflow-x-auto hidden-scrollbar"
-                                style="max-height: 170px; white-space: nowrap;">
+                        <div style="height: 150px;">
+                            <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
+                                style="max-height: 150px; white-space: nowrap;">
                                 <div id="handResultColumn" class="flex flex-row h-full w-full"></div>
                             </div>
                         </div>
+
                         <div class="flex justify-between">
                             <button type="button" id="playerButton"
-                                class="w-full bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600 transition duration-300 shadow-md mr-2">
+                                class="w-full bg-blue-500 text-white py-1 rounded hover:bg-blue-600 transition duration-200 mr-1">
                                 PLAYER
                             </button>
                             <button type="button" id="bankerButton"
-                                class="w-full bg-red-500 text-white py-3 rounded-md hover:bg-red-600 transition duration-300 shadow-md ml-2">
+                                class="w-full bg-red-500 text-white py-1 rounded hover:bg-red-600 transition duration-200 ml-1">
                                 BANKER
                             </button>
                         </div>
                     </form>
                 </div>
-            
-                <div id="results" class="bg-white p-4 mt-6 rounded-md shadow-sm">
-                    <div id="status" class="text-gray-800 font-semibold text-lg mb-4 text-center border-b-2 pb-2">
-                        <!-- Game status will be shown here -->
-                    </div>
+
+                <div id="results" class="bg-white p-2 mt-4 rounded-md shadow-sm">
+                    <div id="status" class="text-gray-800 font-semibold text-md mb-2 text-center border-b pb-1"></div>
                     <div id="bettingResults" class="text-gray-700"></div>
-                    <div id="finalStats" class="mt-4 font-bold text-gray-900"></div>
+                    <div id="finalStats" class="mt-2 font-bold text-gray-900"></div>
                 </div>
-            
-                <div class="flex justify-between mt-6">
+
+                <div class="flex justify-between">
                     <button type="button" id="resetButton" style="display: none;"
-                        class="w-full bg-yellow-500 text-white py-3 rounded-md hover:bg-yellow-600 transition duration-300 shadow-md mr-2">
+                        class="w-full bg-yellow-500 text-white py-1 rounded hover:bg-yellow-600 transition duration-200 mr-1">
                         Reset Game
                     </button>
                     <button type="button" id="undoButton" style="display: none;"
-                        class="w-full bg-green-500 text-white py-3 rounded-md hover:bg-green-600 transition duration-300 shadow-md ml-2">
+                        class="w-full bg-green-500 text-white py-1 rounded hover:bg-green-600 transition duration-200 ml-1">
                         Undo
                     </button>
                 </div>
-            
-                <div class="mt-6 hidden">
-                    <div class="bg-blue-100 border border-blue-300 rounded-lg p-6 shadow-sm">
-                        <h3 id="infoHeader" class="font-semibold text-blue-800 text-lg">Subscription Plan: TRIAL</h3>
-                        <p id="infoContent" class="text-gray-700">
-                            Days remaining before the subscription ends:
-                            <span id="daysRemaining" class="font-bold text-blue-600"></span> days.
-                        </p>
+
+                <div class="mt-4" style="display: none;">
+                    <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
+                        <h3 id="infoHeader" class="font-semibold">Subscription Plan: TRIAL</h3>
+                        <p id="infoContent" class="text-gray-700">Days remaining before the subscription ends: 20 <span
+                                id="daysRemaining" class="font-bold text-blue-600"></span> days.</p>
                     </div>
                 </div>
             </div>
-            
 
             <!-- Second Panel -->
-            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-6 mb-6" style="margin: 0.5%;">
-                <h2 class="text-2xl font-semibold mb-4">Game Results Overview</h2>
-                <p class="text-gray-700">Each result below represents the
-                    profit details for each shoe.</p>
+            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-2 mb-2" style="margin: 0.25%;">
+                <h2 class="text-lg font-semibold mb-1">Game Results Overview</h2>
+                <p class="text-gray-700 text-sm">Each result below represents the profit details for each shoe.</p>
 
                 <!-- Main Card -->
-                <div class="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-4">
-                    <h3 class="font-semibold">Total Profit(u): <span id="totalProfit"></span></h3>
-                    <p class="text-gray-700">Date/Time: <span id="dateTime"></span></p>
+                <div class="bg-gray-100 border border-gray-300 rounded-lg p-1 mb-1">
+                    <h3 class="font-semibold text-sm">Total Profit(u): <span id="totalProfit"></span></h3>
+                    <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime"></span></p>
                 </div>
 
-
                 <!-- Sub Card Container -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="journalContainer">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalContainer">
                     <!-- Journal entries will be populated here -->
                 </div>
             </div>
 
-
-
-
         </div>
     </div>
+
+
+
 
     <div class="overlay" id="spinnerOverlay">
         <div class="spinner"></div>
@@ -171,10 +166,20 @@
 
         function showSpinner() {
             // Show the overlay and spinner
-            document.getElementById("spinnerOverlay").style.display = "flex";
+            // document.getElementById("spinnerOverlay").style.display = "flex";
+            const circleContainer = document.getElementById("circleContainer");
+            const spinnerOverlay = document.getElementById("spinnerOverlay");
 
-            // Hide the spinner after 3 seconds (adjust as needed)
-            // setTimeout(hideSpinner, 3000);
+            // Get the position and dimensions of circleContainer
+            const rect = circleContainer.getBoundingClientRect();
+
+            // Position the spinnerOverlay over circleContainer
+            spinnerOverlay.style.display = "flex";
+            spinnerOverlay.style.position = "absolute";
+            spinnerOverlay.style.top = `${rect.top}px`;
+            spinnerOverlay.style.left = `${rect.left}px`;
+            spinnerOverlay.style.width = `${rect.width}px`;
+            spinnerOverlay.style.height = `${rect.height}px`;
         }
 
         function hideSpinner() {
@@ -288,40 +293,40 @@
 
             $('#bettingResults').html(`
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <div class="bg-gray-200 text-gray-800 text-sm font-semibold p-2">
+        <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1">
             Betting Results
         </div>
-        <div class="p-4">
-            <div class="space-y-2">
+        <div class="p-2">
+            <div class="space-y-1">
                 <div class="flex justify-between">
-                    <span class="font-bold">Hands:</span>
-                    <span>${response.gameStatus.handCount}</span>
+                    <span class="font-bold text-xs">Hands:</span>
+                    <span class="text-xs">${response.gameStatus.handCount}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-bold">Wins:</span>
-                    <span>${response.gameStatus.wins}</span>
+                    <span class="font-bold text-xs">Wins:</span>
+                    <span class="text-xs">${response.gameStatus.wins}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-bold">Losses:</span>
-                    <span>${response.gameStatus.losses}</span>
+                    <span class="font-bold text-xs">Losses:</span>
+                    <span class="text-xs">${response.gameStatus.losses}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-bold">Units:</span>
-                    <span>${response.gameStatus.playingUnits.toFixed(0)}</span>
+                    <span class="font-bold text-xs">Units:</span>
+                    <span class="text-xs">${response.gameStatus.playingUnits.toFixed(0)}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-bold">Net Profit:</span>
-                    <span class="${response.gameStatus.profit >= 0 ? 'text-green-600' : 'text-red-600'}">
+                    <span class="font-bold text-xs">Net Profit:</span>
+                    <span class="text-xs ${response.gameStatus.profit >= 0 ? 'text-green-600' : 'text-red-600'}">
                         ${response.gameStatus.profit.toFixed(0)}
                     </span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-bold">Suggested Unit:</span>
-                    <span>${response.suggestedBetUnit.toFixed(0)}</span>
+                    <span class="font-bold text-xs">Suggested Unit:</span>
+                    <span class="text-xs">${response.suggestedBetUnit.toFixed(0)}</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-bold">Next Bet:</span>
-                    <span>${response.recommendedBet}</span>
+                    <span class="font-bold text-xs">Next Bet:</span>
+                    <span class="text-xs">${response.recommendedBet}</span>
                 </div>
             </div>
         </div>
@@ -329,6 +334,8 @@
     <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>
     <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
 `);
+
+
 
 
 
@@ -453,18 +460,18 @@
 
                 response.forEach((journal, index) => {
                     const journalDiv = document.createElement('div');
-                    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-4');
+                    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2'); // Reduced padding and margin
 
                     const shoeHeading = document.createElement('h4');
-                    shoeHeading.classList.add('font-semibold');
+                    shoeHeading.classList.add('font-semibold', 'text-sm'); // Reduced font size
                     shoeHeading.textContent = `Shoe: ${journal.shoe}`;
 
                     const handParagraph = document.createElement('p');
-                    handParagraph.classList.add('text-gray-700');
+                    handParagraph.classList.add('text-gray-700', 'text-xs'); // Reduced font size
                     handParagraph.textContent = `Hand: ${journal.hand}`;
 
                     const profitParagraph = document.createElement('p');
-                    profitParagraph.classList.add('text-gray-700');
+                    profitParagraph.classList.add('text-gray-700', 'text-xs'); // Reduced font size
                     profitParagraph.textContent = `Profit: ${journal.profit}`;
 
                     totalProfit += journal.profit;
