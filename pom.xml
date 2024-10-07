@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.virtualsoft</groupId>
 	<artifactId>PlayerCompanion</artifactId>
-	<version>1.1.14-SNAPSHOT</version>
+	<version>1.1.15-SNAPSHOT</version>
 	<name>Player Companion</name>
 	<description>Player Companion Baccarat Game Tracker</description>
 	<url/>

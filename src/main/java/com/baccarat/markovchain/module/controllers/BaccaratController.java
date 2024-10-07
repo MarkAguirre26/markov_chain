@@ -221,8 +221,6 @@ public class BaccaratController {
         String username = userPrincipal.getUsername();
 
         int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
-//        int playingUnit = gameResultResponse.getGameStatus().getPlayingUnits();
-
 
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
 

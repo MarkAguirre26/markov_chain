@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Player Companion Baccarat App Game Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -89,42 +90,51 @@
             <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg p-4 mb-4" style="margin: 0.25%;">
                 <div id="inputsContainer">
                     <form id="gameForm">
-                        <div style="height: 150px;">
+
+                        <div style="height: 175px;">
                             <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
-                                style="max-height: 150px; white-space: nowrap;">
+                                style="max-height: 175px; white-space: nowrap;">
                                 <div id="handResultColumn" class="flex flex-row h-full w-full"></div>
                             </div>
                         </div>
 
-                        <div class="flex justify-between">
-                            <button type="button" id="playerButton"
-                                class="w-full bg-blue-500 text-white py-1 rounded hover:bg-blue-600 transition duration-200 mr-1">
-                                PLAYER
-                            </button>
-                            <button type="button" id="bankerButton"
-                                class="w-full bg-red-500 text-white py-1 rounded hover:bg-red-600 transition duration-200 ml-1">
-                                BANKER
-                            </button>
-                        </div>
+
+
                     </form>
                 </div>
 
-                <div id="results" class="bg-white p-2 mt-4 rounded-md shadow-sm">
-                    <div id="status" class="text-gray-800 font-semibold text-md mb-2 text-center border-b pb-1"></div>
+                <div id="results" class="bg-white mt-4 rounded-md shadow-sm">
+                    <div id="status"
+                        class="text-gray-600 font-medium text-sm mb-2 text-center border-b border-gray-300 pb-1 bg-gray-100 rounded-md p-2 shadow-inner">
+                    </div>
                     <div id="bettingResults" class="text-gray-700"></div>
                     <div id="finalStats" class="mt-2 font-bold text-gray-900"></div>
                 </div>
 
-                <div class="flex justify-between">
+                <div class="flex justify-between mb-2"> <!-- Added margin-bottom for spacing -->
+                    <button type="button" id="playerButton"
+                        class="flex-1 bg-blue-500 text-white py-1 rounded hover:bg-blue-600 transition duration-200 mr-2">
+                        PLAYER
+                    </button>
+                    <button type="button" id="bankerButton"
+                        class="flex-1 bg-red-500 text-white py-1 rounded hover:bg-red-600 transition duration-200 ml-2">
+                        BANKER
+                    </button>
+                </div>
+
+                <div class="flex justify-between mb-2"> <!-- Added margin-bottom for spacing -->
                     <button type="button" id="resetButton" style="display: none;"
-                        class="w-full bg-yellow-500 text-white py-1 rounded hover:bg-yellow-600 transition duration-200 mr-1">
+                        class="flex-1 bg-yellow-500 text-white py-1 rounded hover:bg-yellow-600 transition duration-200 mr-2">
                         Reset Game
                     </button>
                     <button type="button" id="undoButton" style="display: none;"
-                        class="w-full bg-green-500 text-white py-1 rounded hover:bg-green-600 transition duration-200 ml-1">
+                        class="flex-1 bg-green-500 text-white py-1 rounded hover:bg-green-600 transition duration-200 ml-2">
                         Undo
                     </button>
                 </div>
+
+
+
 
                 <div class="mt-4" style="display: none;">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
@@ -162,6 +172,32 @@
         <div class="spinner"></div>
     </div>
 
+    <!-- Yes or No Dialog Modal -->
+    <div id="yesNoModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg w-96">
+            <!-- Modal Header -->
+            <div class="px-4 py-2 border-b">
+                <h3 class="text-lg font-semibold">Confirmation</h3>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-4">
+                <p>Are you sure you want to proceed with this action?</p>
+            </div>
+            <!-- Modal Footer -->
+            <div class="px-4 py-2 border-t flex justify-end space-x-2">
+                <button id="noButton"
+                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition duration-200">
+                    No
+                </button>
+                <button id="yesButton"
+                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-200">
+                    Yes
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <script>
 
         function showSpinner() {
@@ -193,6 +229,50 @@
                 await getJournal();
                 await currentState();
             })();
+
+            // Get modal and buttons
+            const modal = document.getElementById('yesNoModal');
+            const openModalButton = document.getElementById('openModalButton');
+            const yesButton = document.getElementById('yesButton');
+            const noButton = document.getElementById('noButton');
+
+            // Close modal and handle Yes/No actions
+            noButton.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+
+
+            yesButton.addEventListener('click', async () => {
+                // Handle the Yes action (e.g., form submission, data update)
+                console.log('User confirmed action');
+
+                // Disable the reset button and show a spinner
+                $('#resetButton').prop('disabled', true);
+                showSpinner();
+
+                try {
+                    // Make an AJAX request to reset the game
+                    const response = await $.ajax({
+                        url: '/api/baccarat/reset',
+                        method: 'POST'
+                    });
+
+                    // Display the result in the UI
+                    displayResultToUi(response);
+                } catch (xhr) {
+                    // Re-enable the reset button if an error occurs
+                    $('#resetButton').prop('disabled', false);
+
+                    // Display the error status
+                    $('#status').text(`Error: ${xhr.responseText}`);
+                } finally {
+                    // Hide the modal after the operation is done
+                    modal.classList.add('hidden');
+                }
+            });
+
+
+
 
             async function playGame(userInput) {
                 const recommendedBetUnit = $('#recommendedBet').text();
@@ -240,26 +320,21 @@
                 await undo();
             });
 
+         
+
             // Event listener for RESET GAME button
             $('#resetButton').on('click', async function () {
-                $('#resetButton').prop('disabled', true);
-                showSpinner();
-                try {
-                    const response = await $.ajax({
-                        url: '/api/baccarat/reset',
-                        method: 'POST'
-                    });
-                    displayResultToUi(response);
-                } catch (xhr) {
-                    $('#resetButton').prop('disabled', false);
 
-                    $('#status').text(`Error: ${xhr.responseText}`);
-                }
+                modal.classList.remove('hidden');
+
             });
         });
 
+
         async function displayResultToUi(response) {
+
             // console.log(response);
+
             hideSpinner();
             $('#playerButton').prop('disabled', false);
             $('#bankerButton').prop('disabled', false);
@@ -386,7 +461,11 @@
                 // Create a smaller white circle inside
                 const innerCircle = document.createElement('div');
                 innerCircle.classList.add('flex', 'items-center', 'justify-center', 'w-3', 'h-3', 'bg-white', 'rounded-full', 'text-xs', 'text-gray-400');
-                innerCircle.textContent = circleNumber;
+                innerCircle.textContent = "";
+
+
+                innerCircle.textContent = circleNumber >= 7 ? circleNumber : "";
+
 
                 // Add the inner circle to the outer circle
                 circle.appendChild(innerCircle);
@@ -417,7 +496,7 @@
                 if (results[i] === currentChar) {
                     group += results[i]; // Add to the current group if same
                 } else {
-                    // Create and append the container for the current group
+
                     column.appendChild(addContainer(group));
                     currentChar = results[i]; // Update currentChar
                     group = currentChar; // Start a new group
