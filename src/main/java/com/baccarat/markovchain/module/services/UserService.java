@@ -12,6 +12,8 @@ public interface UserService {
 
     User findByUsernameAndIsActive(String username, int isActive);
 
+    User findByEmailAndIsActive(String email, int isActive);
+
     User createUser(User user);
 
     User updateUser(User user);

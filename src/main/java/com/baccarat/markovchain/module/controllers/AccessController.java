@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -57,8 +58,15 @@ public class AccessController {
                                    @RequestParam String password,
                                    Model model) {
         // Custom authentication logic
-        User user = userService.findUserByUsername(username); // Replace with your method to find a user
-        if (user != null && passwordMatches(password, user.getPassword()) && user.getIsActive() == 1) { // Implement your password matching logic
+        User user = userService.findUserByUsername(username);
+
+        if (user == null) {
+            logger.warn("{}: User Not Found by Username", username);
+            System.out.println(String.format("%s: User Not Found by Username", username));
+            user = userService.findByEmailAndIsActive(username, 1);
+        }
+
+        if (user != null && passwordMatches(password, user.getPassword()) && user.getIsActive() == 1) {
             // Successful authentication logic
             // Set user session, etc.
             logger.info(user.getUsername() + ": successfully logged in.");
