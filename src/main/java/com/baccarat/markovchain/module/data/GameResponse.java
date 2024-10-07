@@ -28,6 +28,10 @@ public class GameResponse {
     @Column(name = "initial_Playing_units", columnDefinition = "int default 100")
     private int initialPlayingUnits = 100;
 
+    @Column(name = "loss_counter", columnDefinition = "int default 0")
+    private int lossCounter = 0;
+
+
     @Column(name = "recommended_bet", length = 10)
     private String recommendedBet;
 
