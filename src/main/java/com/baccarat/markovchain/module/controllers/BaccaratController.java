@@ -124,6 +124,7 @@ public class BaccaratController {
         gameResponse.setRecommendedBet(game.getRecommendedBet());
         gameResponse.setSequence(game.getSequence());
         gameResponse.setMessage("Initialized");
+        gameResponse.setDateLastUpdated(LocalDateTime.now());
         gameResponseService.createOrUpdateGameResponse(gameResponse);
 
         GameResponse g = gameResponseService.getGameResponseByUserUuid(userUuid);

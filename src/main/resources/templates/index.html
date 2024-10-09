@@ -91,9 +91,9 @@
                 <div id="inputsContainer">
                     <form id="gameForm">
 
-                        <div style="height: 175px;">
+                        <div style="height: 165px;">
                             <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
-                                style="max-height: 175px; white-space: nowrap;">
+                                style="max-height: 165px; white-space: nowrap;">
                                 <div id="handResultColumn" class="flex flex-row h-full w-full"></div>
                             </div>
                         </div>
@@ -134,13 +134,10 @@
                 </div>
 
 
-
-
-                <div class="mt-4" style="display: none;">
+                <div class="mt-4">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
-                        <h3 id="infoHeader" class="font-semibold">Subscription Plan: TRIAL</h3>
-                        <p id="infoContent" class="text-gray-700">Days remaining before the subscription ends: 20 <span
-                                id="daysRemaining" class="font-bold text-blue-600"></span> days.</p>
+                        <h3 id="infoHeader" class="font-semibold">Gaming Rule</h3>
+                        <p id="infoContent" class="text-gray-700">Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.</p>
                     </div>
                 </div>
             </div>
@@ -320,7 +317,7 @@
                 await undo();
             });
 
-         
+
 
             // Event listener for RESET GAME button
             $('#resetButton').on('click', async function () {
@@ -342,12 +339,15 @@
             $('#undoButton').prop('disabled', false);
 
             if (response.gameStatus.handCount > 0) {
+                $('#status').show();
                 $('#resetButton').show();
                 $('#undoButton').show();
                 if (response.gameStatus.handCount === 1) {
                     $('#undoButton').hide();
                 }
             } else {
+
+                $('#status').hide();
                 $('#resetButton').hide();
                 $('#undoButton').hide();
             }
@@ -537,7 +537,10 @@
                     }
                 });
 
-                response.forEach((journal, index) => {
+                // Filter journals where hand is not zero and reverse the order
+                const validJournals = response.filter(journal => journal.hand !== 0).reverse();
+
+                validJournals.forEach((journal, index) => {
                     const journalDiv = document.createElement('div');
                     journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2'); // Reduced padding and margin
 
@@ -562,10 +565,12 @@
                     journalContainer.appendChild(journalDiv);
 
                     // Add a glowing effect to the last card with Hand not equal to 0
-                    if (index === lastValidIndex) {
+                    if (index === 0) {
                         journalDiv.classList.add('glow'); // Add a class for glowing effect
                     }
                 });
+
+
 
                 $('#totalProfit').text(totalProfit);
             } catch (xhr) {
