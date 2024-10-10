@@ -141,8 +141,8 @@
                 <div class="mt-4">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
                         <h3 id="infoHeader" class="font-semibold text-xs">Gaming Rule</h3>
-                        <p id="infoContent" class="text-gray-700 text-xs">Your total daily units (u) should be 100, with
-                            each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1.
+                        <p id="infoContent" class="text-gray-700 text-xs">Take profit is set at 40 units, stop loss at -10 units, with a daily shoe limit of 10.
+                            Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1.                             
                             Follow the app's guidelines to protect your bankroll.</p>
                     </div>
                 </div>
@@ -258,10 +258,8 @@
 
 
 
-
             // Close modal and handle Yes/No actions
-            noButton.addEventListener('click', () => {
-                modal.classList.add('hidden');
+            noButton.addEventListener('click', () => {               
                 processEventToReset("no");
             });
 
