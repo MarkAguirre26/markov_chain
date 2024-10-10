@@ -32,8 +32,8 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public User findByEmailAndIsActive(String email, int isActive) {
-        return userRepository.findByEmailAndIsActive(email, isActive);
+    public User findByEmailAndIsActiveAndLogged(String email, int isActive, int logged) {
+        return userRepository.findByEmailAndIsActiveAndLogged(email, isActive, logged);
     }
 
 

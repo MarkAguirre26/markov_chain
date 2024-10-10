@@ -12,7 +12,7 @@ public interface UserService {
 
     User findByUsernameAndIsActive(String username, int isActive);
 
-    User findByEmailAndIsActive(String email, int isActive);
+    User findByEmailAndIsActiveAndLogged(String email, int isActive, int logged);
 
     User createUser(User user);
 

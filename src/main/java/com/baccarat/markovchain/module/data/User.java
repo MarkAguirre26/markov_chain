@@ -38,6 +38,9 @@ public class User {
     @Column(name = "is_active", length = 10)
     private int isActive;
 
+    @Column(name = "logged", length = 10)
+    private int logged;
+
     @Column(name = "date_last_modified")
     private LocalDateTime dateLastModified;
 

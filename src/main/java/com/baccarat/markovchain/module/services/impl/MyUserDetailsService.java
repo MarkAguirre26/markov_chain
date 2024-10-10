@@ -1,6 +1,5 @@
 package com.baccarat.markovchain.module.services.impl;
 
-import com.baccarat.markovchain.module.controllers.BaccaratController;
 import com.baccarat.markovchain.module.data.User;
 import com.baccarat.markovchain.module.model.UserPrincipal;
 import org.slf4j.Logger;
@@ -25,29 +24,36 @@ public class MyUserDetailsService implements UserDetailsService {
     }
 
 
-   @Override
-public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    // Attempt to find the user by username
-    User user = userService.findByUsernameAndIsActive(username, 1);
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // Attempt to find the user by username
+        User user = userService.findByUsernameAndIsActive(username, 1);
 
-    // If not found by username, attempt to find by email
-    if (user == null) {
-        logger.warn("{}: User Not Found by Username", username);
-        System.out.println(String.format("%s: User Not Found by Username", username));
-        user = userService.findByEmailAndIsActive(username, 1);
+        // If not found by username, attempt to find by email
+        if (user == null) {
+            logger.warn("{}: User Not Found by Username", username);
+            System.out.println(String.format("%s: User Not Found by Username", username));
+            user = userService.findByEmailAndIsActiveAndLogged(username, 1, 0);
+        }
+
+        // Throw an exception if the user is not found
+        if (user == null) {
+            logger.warn("{}: User Not Found by Email", username);
+            throw new UsernameNotFoundException("User not found with username or email: " + username);
+        }
+
+        if (user.getLogged() == 1) {
+            // Successful authentication logic
+            logger.warn("Invalid! 1 session at time {}", username);
+            throw new UsernameNotFoundException("Invalid! 1 session at time " + username);
+        }
+
+        // Log successful login
+//        user.setLogged(1);
+//        userService.updateUser(user);
+        logger.info("User logged-in: {}", user.getUsername());
+
+        return new UserPrincipal(user, user.getUuid());
     }
-
-    // Throw an exception if the user is not found
-    if (user == null) {
-        logger.warn("{}: User Not Found by Email", username);
-        System.out.println(String.format("%s: User Not Found by Email", username));
-        throw new UsernameNotFoundException("User not found with username or email: " + username);
-    }
-
-    // Log successful login
-       logger.info("User logged-in: {}", user.getUsername());
-
-    return new UserPrincipal(user, user.getUuid());
-}
 
 }

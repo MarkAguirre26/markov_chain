@@ -1,27 +1,22 @@
 package com.baccarat.markovchain.config;
 
+import com.baccarat.markovchain.module.services.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -31,6 +26,12 @@ public class SecurityConfig {
 
     @Autowired
     private UserDetailsService userDetailsService;
+
+    private final UserServiceImpl userService;
+
+    public SecurityConfig(UserServiceImpl userService) {
+        this.userService = userService;
+    }
 
 
     @Bean
@@ -58,6 +59,7 @@ public class SecurityConfig {
                         .failureUrl("/auth") // Redirect to login page on failure
                         .permitAll())
                 .logout(logout -> logout
+                        .logoutSuccessHandler(new CustomLogoutSuccessHandler(userService)) // Use custom handler
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/auth") // Redirect to login page after logout
                         .permitAll())
@@ -65,7 +67,12 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             // Redirect to custom login page on 403 or 401
                             response.sendRedirect("/auth");
-                        }));
+                        }))
+                .sessionManagement(session -> session
+                        .maximumSessions(1)  // Limit to 1 session per user
+                        .maxSessionsPreventsLogin(false)  // Allow new login, invalidate old session
+                        .sessionRegistry(sessionRegistry())  // Register the session registry bean
+                );
 
         http.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration configuration = new CorsConfiguration();
@@ -80,19 +87,11 @@ public class SecurityConfig {
         return http.build();
     }
 
-//    @Bean
-//    public CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration configuration = new CorsConfiguration();
-//        configuration.setAllowedOrigins(Arrays.asList("https://player-companion.com")); // Your domain
-//        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP methods
-//        configuration.setAllowCredentials(true); // Allow credentials (if needed)
-//        configuration.setAllowedHeaders(Arrays.asList("*")); // Allow all headers
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", configuration); // Apply to all endpoints
-//        return source;
-//    }
-
+    // SessionRegistry bean required for tracking active sessions
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -102,10 +101,6 @@ public class SecurityConfig {
         return provider;
     }
 
-//    @Bean
-//    public PasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
 
 
 }

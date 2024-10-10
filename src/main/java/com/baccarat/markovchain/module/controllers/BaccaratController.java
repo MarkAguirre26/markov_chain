@@ -350,8 +350,6 @@ public class BaccaratController {
 
                 gameResultResponse.setSuggestedBetUnit(0);
                 gameResultResponse.setMessage("Wait for virtual win.");
-
-
             }
 
 
@@ -380,6 +378,8 @@ public class BaccaratController {
                 profit -= suggestedUnit;
                 playingUnit -= suggestedUnit;
                 totalLosses++;
+                betSize--;
+
             }
         }
 
@@ -389,9 +389,17 @@ public class BaccaratController {
         gameResultStatus.setPlayingUnits(playingUnit);
         gameResultStatus.setWins(totalWins);
         gameResultStatus.setLosses(totalLosses);
-        gameResultResponse.setGameStatus(gameResultStatus);
-        gameResultResponse.setSuggestedBetUnit(betSize);
         gameResultResponse.setLossCounter(currentLossCount);
+        gameResultResponse.setGameStatus(gameResultStatus);
+
+        int temptBetSize = gameResultStatus.getProfit() - betSize;
+        if(temptBetSize < -10){
+            betSize = Math.abs(temptBetSize + 10);
+        }
+
+
+        gameResultResponse.setSuggestedBetUnit(betSize);
+
         return gameResultResponse;
     }
 
@@ -404,88 +412,6 @@ public class BaccaratController {
 
         return getGameResponse(userPrincipal);
     }
-
-
-//    @PostMapping("/playing-fund-config")
-//    public ResponseEntity<String> playingFundConfig(@RequestParam int playingFund) {
-//        String userUuid = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUserUuid();
-//        logger.info("Received request to update playing fund for user: {}", userUuid);
-//
-//        List<Config> userConfigList = configService.getConfigsByUserUuid(userUuid);
-//
-//        Config playingFundConfig = null;
-//        if (userConfigList.stream().anyMatch(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue()))) {
-//            logger.info("User already has a playing fund configured. Updating existing value.");
-//            playingFundConfig = userConfigList.stream().filter(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue())).findFirst().orElse(null);
-//        }
-//
-//        if (playingFundConfig == null) {
-//            logger.info("No existing playing fund found. Creating a new one.");
-//            playingFundConfig = new Config(); // Initialize a new Config object if not found
-//            playingFundConfig.setName(UserConfig.PLAYING_FUND.getValue());
-//        }
-//
-//        playingFundConfig.setValue(String.valueOf(playingFund));
-//        configService.saveOrUpdateConfig(playingFundConfig);
-//        logger.info("Playing fund updated to: {} for user: {}", playingFund, userUuid);
-//
-//        return ResponseEntity.ok("Playing fund updated successfully");
-//    }
-
-
-//    @PostMapping("/playing-base-bet")
-//    public ResponseEntity<String> playingBaseBet(@RequestParam int baseBetAmount) {
-//        String userUuid = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUserUuid();
-//        logger.info("Received request to update base bet for user: {}", userUuid);
-//
-//        List<Config> userConfigList = configService.getConfigsByUserUuid(userUuid);
-//
-//        Config playingBaseBetConfig = null;
-//        if (userConfigList.stream().anyMatch(config -> config.getName().equals(UserConfig.BASE_BET.getValue()))) {
-//            logger.info("User already has a base bet configured. Updating existing value.");
-//            playingBaseBetConfig = userConfigList.stream().filter(config -> config.getName().equals(UserConfig.BASE_BET.getValue())).findFirst().orElse(null);
-//        }
-//
-//        if (playingBaseBetConfig == null) {
-//            logger.info("No existing base bet. Creating a new one.");
-//            playingBaseBetConfig = new Config(); // Initialize a new Config object if not found
-//            playingBaseBetConfig.setName(UserConfig.BASE_BET.getValue());
-//        }
-//
-//        playingBaseBetConfig.setValue(String.valueOf(baseBetAmount));
-//        configService.saveOrUpdateConfig(playingBaseBetConfig);
-////        logger.info("Playing fund updated to: {} for user: {}", playingUnit, userUuid);
-//
-//        return ResponseEntity.ok("" + baseBetAmount);
-//    }
-
-
-//    @PostMapping("/initial-playing-fund")
-//    public ResponseEntity<String> initialPlayingFund(@RequestParam int initialPlayingUnit) {
-//        String userUuid = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUserUuid();
-//        logger.info("Received request to update playing fund for user: {}", userUuid);
-//
-//        List<Config> userConfigList = configService.getConfigsByUserUuid(userUuid);
-//
-//        Config playingFundConfig = null;
-//        if (userConfigList.stream().anyMatch(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue()))) {
-//            logger.info("User already has a playing fund configured. Updating existing value.");
-//            playingFundConfig = userConfigList.stream().filter(config -> config.getName().equals(UserConfig.PLAYING_FUND.getValue())).findFirst().orElse(null);
-//        }
-//
-//        if (playingFundConfig == null) {
-//            logger.info("No existing playing fund. Creating a new one.");
-//            playingFundConfig = new Config(); // Initialize a new Config object if not found
-//            playingFundConfig.setName(UserConfig.PLAYING_FUND.getValue());
-//        }
-//
-//        playingFundConfig.setValue(String.valueOf(initialPlayingUnit));
-//        configService.saveOrUpdateConfig(playingFundConfig);
-//        logger.info("Playing fund updated to: {} for user: {}", playingUnit, userUuid);
-//
-//        INITIAL_PLAYING_UNITS = Integer.valueOf(playingFundConfig.getValue());
-//        return ResponseEntity.ok("" + initialPlayingUnit);
-//    }
 
 
     @PostMapping("/undo")
@@ -508,13 +434,18 @@ public class BaccaratController {
 
 
     @PostMapping("/reset")
-    public GameResultResponse reset() {
+    public GameResultResponse reset(@RequestParam String yesNo) {
         logger.info("Resetting game state to initial values.");
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
         try {
+
+            if(yesNo.equalsIgnoreCase("yes")){
+                saveAndReturn(getGameResponse(userPrincipal));
+            }
+
             deleteGamesByUserUuid(userUuid);
 
             GameStatus gameStatus = createInitialGameStatus();
@@ -587,7 +518,7 @@ public class BaccaratController {
         // Get the GameResponse for the user
         Optional<GameResponse> g1 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
         if (g1.isEmpty()) {
-            reset();
+            reset("no");
         }
 
         Optional<GameResponse> g2 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());

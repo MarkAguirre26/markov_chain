@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -63,12 +62,11 @@ public class AccessController {
         if (user == null) {
             logger.warn("{}: User Not Found by Username", username);
             System.out.println(String.format("%s: User Not Found by Username", username));
-            user = userService.findByEmailAndIsActive(username, 1);
+            user = userService.findByEmailAndIsActiveAndLogged(username, 1, 0);
         }
 
-        if (user != null && passwordMatches(password, user.getPassword()) && user.getIsActive() == 1) {
+        if (user != null && passwordMatches(password, user.getPassword()) && user.getIsActive() == 1 && user.getLogged() == 0) {
             // Successful authentication logic
-            // Set user session, etc.
             logger.info(user.getUsername() + ": successfully logged in.");
             return "redirect:/"; // Redirect to homepage after successful login
         } else {
@@ -78,7 +76,6 @@ public class AccessController {
             return "auth"; // Return to login page
         }
     }
-
 
 
     private boolean passwordMatches(String rawPassword, String encodedPassword) {

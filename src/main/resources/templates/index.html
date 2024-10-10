@@ -58,6 +58,11 @@
         animation: spin 2s linear infinite;
     }
 
+    .light-separator {
+        border-color: rgba(229, 231, 235, 0.5);
+        /* Lighter gray with 50% opacity */
+    }
+
     /* Spinner animation */
     @keyframes spin {
         0% {
@@ -104,8 +109,7 @@
                 </div>
 
                 <div id="results" class="bg-white mt-4 rounded-md shadow-sm">
-                    <div id="status"
-                        class="text-gray-600 font-medium text-sm mb-2 text-center border-b border-gray-300 pb-1 bg-gray-100 rounded-md p-2 shadow-inner">
+                    <div id="status" class="text-sm text-center">
                     </div>
                     <div id="bettingResults" class="text-gray-700"></div>
                     <div id="finalStats" class="mt-2 font-bold text-gray-900"></div>
@@ -136,8 +140,10 @@
 
                 <div class="mt-4">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
-                        <h3 id="infoHeader" class="font-semibold">Gaming Rule</h3>
-                        <p id="infoContent" class="text-gray-700">Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.</p>
+                        <h3 id="infoHeader" class="font-semibold text-xs">Gaming Rule</h3>
+                        <p id="infoContent" class="text-gray-700 text-xs">Your total daily units (u) should be 100, with
+                            each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1.
+                            Follow the app's guidelines to protect your bankroll.</p>
                     </div>
                 </div>
             </div>
@@ -178,21 +184,30 @@
             </div>
             <!-- Modal Body -->
             <div class="p-4">
-                <p>Are you sure you want to proceed with this action?</p>
+                <p>Do you want to add this game result to your journal?</p>
             </div>
             <!-- Modal Footer -->
-            <div class="px-4 py-2 border-t flex justify-end space-x-2">
+            <div class="px-4 py-2 border-t flex flex-col space-y-2">
+                
+                
+                <button id="yesButton"
+                    class="bg-green-500 text-white w-full py-1 rounded hover:bg-green-600 transition duration-200 text-sm">
+                    Yes
+                </button>
                 <button id="noButton"
-                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition duration-200">
+                    class="bg-blue-500 text-white w-full py-1 rounded hover:bg-blue-600 transition duration-200 text-sm">
                     No
                 </button>
-                <button id="yesButton"
-                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-200">
-                    Yes
+
+                <button id="cancelButton" style="margin-top: 20px;"
+                    class="bg-gray-500 text-white w-full py-1 rounded hover:bg-gray-600 transition duration-200 text-sm">
+                    Cancel
                 </button>
             </div>
         </div>
     </div>
+
+
 
 
     <script>
@@ -232,42 +247,61 @@
             const openModalButton = document.getElementById('openModalButton');
             const yesButton = document.getElementById('yesButton');
             const noButton = document.getElementById('noButton');
+            const cancelButton = document.getElementById('cancelButton');
+            
+
+             // Close modal and handle Yes/No actions
+             cancelButton.addEventListener('click', () => {
+                modal.classList.add('hidden');
+               
+            });
+
+
+
 
             // Close modal and handle Yes/No actions
             noButton.addEventListener('click', () => {
                 modal.classList.add('hidden');
+                processEventToReset("no");
             });
 
 
             yesButton.addEventListener('click', async () => {
                 // Handle the Yes action (e.g., form submission, data update)
-                console.log('User confirmed action');
+                //console.log('User confirmed action');
 
                 // Disable the reset button and show a spinner
                 $('#resetButton').prop('disabled', true);
                 showSpinner();
 
+                processEventToReset("yes");
+            });
+
+
+            async function processEventToReset(answer) {
                 try {
                     // Make an AJAX request to reset the game
                     const response = await $.ajax({
                         url: '/api/baccarat/reset',
-                        method: 'POST'
+                        method: 'POST',
+                        data: {
+                            yesNo: answer
+                        }
                     });
 
                     // Display the result in the UI
                     displayResultToUi(response);
-                } catch (xhr) {
+                } catch (error) {
                     // Re-enable the reset button if an error occurs
                     $('#resetButton').prop('disabled', false);
 
                     // Display the error status
-                    $('#status').text(`Error: ${xhr.responseText}`);
+                    $('#status').text(`Error: ${error.responseText}`);
                 } finally {
                     // Hide the modal after the operation is done
                     modal.classList.add('hidden');
                 }
-            });
-
+            }
 
 
 
@@ -346,15 +380,19 @@
                     $('#undoButton').hide();
                 }
             } else {
-
                 $('#status').hide();
+                if (response.message.includes("Daily limit!")) {
+                    $('#status').show();
+                }
+
                 $('#resetButton').hide();
                 $('#undoButton').hide();
             }
 
             // Set the text and change color based on the message
             const statusMessage = response.message;
-            $('#status').text(statusMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
+            const tempMessage = (statusMessage.includes('Wait') && statusMessage === 'Method...') ? "" : response.message;
+            $('#status').text(tempMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
 
             if (statusMessage.includes("reset") || statusMessage.includes("Initialized")) {
                 $("#handResultColumn").html("");
@@ -367,44 +405,43 @@
 
 
             $('#bettingResults').html(`
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1">
-            Betting Results
+            Betting Status
         </div>
         <div class="p-2">
             <div class="space-y-1">
-                <div class="flex justify-between">
+                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
                     <span class="font-bold text-xs">Hands:</span>
                     <span class="text-xs">${response.gameStatus.handCount}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
                     <span class="font-bold text-xs">Wins:</span>
                     <span class="text-xs">${response.gameStatus.wins}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
                     <span class="font-bold text-xs">Losses:</span>
                     <span class="text-xs">${response.gameStatus.losses}</span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="font-bold text-xs">Units:</span>
-                    <span class="text-xs">${response.gameStatus.playingUnits.toFixed(0)}</span>
-                </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
                     <span class="font-bold text-xs">Net Profit:</span>
                     <span class="text-xs ${response.gameStatus.profit >= 0 ? 'text-green-600' : 'text-red-600'}">
                         ${response.gameStatus.profit.toFixed(0)}
                     </span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
                     <span class="font-bold text-xs">Suggested Unit:</span>
                     <span class="text-xs">${response.suggestedBetUnit.toFixed(0)}</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="font-bold text-xs">Next Bet:</span>
-                    <span class="text-xs">${response.recommendedBet}</span>
+                    <span class="text-xs">
+                        ${response.message === 'Wait for virtual win.' ? 'Wait' : response.recommendedBet}
+                    </span>
                 </div>
             </div>
         </div>
+
     </div>
     <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>
     <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
@@ -514,19 +551,18 @@
 
         async function getJournal() {
             const currentDate = new Date();
-            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const options = { timeZone: userTimeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
-            const localDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
+            const options = { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const utcDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
 
             try {
                 const response = await $.ajax({
                     url: '/api/journals/dateCreated',
                     type: 'GET',
-                    data: { dateCreated: localDate }
+                    data: { dateCreated: utcDate }
                 });
 
                 $('#journalContainer').html('');
-                $('#dateTime').text(localDate);
+                $('#dateTime').text(utcDate);
                 const journalContainer = document.getElementById('journalContainer');
                 let totalProfit = 0;
                 let lastValidIndex = -1;
@@ -544,23 +580,35 @@
                     const journalDiv = document.createElement('div');
                     journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2'); // Reduced padding and margin
 
+                    // Create a container for aligning Shoe, Hand, and Profit horizontally
+                    const flexContainer = document.createElement('div');
+                    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right'); // Flexbox layout with right alignment
+
                     const shoeHeading = document.createElement('h4');
                     shoeHeading.classList.add('font-semibold', 'text-sm'); // Reduced font size
                     shoeHeading.textContent = `Shoe: ${journal.shoe}`;
 
+                    const handProfitContainer = document.createElement('div');
+                    handProfitContainer.classList.add('text-right'); // Right align for Hand and Profit
+
                     const handParagraph = document.createElement('p');
-                    handParagraph.classList.add('text-gray-700', 'text-xs'); // Reduced font size
                     handParagraph.textContent = `Hand: ${journal.hand}`;
 
                     const profitParagraph = document.createElement('p');
-                    profitParagraph.classList.add('text-gray-700', 'text-xs'); // Reduced font size
                     profitParagraph.textContent = `Profit: ${journal.profit}`;
+
+                    // Append hand and profit (stacked vertically) to the container
+                    handProfitContainer.appendChild(handParagraph);
+                    handProfitContainer.appendChild(profitParagraph);
 
                     totalProfit += journal.profit;
 
-                    journalDiv.appendChild(shoeHeading);
-                    journalDiv.appendChild(handParagraph);
-                    journalDiv.appendChild(profitParagraph);
+                    // Append Shoe and Hand/Profit container to the flex container
+                    flexContainer.appendChild(shoeHeading);
+                    flexContainer.appendChild(handProfitContainer);
+
+                    // Append flex container to the journal div
+                    journalDiv.appendChild(flexContainer);
 
                     journalContainer.appendChild(journalDiv);
 
@@ -569,7 +617,6 @@
                         journalDiv.classList.add('glow'); // Add a class for glowing effect
                     }
                 });
-
 
 
                 $('#totalProfit').text(totalProfit);

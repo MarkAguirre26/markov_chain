@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.virtualsoft</groupId>
 	<artifactId>PlayerCompanion</artifactId>
-	<version>1.1.25</version>
+	<version>1.1.29</version>
 	<name>Player Companion</name>
 	<description>Player Companion Baccarat Game Tracker</description>
 	<url/>
@@ -81,6 +81,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-config</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.security</groupId>
