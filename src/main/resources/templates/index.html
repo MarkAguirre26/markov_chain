@@ -63,6 +63,16 @@
         /* Lighter gray with 50% opacity */
     }
 
+    #spinnerOverlay {
+        display: none;
+        /* Hidden by default */
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.5);
+        /* Optional: semi-transparent background */
+    }
+
+
     /* Spinner animation */
     @keyframes spin {
         0% {
@@ -141,8 +151,10 @@
                 <div class="mt-4">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
                         <h3 id="infoHeader" class="font-semibold text-xs">Gaming Rule</h3>
-                        <p id="infoContent" class="text-gray-700 text-xs">Take profit is set at 40 units, stop loss at -10 units, with a daily shoe limit of 10.
-                            Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1.                             
+                        <p id="infoContent" class="text-gray-700 text-xs">Take profit is set at 40 units, stop loss at
+                            -10 units, with a daily shoe limit of 10.
+                            Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your
+                            bankroll is $100, 1 unit (1u) equals $1.
                             Follow the app's guidelines to protect your bankroll.</p>
                     </div>
                 </div>
@@ -188,8 +200,8 @@
             </div>
             <!-- Modal Footer -->
             <div class="px-4 py-2 border-t flex flex-col space-y-2">
-                
-                
+
+
                 <button id="yesButton"
                     class="bg-green-500 text-white w-full py-1 rounded hover:bg-green-600 transition duration-200 text-sm">
                     Yes
@@ -213,22 +225,22 @@
     <script>
 
         function showSpinner() {
-            // Show the overlay and spinner
-            // document.getElementById("spinnerOverlay").style.display = "flex";
             const circleContainer = document.getElementById("circleContainer");
             const spinnerOverlay = document.getElementById("spinnerOverlay");
 
             // Get the position and dimensions of circleContainer
             const rect = circleContainer.getBoundingClientRect();
 
-            // Position the spinnerOverlay over circleContainer
+            // Show the spinner overlay
             spinnerOverlay.style.display = "flex";
-            spinnerOverlay.style.position = "absolute";
-            spinnerOverlay.style.top = `${rect.top}px`;
-            spinnerOverlay.style.left = `${rect.left}px`;
-            spinnerOverlay.style.width = `${rect.width}px`;
-            spinnerOverlay.style.height = `${rect.height}px`;
+            spinnerOverlay.style.position = "fixed"; // Change to fixed for screen-wide overlay
+            spinnerOverlay.style.top = "0"; // Cover the whole screen
+            spinnerOverlay.style.left = "0"; // Cover the whole screen
+            spinnerOverlay.style.width = "100vw"; // Full viewport width
+            spinnerOverlay.style.height = "100vh"; // Full viewport height
+            spinnerOverlay.style.zIndex = "9999"; // Ensure it is above everything, including modals
         }
+
 
         function hideSpinner() {
             // Hide the overlay and spinner
@@ -248,18 +260,18 @@
             const yesButton = document.getElementById('yesButton');
             const noButton = document.getElementById('noButton');
             const cancelButton = document.getElementById('cancelButton');
-            
 
-             // Close modal and handle Yes/No actions
-             cancelButton.addEventListener('click', () => {
+
+            // Close modal and handle Yes/No actions
+            cancelButton.addEventListener('click', () => {
                 modal.classList.add('hidden');
-               
+
             });
 
 
 
             // Close modal and handle Yes/No actions
-            noButton.addEventListener('click', () => {               
+            noButton.addEventListener('click', () => {
                 processEventToReset("no");
             });
 
@@ -270,13 +282,12 @@
 
                 // Disable the reset button and show a spinner
                 $('#resetButton').prop('disabled', true);
-                showSpinner();
-
                 processEventToReset("yes");
             });
 
 
             async function processEventToReset(answer) {
+                showSpinner();
                 try {
                     // Make an AJAX request to reset the game
                     const response = await $.ajax({
@@ -362,7 +373,7 @@
 
         async function displayResultToUi(response) {
 
-            // console.log(response);
+             console.log(response);
 
             hideSpinner();
             $('#playerButton').prop('disabled', false);
@@ -389,7 +400,7 @@
 
             // Set the text and change color based on the message
             const statusMessage = response.message;
-            const tempMessage = (statusMessage.includes('Wait') && statusMessage === 'Method...') ? "" : response.message;
+            const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : response.message;
             $('#status').text(tempMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
 
             if (statusMessage.includes("reset") || statusMessage.includes("Initialized")) {
