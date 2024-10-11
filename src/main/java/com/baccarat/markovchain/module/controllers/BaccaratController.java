@@ -327,19 +327,22 @@ public class BaccaratController {
             gameResultResponse.setMessage(STOP_PROFIT_REACHED);
             gameResultResponse.setSuggestedBetUnit(0);
             gameResultResponse.setRecommendedBet(WAIT);
-            return saveAndReturn(provideGameResponse(gameResultResponse));
+//            return saveAndReturn(provideGameResponse(gameResultResponse));
+            return provideGameResponse(gameResultResponse);
         } else if (hasReachedStopLoss(gameResultResponse)) {
             logger.warn(": Reached stop loss. New profit: {}, New playing fund: {}", profit, playingUnit);
             gameResultResponse.setMessage(STOP_LOSS_REACHED);
             gameResultResponse.setSuggestedBetUnit(0);
             gameResultResponse.setRecommendedBet(WAIT);
-            return saveAndReturn(provideGameResponse(gameResultResponse));
+//            return saveAndReturn(provideGameResponse(gameResultResponse));
+            return provideGameResponse(gameResultResponse);
         } else if (hasReachedHandsLimit(gameResultResponse)) {
             logger.warn(": Reached max hand limit. New profit: {}, New playing fund: {}", profit, playingUnit);
             gameResultResponse.setMessage(MAX_HAND_LIMIT_REACHED);
             gameResultResponse.setSuggestedBetUnit(0);
             gameResultResponse.setRecommendedBet(WAIT);
-            return saveAndReturn(provideGameResponse(gameResultResponse));
+//            return saveAndReturn(provideGameResponse(gameResultResponse));
+            return provideGameResponse(gameResultResponse);
         } else {
 
             gameResultResponse.setRecommendedBet(nextPredictedBet);
@@ -378,7 +381,8 @@ public class BaccaratController {
                 profit -= suggestedUnit;
                 playingUnit -= suggestedUnit;
                 totalLosses++;
-                betSize--;
+                betSize -= 2;
+                betSize = betSize == 0 ? 1 : betSize;
 
             }
         }
@@ -393,7 +397,7 @@ public class BaccaratController {
         gameResultResponse.setGameStatus(gameResultStatus);
 
         int temptBetSize = gameResultStatus.getProfit() - betSize;
-        if(temptBetSize < -10){
+        if (temptBetSize < -10) {
             betSize = Math.abs(temptBetSize + 10);
         }
 
@@ -442,7 +446,7 @@ public class BaccaratController {
 
         try {
 
-            if(yesNo.equalsIgnoreCase("yes")){
+            if (yesNo.equalsIgnoreCase("yes")) {
                 saveAndReturn(getGameResponse(userPrincipal));
             }
 
