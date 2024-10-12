@@ -156,8 +156,8 @@
 
             <!-- Second Panel -->
             <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-2 mb-2" style="margin: 0.25%;">
-                <h2 class="text-lg font-semibold mb-1">Game Results Overview</h2>
-                <p class="text-gray-700 text-sm">Each result below represents the profit details for each shoe.</p>
+                <h2 class="text-sm font-semibold mb-1">Game Results Overview</h2>
+                <p class="text-gray-700 text-xs">Each result below represents the profit details for each shoe.</p>
 
                 <!-- Main Card -->
                 <div class="bg-gray-100 border border-gray-300 rounded-lg p-1 mb-1 flex items-center justify-between">
@@ -241,7 +241,7 @@
 
     <script>
 
-        let playedShoe = 1;
+        let playedShoe = 0;
         let dateCreated;
 
         function showSpinner() {
@@ -296,7 +296,7 @@
             });
 
 
-            yesButton.addEventListener('click', async () => {   
+            yesButton.addEventListener('click', async () => {
                 processEventToReset("yes");
             });
 
@@ -394,7 +394,7 @@
             $('#bettingResults').html(`
                 <div class="bg-white shadow-md rounded-lg overflow-hidden">
                 <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
-                    <span id="playedShoe">Shoe: ${playedShoe + 2}/10</span>
+                    <span id="playedShoe">Shoe: ${playedShoe + 1}/10</span>
                     <span>Hands: ${handCount}/60</span>
                 </div>
                 <div class="p-2 space-y-1">
@@ -409,7 +409,7 @@
                     <span class="text-xs ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between border-b pb-1">
-                    <span class="font-bold text-xs">Staket:</span><span class="text-xs">${response.recommendedBet.includes("Wait") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
+                    <span class="font-bold text-xs">Stake:</span><span class="text-xs">${response.recommendedBet.includes("Wait") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between">
                     <span class="font-bold text-xs">Next Bet:</span><span class="text-xs">${statusMessage === 'Wait for virtual win.' ? 'Wait' : response.recommendedBet}</span>
@@ -545,7 +545,7 @@
 
                 // Filter valid journals and reverse the order
                 const validJournals = response.filter(journal => journal.hand !== 0).reverse();
-
+                playedShoe = 0;
                 validJournals.forEach((journal, index) => {
                     const journalDiv = document.createElement('div');
                     journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
@@ -578,7 +578,7 @@
                     if (index === 0) {
                         journalDiv.classList.add('glow');
                     }
-                    playedShoe = index;
+                    playedShoe++;
                 });
 
                 // Update header and content based on total profit
@@ -596,7 +596,7 @@
                 alert('An error occurred while fetching journals. Please try again.');
             }
         }
-        
+
         async function currentState() {
 
 
