@@ -1,14 +1,12 @@
 package com.baccarat.markovchain.module.controllers;
 
 import com.baccarat.markovchain.module.common.concrete.UserConfig;
-import com.baccarat.markovchain.module.data.Config;
-import com.baccarat.markovchain.module.data.GameResponse;
-import com.baccarat.markovchain.module.data.GameStatus;
-import com.baccarat.markovchain.module.data.Journal;
+import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
 import com.baccarat.markovchain.module.data.response.GameResultStatus;
 import com.baccarat.markovchain.module.model.Pair;
 import com.baccarat.markovchain.module.model.UserPrincipal;
+import com.baccarat.markovchain.module.services.TrailingStopService;
 import com.baccarat.markovchain.module.services.impl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +29,8 @@ public class BaccaratController {
     private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again tomorrow.";
     private static final String MAX_HAND_LIMIT_REACHED = "Hands limit reached! Restart the game";
     private static final String PREDICTION_CONFIDENCE_LOW = "Prediction confidence too low, no bet suggested.";
+    private static final String TRAILING_STOP_TRIGGERED_LABEL = "Trailing stop triggered";
+    private static final String TRAILING_STOP_TRIGGERED = "StopProfitTriggered";
     private static final String PLACE_YOUR_BET = "Place your bet";
     private static final int ZERO = 0;
 
@@ -46,18 +46,20 @@ public class BaccaratController {
     private final JournalServiceImpl journalService;
     private final GameStatusService gameStatusService;
     private final GameResponseService gameResponseService;
+    private final TrailingStopService trailingStopService;
 
     private final UserConfigService configService;
     private final String WAIT = "Wait..";
 
 
     @Autowired
-    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, GameStatusService gameStatusService, GameResponseService gameResponseService, UserConfigService configService) {
+    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, GameStatusService gameStatusService, GameResponseService gameResponseService, TrailingStopService trailingStopService, UserConfigService configService) {
         this.markovChain = markovChain;
         this.patternRecognizer = patternRecognizer;
         this.journalService = journalService;
         this.gameStatusService = gameStatusService;
         this.gameResponseService = gameResponseService;
+        this.trailingStopService = trailingStopService;
         this.configService = configService;
 
     }
@@ -86,8 +88,15 @@ public class BaccaratController {
             existingGame.setDailyLimitReached(true);
             existingGame.setMessage(DAILY_LIMIT_REACHED);
             existingGame.setRecommendedBet(recommendedBet);
+            logger.info(userName + ": Daily limit reached, skipping game");
             return existingGame;
         }
+
+        if (existingGame.getMessage().equals(TRAILING_STOP_TRIGGERED_LABEL)) {
+            logger.info(userName + ": Trailing stop triggered, skipping game");
+            return existingGame;
+        }
+
 
         GameResultResponse gameResultResponse = updateSequenceAndUpdateHandCount(existingGame, userInput);
 
@@ -217,14 +226,7 @@ public class BaccaratController {
     }
 
     public int calculateWager(double confidence) {
-//        if (confidence < 0.2) {
-//            return 1;  // Low confidence, minimum bet
-//        } else
-
-//        if (confidence < 0.4) {
-//            return 2;
-//        } else
-            if (confidence < 0.6) {
+        if (confidence < 0.6) {
             return 1;
         } else if (confidence < 0.8) {
             return 2;
@@ -289,6 +291,7 @@ public class BaccaratController {
 
             String previousPrediction = predictedBet.equals("Player") ? "p" : "b";
 
+
             if (previousPrediction.equals(userInput)) {
 
                 boolean toValidate = false;
@@ -303,7 +306,7 @@ public class BaccaratController {
 
                 }
 
-                return settleLimitAndValidation(updateProfitAndFund(toValidate, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet, true);
+                return settleLimitAndValidation(updateProfitAndFund(toValidate, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet);
             } else {
 
                 if (gameResultResponse.getLossCounter() >= 2) {
@@ -315,21 +318,22 @@ public class BaccaratController {
                     logger.info(username + ": You lost!");
                     gameResultResponse.setMessage("You lost!");
 
+
                 }
 
 
-                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit, betSize, false), nextPredictedBet, false);
+                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit, betSize, false), nextPredictedBet);
             }
         } else {
             gameResultResponse.setSuggestedBetUnit(0);
 
-            return settleLimitAndValidation(updateProfitAndFund(false, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet, true);
+            return settleLimitAndValidation(updateProfitAndFund(false, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet);
         }
 
 
     }
 
-    private GameResultResponse settleLimitAndValidation(GameResultResponse gameResultResponse, String nextPredictedBet, boolean isWon) {
+    private GameResultResponse settleLimitAndValidation(GameResultResponse gameResultResponse, String nextPredictedBet) {
 
 
         int profit = gameResultResponse.getGameStatus().getProfit();
@@ -366,19 +370,105 @@ public class BaccaratController {
 
             gameResultResponse.setRecommendedBet(nextPredictedBet);
 
-
             if (gameResultResponse.getLossCounter() >= 2
                     && !gameResultResponse.getMessage().equals("Virtual won!")) {
-
                 gameResultResponse.setSuggestedBetUnit(0);
                 gameResultResponse.setMessage("Wait for virtual win.");
             }
 
-
+            //evaluate trailing stop
+            GameResultResponse gameResultResponseWithTrailingStop = trailingStop(gameResultResponse, false);
+            if (gameResultResponseWithTrailingStop.getMessage().equals(TRAILING_STOP_TRIGGERED_LABEL)) {
+                return provideGameResponse(gameResultResponseWithTrailingStop);
+            }
+            // code below will not be executed if the above condition is true
+            gameResultResponse.setTrailingStop(gameResultResponseWithTrailingStop.getTrailingStop());
             return provideGameResponse(gameResultResponse);
         }
 
     }
+
+    private GameResultResponse trailingStop(GameResultResponse gameResultResponse, boolean isUndo) {
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        int profit = gameResultResponse.getGameStatus().getProfit();
+        if (gameResultResponse.getGameStatus().getProfit() >= 10) {
+
+            int currentProfit = gameResultResponse.getGameStatus().getProfit();
+            double trailingPercent = 5;
+            double stopProfit = currentProfit - trailingPercent;
+
+            TrailingStop existingTrailingStop = trailingStopService.getTrailingStopByUserUuid(userPrincipal.getUserUuid());
+
+            if (existingTrailingStop == null) {
+                trailingStopService.saveOrUpdate(new TrailingStop(userPrincipal.getUserUuid(), currentProfit
+                        , trailingPercent, stopProfit, currentProfit));
+            } else {
+
+                if (!isUndo) {
+                    if (profit > existingTrailingStop.getHighestProfit()) {
+                        existingTrailingStop.setHighestProfit(profit);
+                        existingTrailingStop.setStopProfit(stopProfit);
+                        trailingStopService.saveOrUpdate(existingTrailingStop);
+                    }
+                } else {
+                    existingTrailingStop.setHighestProfit(profit);
+                    existingTrailingStop.setStopProfit(stopProfit);
+                    trailingStopService.saveOrUpdate(existingTrailingStop);
+                }
+            }
+
+        } else {
+            if (isUndo) {
+                trailingStopService.deleteTrailingStopByUserUuid(userPrincipal.getUserUuid());
+            }
+        }
+
+        String trailingStop = evaluateTrailingStop(userPrincipal.getUserUuid(), profit);
+        if (trailingStop.equals(TRAILING_STOP_TRIGGERED_LABEL)) {
+            gameResultResponse.setRecommendedBet(WAIT);
+            gameResultResponse.setSuggestedBetUnit(0);
+            gameResultResponse.setMessage(trailingStop);
+        } else {
+            gameResultResponse.setTrailingStop(trailingStop);
+        }
+        gameResultResponse.setSequence(gameResultResponse.getSequence().replace("1111", ""));
+
+
+        return gameResultResponse;
+    }
+
+    public String evaluateTrailingStop(String userUuid, int currentProfit) {
+
+
+        TrailingStop trailingStop = trailingStopService.getTrailingStopByUserUuid(userUuid);
+
+        if (trailingStop == null) {
+            return "";
+        }
+
+        double stopProfit = trailingStop.getStopProfit();
+        int highestProfit = trailingStop.getHighestProfit();
+        double trailingPercent = trailingStop.getTrailingPercent();
+
+
+        if (currentProfit > highestProfit) {
+            highestProfit = currentProfit;
+            stopProfit = highestProfit * (1 - trailingPercent); // Recalculate the stop price
+
+            trailingStopService.saveOrUpdate(new TrailingStop(trailingStop.getTrailingStopId(), userUuid,
+                    trailingStop.getInitial(), trailingStop.getTrailingPercent(), stopProfit, highestProfit));
+        }
+
+        // Check if the stop price has been triggered
+        if (currentProfit <= stopProfit) {
+            return TRAILING_STOP_TRIGGERED_LABEL;
+        } else {
+            System.out.println("highestProfit: " + highestProfit);
+            System.out.println("Current Profit: " + currentProfit + ", Stop Profit: " + stopProfit);
+            return stopProfit + "";
+        }
+    }
+
 
     private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse, int suggestedUnit, int betSize, boolean isWin) {
 
@@ -404,6 +494,14 @@ public class BaccaratController {
                 betSize = betSize == 0 ? 1 : betSize;
 
             }
+
+
+//            int currentProfit = gameResultResponse.getGameStatus().getProfit();
+//            if (currentProfit > 10) {
+//                trailingStop = TrailingStop.evaluate(currentProfit);
+//            }
+
+
         } else {
             int lossCount = gameResultResponse.getLossCounter();
             if (lossCount > 0) {
@@ -449,6 +547,20 @@ public class BaccaratController {
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
+        GameResultResponse existingGame = getGameResponse(userPrincipal);
+
+        if (hasReachedDailyJournalLimit()) {
+            existingGame.setDailyLimitReached(true);
+            existingGame.setMessage(DAILY_LIMIT_REACHED);
+            existingGame.setRecommendedBet(WAIT);
+            return existingGame;
+        }
+
+        if (existingGame.getMessage().equals(TRAILING_STOP_TRIGGERED_LABEL)) {
+            return existingGame;
+        }
+
+
         Optional<GameResponse> g2 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
         GameResponse gameResponseToDelete = g2.get();
 
@@ -457,8 +569,10 @@ public class BaccaratController {
         GameStatus gameStatus = gameStatusService.findByGameResponseId(gameResponseToDelete.getGameResponseId()).get();
         gameStatusService.deleteById(gameStatus.getGameStatusId());
 
+        GameResultResponse newGameResponse = getGameResponse(userPrincipal);
+        trailingStop(newGameResponse, true);
 
-        return getGameResponse(userPrincipal);
+        return newGameResponse;
 
     }
 
@@ -477,6 +591,7 @@ public class BaccaratController {
             }
 
             deleteGamesByUserUuid(userUuid);
+            trailingStopService.deleteTrailingStopByUserUuid(userUuid);
 
             GameStatus gameStatus = createInitialGameStatus();
             GameResultResponse gameResultResponse = createInitialGameResultResponse(gameStatus);
@@ -498,6 +613,7 @@ public class BaccaratController {
             gameStatusService.deleteById(gameStatusService.findByGameResponseId(game.getGameResponseId()).get().getGameStatusId());
         }
     }
+
 
     private GameStatus createInitialGameStatus() {
         GameStatus gameStatus = new GameStatus();
@@ -580,6 +696,13 @@ public class BaccaratController {
 
         response.setGameStatus(gameResultStatus);
 
+
+        TrailingStop trailingStop = trailingStopService.getTrailingStopByUserUuid(userPrincipal.getUserUuid());
+        if (trailingStop != null) {
+            response.setTrailingStop(String.valueOf(trailingStop.getStopProfit()));
+        } else {
+            response.setTrailingStop("0");
+        }
 
         // Log the response
         logger.info("{}: Game Response-> {}", userPrincipal.getUsername(), response);

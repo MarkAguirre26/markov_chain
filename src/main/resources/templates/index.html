@@ -367,6 +367,8 @@
 
 
         async function displayResultToUi(response) {
+            // console.log(response);
+
             hideSpinner();
             $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
 
@@ -399,11 +401,13 @@
                 </div>
                 <div class="p-2 space-y-1">
                     <div class="flex justify-between border-b pb-1">
-                    <span class="font-bold text-xs">Wins:</span><span class="text-xs">${wins}</span>
+                    <span class="font-bold text-xs">Wins/Losses:</span><span class="text-xs">${wins}/${losses}</span>
                     </div>
-                    <div class="flex justify-between border-b pb-1">
-                    <span class="font-bold text-xs">Losses:</span><span class="text-xs">${losses}</span>
+                  
+                    <div class="flex justify-between border-b pb-1" style="${!response.trailingStop ? 'display:none;' : ''}">
+                    <span class="font-bold text-xs">Trailing Stop:</span><span class="text-xs">${parseInt(response.trailingStop) || 0}</span>
                     </div>
+
                     <div class="flex justify-between border-b pb-1">
                     <span class="font-bold text-xs">Net Profit:</span>
                     <span class="text-xs ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit.toFixed(0)}</span>
@@ -437,7 +441,10 @@
 
         async function undo() {
             try {
+                
                 const response = await $.post('/api/baccarat/undo');
+                console.log(response);
+
                 displayResultToUi(response);
             } catch (xhr) {
                 $('#undoButton').prop('disabled', false);
@@ -585,7 +592,7 @@
                 const headerText = totalProfit > 20 ? "Lucky Day" : "Gaming Rule";
                 const contentText = totalProfit > 20
                     ? "You're now in profit! Time to call it a day and enjoy your success."
-                    : "Take profit is set at 40 units, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.";
+                    : "Take profit is set at 30 units, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.";
 
                 $('#infoHeader').text(headerText);
                 $('#infoContent').text(contentText);
