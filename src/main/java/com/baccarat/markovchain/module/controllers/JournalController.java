@@ -5,7 +5,7 @@ import com.baccarat.markovchain.module.data.Config;
 import com.baccarat.markovchain.module.data.Journal;
 import com.baccarat.markovchain.module.model.UserPrincipal;
 import com.baccarat.markovchain.module.response.JournalResponse;
-import com.baccarat.markovchain.module.services.JournalService;
+import com.baccarat.markovchain.module.services.impl.JournalServiceImpl;
 import com.baccarat.markovchain.module.services.impl.UserConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -28,12 +28,12 @@ import java.util.stream.IntStream;
 public class JournalController {
 
     private static final Logger logger = LoggerFactory.getLogger(JournalController.class);
-    private final JournalService journalService;
+    private final JournalServiceImpl journalService;
     private final UserConfigService configService;
 
 
     @Autowired
-    public JournalController(JournalService journalService, UserConfigService configService) {
+    public JournalController(JournalServiceImpl journalService, UserConfigService configService) {
         this.journalService = journalService;
         this.configService = configService;
     }
@@ -48,7 +48,6 @@ public class JournalController {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
-        logger.info(userPrincipal.getUsername()+ ": Date created: {}", effectiveFrom);
 
 //        logger.info("User UUID: {}", userUuid);
 
@@ -68,13 +67,13 @@ public class JournalController {
                         journals.get(i).getDateCreated()))
                 .collect(Collectors.toList());
 
-        // Fill in remaining responses if fewer than totalResponses
-        int remainingShoe = journals.size() + 1;
-        while (journalResponses.size() < dailyLimit) {
-            journalResponses.add(new JournalResponse(remainingShoe++, 0, 0, LocalDate.now()));
-        }
+//        // Fill in remaining responses if fewer than totalResponses
+//        int remainingShoe = journals.size() + 1;
+//        while (journalResponses.size() < dailyLimit) {
+//            journalResponses.add(new JournalResponse(remainingShoe++, 0, 0, LocalDate.now()));
+//        }
 
-        logger.info(userPrincipal.getUsername()+ ": Journals fetched: {}", journals.size());
+        logger.info(userPrincipal.getUsername() + ": Journals fetched: {}", journals.size());
         return ResponseEntity.ok(journalResponses);
     }
 

@@ -41,7 +41,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(255, 255, 255, 0.158);
+        background-color: rgba(255, 255, 255, 0);
         /* Semi-transparent background */
         justify-content: center;
         align-items: center;
@@ -68,7 +68,7 @@
         /* Hidden by default */
         align-items: center;
         justify-content: center;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(255, 255, 255, 0);
         /* Optional: semi-transparent background */
     }
 
@@ -150,12 +150,8 @@
 
                 <div class="mt-4">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
-                        <h3 id="infoHeader" class="font-semibold text-xs">Gaming Rule</h3>
-                        <p id="infoContent" class="text-gray-700 text-xs">Take profit is set at 40 units, stop loss at
-                            -10 units, with a daily shoe limit of 10.
-                            Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your
-                            bankroll is $100, 1 unit (1u) equals $1.
-                            Follow the app's guidelines to protect your bankroll.</p>
+                        <h3 id="infoHeader" class="font-semibold text-xs"></h3>
+                        <p id="infoContent" class="text-gray-700 text-xs"></p>
                     </div>
                 </div>
             </div>
@@ -166,10 +162,37 @@
                 <p class="text-gray-700 text-sm">Each result below represents the profit details for each shoe.</p>
 
                 <!-- Main Card -->
-                <div class="bg-gray-100 border border-gray-300 rounded-lg p-1 mb-1">
-                    <h3 class="font-semibold text-sm">Total Profit(u): <span id="totalProfit"></span></h3>
+                <!-- <div class="bg-gray-100 border border-gray-300 rounded-lg p-1 mb-1">
+                    <h3 class="font-semibold text-sm">Total Profit(u): <span id="totalProfit"></span></h3>   //put  Back and forward icons here to very right
                     <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime"></span></p>
+                </div> -->
+                <div class="bg-gray-100 border border-gray-300 rounded-lg p-1 mb-1 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-semibold text-sm">
+                            Total Profit(u): <span id="totalProfit"></span>
+                        </h3>
+                        <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime"></span></p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <!-- Back Icon -->
+                        <button onclick="getJournal('back')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <!-- Forward Icon -->
+                        <button onclick="getJournal('forward')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
+
 
                 <!-- Sub Card Container -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalContainer">
@@ -224,6 +247,9 @@
 
     <script>
 
+        var playedShoe = 0;
+        let dateCreated;
+        
         function showSpinner() {
             const circleContainer = document.getElementById("circleContainer");
             const spinnerOverlay = document.getElementById("spinnerOverlay");
@@ -250,7 +276,7 @@
 
         $(document).ready(function () {
             (async () => {
-                await getJournal();
+                await getJournal('today');
                 await currentState();
             })();
 
@@ -373,7 +399,7 @@
 
         async function displayResultToUi(response) {
 
-             console.log(response);
+            // console.log(response);
 
             hideSpinner();
             $('#playerButton').prop('disabled', false);
@@ -406,7 +432,7 @@
             if (statusMessage.includes("reset") || statusMessage.includes("Initialized")) {
                 $("#handResultColumn").html("");
                 $('#status').text("");
-                await getJournal();
+                await getJournal("today");
             }
 
             $("#baseBetUnit").val(response.baseBetUnit);
@@ -415,15 +441,13 @@
 
             $('#bettingResults').html(`
         <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1">
-            Betting Status
+          <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
+            <span>Shoe: ${playedShoe}</span>
+            <span>Hands: ${response.gameStatus.handCount}</span>
         </div>
+
         <div class="p-2">
-            <div class="space-y-1">
-                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
-                    <span class="font-bold text-xs">Hands:</span>
-                    <span class="text-xs">${response.gameStatus.handCount}</span>
-                </div>
+            <div class="space-y-1">                
                 <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
                     <span class="font-bold text-xs">Wins:</span>
                     <span class="text-xs">${response.gameStatus.wins}</span>
@@ -440,7 +464,10 @@
                 </div>
                 <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
                     <span class="font-bold text-xs">Suggested Unit:</span>
-                    <span class="text-xs">${response.suggestedBetUnit.toFixed(0)}</span>
+                   <span class="text-xs">
+                    ${response.recommendedBet.includes("Wait") ? "0" : response.suggestedBetUnit.toFixed(0)}
+                    </span>
+
                 </div>
                 <div class="flex justify-between">
                     <span class="font-bold text-xs">Next Bet:</span>
@@ -452,6 +479,7 @@
         </div>
 
     </div>
+    
     <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>
     <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
 `);
@@ -467,7 +495,7 @@
                 $('#playerButton, #bankerButton').prop('disabled', true);
                 $('#undoButton').hide();
                 $('#resetButton').show();
-                await getJournal();
+                await getJournal("today");
             } else {
                 $('#playerButton, #bankerButton').prop('disabled', false);
             }
@@ -558,23 +586,51 @@
             }, 0); // Using a timeout to ensure rendering is complete before scrolling
         }
 
-        async function getJournal() {
+        // Function to modify the date
+        function modifyDate(dateString, days,options) {
+            const dateObj = new Date(dateString);
+            dateObj.setUTCDate(dateObj.getUTCDate() + days);
+            return dateObj.toLocaleDateString('en-CA', options);  // Return the new date in YYYY-MM-DD format
+        }
+
+        async function getJournal(purpose) {
+
+           
             const currentDate = new Date();
             const options = { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' };
             const utcDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
+
+            // Set dateCreated initially if not already set
+            if (!dateCreated) {
+                dateCreated = utcDate;
+            }
+
+            if (purpose === 'back') {
+                // Subtract 1 day from dateCreated
+                dateCreated = modifyDate(dateCreated, -1,options);
+            } else if (purpose === 'forward') {
+                // Add 1 day to dateCreated
+                dateCreated = modifyDate(dateCreated, 1,options);
+            } else {
+                dateCreated = utcDate;
+            }
 
             try {
                 const response = await $.ajax({
                     url: '/api/journals/dateCreated',
                     type: 'GET',
-                    data: { dateCreated: utcDate }
+                    data: { dateCreated: dateCreated }
                 });
 
                 $('#journalContainer').html('');
-                $('#dateTime').text(utcDate);
+                $('#infoHeader').text('');
+                $('#infoContent').text('');
+
+                $('#dateTime').text(dateCreated);
                 const journalContainer = document.getElementById('journalContainer');
                 let totalProfit = 0;
                 let lastValidIndex = -1;
+
 
                 response.forEach((journal, index) => {
                     if (journal.hand !== 0) {
@@ -627,7 +683,14 @@
                     }
                 });
 
+                if (totalProfit > 20) {
+                    $('#infoHeader').text("Lucky Day");
+                    $('#infoContent').text("You're now in profit! Time to call it a day and enjoy your success.");
 
+                } else {
+                    $('#infoHeader').text('Gaming Rule');
+                    $('#infoContent').text("Take profit is set at 40 units, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.");
+                }
                 $('#totalProfit').text(totalProfit);
             } catch (xhr) {
                 console.error('Error fetching journals:', xhr);

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,5 +46,10 @@ public class JournalServiceImpl implements JournalService {
     @Override
     public List<Journal> getJournalsByUserUuidAndDateCreated(String userUuid, LocalDate dateCreated) {
         return journalRepository.findByUserUuidAndDateCreated(userUuid,dateCreated);
+    }
+
+    @Override
+    public List<Journal> getJournalsByUserUuidAndDateLastModified(String userUuid, LocalDateTime dateLastModified) {
+        return journalRepository.findByUserUuidAndDateLastModified(userUuid,dateLastModified);
     }
 }

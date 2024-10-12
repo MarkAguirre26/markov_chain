@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+//@AllArgsConstructor
 @Entity
 @Table(name = "journal")
 public class Journal {
@@ -38,4 +38,12 @@ public class Journal {
 
     @Column(name = "date_created", updatable = false)
     private LocalDate dateCreated;
+
+    public Journal(Integer journalId, String userUuid, Integer shoe, Integer hand, Integer profit) {
+        this.journalId = journalId;
+        this.userUuid = userUuid;
+        this.shoe = shoe;
+        this.hand = hand;
+        this.profit = profit;
+    }
 }

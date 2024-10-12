@@ -146,7 +146,8 @@ public class BaccaratController {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
-        journalService.saveJournal(new Journal(ZERO, userUuid, ZERO, response.getGameStatus().getHandCount(), response.getGameStatus().getProfit(), LocalDateTime.now(), LocalDate.now()));
+        journalService.saveJournal(new Journal(ZERO, userUuid, ZERO, response.getGameStatus().getHandCount(),
+                response.getGameStatus().getProfit()));
         return response;
 
     }
@@ -385,6 +386,13 @@ public class BaccaratController {
                 betSize = betSize == 0 ? 1 : betSize;
 
             }
+        } else {
+            int lossCount = gameResultResponse.getLossCounter();
+            if (lossCount > 0) {
+
+                betSize -= 2;
+                betSize = betSize == 0 ? 1 : betSize;
+            }
         }
 
 
@@ -578,7 +586,7 @@ public class BaccaratController {
         gameResponse.setRecommendedBet(gameResultResponse.getRecommendedBet());
         gameResponse.setSequence(gameResultResponse.getSequence());
         gameResponse.setMessage(gameResultResponse.getMessage());
-        gameResponse.setDateLastUpdated(LocalDateTime.now());
+//        gameResponse.setDateLastUpdated(LocalDateTime.now());
         // Persist the updated game response
         GameResponse newOneGameResponse = gameResponseService.createOrUpdateGameResponse(gameResponse);
 
