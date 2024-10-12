@@ -113,8 +113,6 @@
                             </div>
                         </div>
 
-
-
                     </form>
                 </div>
 
@@ -162,10 +160,6 @@
                 <p class="text-gray-700 text-sm">Each result below represents the profit details for each shoe.</p>
 
                 <!-- Main Card -->
-                <!-- <div class="bg-gray-100 border border-gray-300 rounded-lg p-1 mb-1">
-                    <h3 class="font-semibold text-sm">Total Profit(u): <span id="totalProfit"></span></h3>   //put  Back and forward icons here to very right
-                    <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime"></span></p>
-                </div> -->
                 <div class="bg-gray-100 border border-gray-300 rounded-lg p-1 mb-1 flex items-center justify-between">
                     <div>
                         <h3 class="font-semibold text-sm">
@@ -247,9 +241,9 @@
 
     <script>
 
-        var playedShoe = 0;
+        let playedShoe = 1;
         let dateCreated;
-        
+
         function showSpinner() {
             const circleContainer = document.getElementById("circleContainer");
             const spinnerOverlay = document.getElementById("spinnerOverlay");
@@ -302,12 +296,7 @@
             });
 
 
-            yesButton.addEventListener('click', async () => {
-                // Handle the Yes action (e.g., form submission, data update)
-                //console.log('User confirmed action');
-
-                // Disable the reset button and show a spinner
-                $('#resetButton').prop('disabled', true);
+            yesButton.addEventListener('click', async () => {   
                 processEventToReset("yes");
             });
 
@@ -315,55 +304,35 @@
             async function processEventToReset(answer) {
                 showSpinner();
                 try {
-                    // Make an AJAX request to reset the game
-                    const response = await $.ajax({
-                        url: '/api/baccarat/reset',
-                        method: 'POST',
-                        data: {
-                            yesNo: answer
-                        }
-                    });
-
-                    // Display the result in the UI
+                    const response = await $.post('/api/baccarat/reset', { yesNo: answer });
                     displayResultToUi(response);
                 } catch (error) {
-                    // Re-enable the reset button if an error occurs
                     $('#resetButton').prop('disabled', false);
-
-                    // Display the error status
-                    $('#status').text(`Error: ${error.responseText}`);
+                    $('#status').text(`Error: ${error.responseText || 'Unexpected error'}`);
                 } finally {
-                    // Hide the modal after the operation is done
+                    hideSpinner();
                     modal.classList.add('hidden');
                 }
             }
 
 
 
-            async function playGame(userInput) {
-                const recommendedBetUnit = $('#recommendedBet').text();
-                const suggestedBetUnitValue = $('#suggestedBetUnit').text();
 
+            async function playGame(userInput) {
                 try {
-                    const response = await $.ajax({
-                        url: '/api/baccarat/play',
-                        method: 'POST',
-                        contentType: 'application/x-www-form-urlencoded',
-                        data: $.param({
-                            userInput: userInput,
-                            recommendedBet: recommendedBetUnit,
-                            suggestedUnit: suggestedBetUnitValue
-                        })
-                    });
+                    const response = await $.post('/api/baccarat/play', $.param({
+                        userInput,
+                        recommendedBet: $('#recommendedBet').text(),
+                        suggestedUnit: $('#suggestedBetUnit').text()
+                    }));
+
                     displayResultToUi(response);
                 } catch (xhr) {
-
-                    $('#playerButton').prop('disabled', false);
-                    $('#bankerButton').prop('disabled', false);
-
-                    $('#status').text(`Error: ${xhr.responseText}`);
+                    $('#playerButton, #bankerButton').prop('disabled', false);
+                    $('#status').text(`Error: ${xhr.responseText || 'Unexpected error'}`);
                 }
             }
+
 
             // Event listener for PLAYER button
             $('#playerButton').on('click', function () {
@@ -398,39 +367,22 @@
 
 
         async function displayResultToUi(response) {
-
-            // console.log(response);
-
             hideSpinner();
-            $('#playerButton').prop('disabled', false);
-            $('#bankerButton').prop('disabled', false);
-            $('#resetButton').prop('disabled', false);
-            $('#undoButton').prop('disabled', false);
+            $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
 
-            if (response.gameStatus.handCount > 0) {
-                $('#status').show();
-                $('#resetButton').show();
-                $('#undoButton').show();
-                if (response.gameStatus.handCount === 1) {
-                    $('#undoButton').hide();
-                }
-            } else {
-                $('#status').hide();
-                if (response.message.includes("Daily limit!")) {
-                    $('#status').show();
-                }
-
-                $('#resetButton').hide();
-                $('#undoButton').hide();
-            }
-
-            // Set the text and change color based on the message
+            const { handCount, wins, losses, profit } = response.gameStatus;
             const statusMessage = response.message;
-            const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : response.message;
+            const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : statusMessage;
+
+            // Handle status, reset, and undo button visibility
+            $('#status').toggle(handCount > 0 || statusMessage.includes("Daily limit!"));
+            $('#resetButton, #undoButton').toggle(handCount > 0);
+            if (handCount === 1) $('#undoButton').hide();
+
             $('#status').text(tempMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
 
             if (statusMessage.includes("reset") || statusMessage.includes("Initialized")) {
-                $("#handResultColumn").html("");
+                $("#handResultColumn").empty();
                 $('#status').text("");
                 await getJournal("today");
             }
@@ -438,66 +390,44 @@
             $("#baseBetUnit").val(response.baseBetUnit);
             $("#initialPlayingUnit").val(response.initialPlayingUnits);
 
-
+            // Display betting results
             $('#bettingResults').html(`
-        <div class="bg-white shadow-md rounded-lg overflow-hidden">
-          <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
-            <span>Shoe: ${playedShoe}</span>
-            <span>Hands: ${response.gameStatus.handCount}</span>
-        </div>
-
-        <div class="p-2">
-            <div class="space-y-1">                
-                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
-                    <span class="font-bold text-xs">Wins:</span>
-                    <span class="text-xs">${response.gameStatus.wins}</span>
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
+                    <span id="playedShoe">Shoe: ${playedShoe + 2}/10</span>
+                    <span>Hands: ${handCount}/60</span>
                 </div>
-                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
-                    <span class="font-bold text-xs">Losses:</span>
-                    <span class="text-xs">${response.gameStatus.losses}</span>
-                </div>
-                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
+                <div class="p-2 space-y-1">
+                    <div class="flex justify-between border-b pb-1">
+                    <span class="font-bold text-xs">Wins:</span><span class="text-xs">${wins}</span>
+                    </div>
+                    <div class="flex justify-between border-b pb-1">
+                    <span class="font-bold text-xs">Losses:</span><span class="text-xs">${losses}</span>
+                    </div>
+                    <div class="flex justify-between border-b pb-1">
                     <span class="font-bold text-xs">Net Profit:</span>
-                    <span class="text-xs ${response.gameStatus.profit >= 0 ? 'text-green-600' : 'text-red-600'}">
-                        ${response.gameStatus.profit.toFixed(0)}
-                    </span>
+                    <span class="text-xs ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit.toFixed(0)}</span>
+                    </div>
+                    <div class="flex justify-between border-b pb-1">
+                    <span class="font-bold text-xs">Staket:</span><span class="text-xs">${response.recommendedBet.includes("Wait") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                    <span class="font-bold text-xs">Next Bet:</span><span class="text-xs">${statusMessage === 'Wait for virtual win.' ? 'Wait' : response.recommendedBet}</span>
+                    </div>
                 </div>
-                <div class="flex justify-between border-b border-gray-200 pb-1 light-separator">
-                    <span class="font-bold text-xs">Suggested Unit:</span>
-                   <span class="text-xs">
-                    ${response.recommendedBet.includes("Wait") ? "0" : response.suggestedBetUnit.toFixed(0)}
-                    </span>
-
                 </div>
-                <div class="flex justify-between">
-                    <span class="font-bold text-xs">Next Bet:</span>
-                    <span class="text-xs">
-                        ${response.message === 'Wait for virtual win.' ? 'Wait' : response.recommendedBet}
-                    </span>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    
-    <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>
-    <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
-`);
-
-
-
-
+                <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>
+                <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
+            `);
 
             displayResults(response.sequence.toUpperCase());
 
-            // Show or hide the RESET GAME button based on the result
+            // Handle button visibility after game result
             if (statusMessage.includes("reached")) {
                 $('#playerButton, #bankerButton').prop('disabled', true);
                 $('#undoButton').hide();
                 $('#resetButton').show();
                 await getJournal("today");
-            } else {
-                $('#playerButton, #bankerButton').prop('disabled', false);
             }
 
             if (response.dailyLimitReached) {
@@ -507,17 +437,11 @@
 
         async function undo() {
             try {
-
-
-                const response = await $.ajax({
-                    url: '/api/baccarat/undo',
-                    method: 'POST',
-                    contentType: 'application/x-www-form-urlencoded'
-                });
+                const response = await $.post('/api/baccarat/undo');
                 displayResultToUi(response);
             } catch (xhr) {
                 $('#undoButton').prop('disabled', false);
-                $('#responseMessage').text("An error occurred: " + xhr.responseText);
+                $('#responseMessage').text(`An error occurred: ${xhr.responseText || 'Unexpected error'}`);
                 console.error("Error details:", xhr);
             }
         }
@@ -554,10 +478,7 @@
         function displayResults(playerAndBankerCollections) {
 
             const results = playerAndBankerCollections.replace("1111", "").split('');
-            if (results.length === 0) {
-                return;
-            }
-
+            if (!results.length) return; // Early return if results are empty
             // Clear previous results
             document.getElementById('handResultColumn').innerHTML = '';
 
@@ -587,121 +508,100 @@
         }
 
         // Function to modify the date
-        function modifyDate(dateString, days,options) {
+        function modifyDate(dateString, days, options) {
             const dateObj = new Date(dateString);
             dateObj.setUTCDate(dateObj.getUTCDate() + days);
             return dateObj.toLocaleDateString('en-CA', options);  // Return the new date in YYYY-MM-DD format
         }
 
         async function getJournal(purpose) {
-
-           
             const currentDate = new Date();
             const options = { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' };
-            const utcDate = currentDate.toLocaleDateString('en-CA', options);  // Format: YYYY-MM-DD
+            const utcDate = currentDate.toLocaleDateString('en-CA', options); // Format: YYYY-MM-DD
 
             // Set dateCreated initially if not already set
-            if (!dateCreated) {
-                dateCreated = utcDate;
-            }
+            dateCreated = dateCreated || utcDate;
 
-            if (purpose === 'back') {
-                // Subtract 1 day from dateCreated
-                dateCreated = modifyDate(dateCreated, -1,options);
-            } else if (purpose === 'forward') {
-                // Add 1 day to dateCreated
-                dateCreated = modifyDate(dateCreated, 1,options);
-            } else {
-                dateCreated = utcDate;
-            }
+            // Modify dateCreated based on purpose
+            dateCreated = purpose === 'back'
+                ? modifyDate(dateCreated, -1, options)
+                : purpose === 'forward'
+                    ? modifyDate(dateCreated, 1, options)
+                    : utcDate;
 
             try {
                 const response = await $.ajax({
                     url: '/api/journals/dateCreated',
                     type: 'GET',
-                    data: { dateCreated: dateCreated }
+                    data: { dateCreated }
                 });
 
-                $('#journalContainer').html('');
-                $('#infoHeader').text('');
-                $('#infoContent').text('');
-
+                $('#journalContainer').empty();
+                $('#infoHeader, #infoContent').text('');
                 $('#dateTime').text(dateCreated);
-                const journalContainer = document.getElementById('journalContainer');
+
+
                 let totalProfit = 0;
-                let lastValidIndex = -1;
 
-
-                response.forEach((journal, index) => {
-                    if (journal.hand !== 0) {
-                        lastValidIndex = index; // Update lastValidIndex if Hand is not 0
-                    }
-                });
-
-                // Filter journals where hand is not zero and reverse the order
+                // Filter valid journals and reverse the order
                 const validJournals = response.filter(journal => journal.hand !== 0).reverse();
 
                 validJournals.forEach((journal, index) => {
                     const journalDiv = document.createElement('div');
-                    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2'); // Reduced padding and margin
+                    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
 
-                    // Create a container for aligning Shoe, Hand, and Profit horizontally
+                    // Create a flex container for Shoe, Hand, and Profit
                     const flexContainer = document.createElement('div');
-                    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right'); // Flexbox layout with right alignment
+                    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right');
 
                     const shoeHeading = document.createElement('h4');
-                    shoeHeading.classList.add('font-semibold', 'text-sm'); // Reduced font size
+                    shoeHeading.classList.add('font-semibold', 'text-sm');
                     shoeHeading.textContent = `Shoe: ${journal.shoe}`;
 
                     const handProfitContainer = document.createElement('div');
-                    handProfitContainer.classList.add('text-right'); // Right align for Hand and Profit
+                    handProfitContainer.classList.add('text-right');
 
-                    const handParagraph = document.createElement('p');
-                    handParagraph.textContent = `Hand: ${journal.hand}`;
-
-                    const profitParagraph = document.createElement('p');
-                    profitParagraph.textContent = `Profit: ${journal.profit}`;
-
-                    // Append hand and profit (stacked vertically) to the container
-                    handProfitContainer.appendChild(handParagraph);
-                    handProfitContainer.appendChild(profitParagraph);
+                    handProfitContainer.innerHTML = `
+                        <p>Hand: ${journal.hand}</p>
+                        <p>Profit: ${journal.profit}</p>
+                    `;
 
                     totalProfit += journal.profit;
 
-                    // Append Shoe and Hand/Profit container to the flex container
+                    // Append elements
                     flexContainer.appendChild(shoeHeading);
                     flexContainer.appendChild(handProfitContainer);
-
-                    // Append flex container to the journal div
                     journalDiv.appendChild(flexContainer);
+                    $('#journalContainer').append(journalDiv);
 
-                    journalContainer.appendChild(journalDiv);
-
-                    // Add a glowing effect to the last card with Hand not equal to 0
+                    // Add glowing effect to the first valid journal
                     if (index === 0) {
-                        journalDiv.classList.add('glow'); // Add a class for glowing effect
+                        journalDiv.classList.add('glow');
                     }
+                    playedShoe = index;
                 });
 
-                if (totalProfit > 20) {
-                    $('#infoHeader').text("Lucky Day");
-                    $('#infoContent').text("You're now in profit! Time to call it a day and enjoy your success.");
+                // Update header and content based on total profit
+                const headerText = totalProfit > 20 ? "Lucky Day" : "Gaming Rule";
+                const contentText = totalProfit > 20
+                    ? "You're now in profit! Time to call it a day and enjoy your success."
+                    : "Take profit is set at 40 units, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.";
 
-                } else {
-                    $('#infoHeader').text('Gaming Rule');
-                    $('#infoContent').text("Take profit is set at 40 units, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.");
-                }
+                $('#infoHeader').text(headerText);
+                $('#infoContent').text(contentText);
                 $('#totalProfit').text(totalProfit);
+
             } catch (xhr) {
                 console.error('Error fetching journals:', xhr);
                 alert('An error occurred while fetching journals. Please try again.');
             }
         }
-
+        
         async function currentState() {
-            const statusMessage = $('#status').text();
+
 
             try {
+                const statusMessage = $('#status').text();
                 const response = await $.ajax({
                     url: '/api/baccarat/current-state',
                     type: 'GET',

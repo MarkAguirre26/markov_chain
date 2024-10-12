@@ -37,7 +37,7 @@ public class BaccaratController {
 
     private static final Logger logger = LoggerFactory.getLogger(BaccaratController.class);
 
-    private static final double STOP_PROFIT_PERCENTAGE = 0.40;
+    private static final double STOP_PROFIT_PERCENTAGE = 0.30;
     private static final double STOP_LOSS_PERCENTAGE = 0.10;
     private static final int MAX_HANDS = 60;
 
@@ -216,13 +216,31 @@ public class BaccaratController {
         return handCount >= MAX_HANDS;
     }
 
+    public int calculateWager(double confidence) {
+//        if (confidence < 0.2) {
+//            return 1;  // Low confidence, minimum bet
+//        } else
+
+//        if (confidence < 0.4) {
+//            return 2;
+//        } else
+            if (confidence < 0.6) {
+            return 1;
+        } else if (confidence < 0.8) {
+            return 2;
+        } else {
+            return 3;  // High confidence, maximum bet
+        }
+    }
 
     private GameResultResponse handleBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal, String userInput, Pair<Character, Double> combinedPrediction, String predictedBet, int suggestedUnit) {
 
 
         String username = userPrincipal.getUsername();
 
-        int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
+//        int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
+
+        int betSize = calculateWager(combinedPrediction.second);
 
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
 
