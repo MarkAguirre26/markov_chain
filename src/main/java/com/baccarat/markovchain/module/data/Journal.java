@@ -24,8 +24,8 @@ public class Journal {
     @Column(name = "user_uuid")
     private String userUuid;
 
-    @Column(name = "shoe")
-    private Integer shoe;
+    @Column(name = "win_lose")
+    private String winLose;
 
     @Column(name = "hand")
     private Integer hand;
@@ -39,11 +39,11 @@ public class Journal {
     @Column(name = "date_created", updatable = false)
     private LocalDate dateCreated;
 
-    public Journal(Integer journalId, String userUuid, Integer shoe, Integer hand, Integer profit) {
+    public Journal(Integer journalId, String userUuid, String winLose, Integer hand, Integer profit) {
         this.journalId = journalId;
         this.userUuid = userUuid;
-        this.shoe = shoe;
+        this.winLose = winLose;
         this.hand = hand;
         this.profit = profit;
-    }
+       }
 }

@@ -1,29 +1,50 @@
-response.forEach((journal, index) => {
+// Hard-coded response data (instead of an API response)
+const response = [
+    { shoe: 1, hand: 3, profit: 200 },
+    { shoe: 2, hand: 4, profit: 150 },
+    { shoe: 3, hand: 0, profit: 0 },   // This will be filtered out (hand is 0)
+    { shoe: 4, hand: 5, profit: 300 },
+    { shoe: 5, hand: 6, profit: 50 }
+];
+
+// Filter valid journals and reverse the order
+const validJournals = response.filter(journal => journal.hand !== 0).reverse();
+let playedShoe = 0;
+let totalProfit = 0;
+
+// Limit to 4 valid journals (hard-coded case with max 4 journals)
+const journalsToDisplay = validJournals.slice(0, 4);
+
+journalsToDisplay.forEach((journal, index) => {
     const journalDiv = document.createElement('div');
-   journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2'); // Reduced padding and margin
+    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
 
-   const shoeHeading = document.createElement('h4');
-   shoeHeading.classList.add('font-semibold', 'text-sm'); // Reduced font size
-   shoeHeading.textContent = `Shoe: ${journal.shoe}`;
+    // Create a flex container for Shoe, Hand, and Profit
+    const flexContainer = document.createElement('div');
+    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right');
 
-   const handParagraph = document.createElement('p');
-   handParagraph.classList.add('text-gray-700', 'text-xs'); // Reduced font size
-   handParagraph.textContent = `Hand: ${journal.hand}`;
+    const shoeHeading = document.createElement('h4');
+    shoeHeading.classList.add('font-semibold', 'text-sm');
+    shoeHeading.textContent = `Shoe: ${journal.shoe}`;
 
-   const profitParagraph = document.createElement('p');
-   profitParagraph.classList.add('text-gray-700', 'text-xs'); // Reduced font size
-   profitParagraph.textContent = `Profit: ${journal.profit}`;
+    const handProfitContainer = document.createElement('div');
+    handProfitContainer.classList.add('text-right');
+    handProfitContainer.innerHTML = `
+        <p>Hand: ${journal.hand}</p>
+        <p>Profit: ${journal.profit}</p>
+    `;
 
-   totalProfit += journal.profit;
+    totalProfit += journal.profit;
 
-   journalDiv.appendChild(shoeHeading);
-   journalDiv.appendChild(handParagraph);
-   journalDiv.appendChild(profitParagraph);
+    // Append elements
+    flexContainer.appendChild(shoeHeading);
+    flexContainer.appendChild(handProfitContainer);
+    journalDiv.appendChild(flexContainer);
+    document.getElementById('journalContainer').appendChild(journalDiv);
 
-   journalContainer.appendChild(journalDiv);
-
-   // Add a glowing effect to the last card with Hand not equal to 0
-   if (index === lastValidIndex) {
-       journalDiv.classList.add('glow'); // Add a class for glowing effect
-   }
+    // Add glowing effect to the first valid journal
+    if (index === 0) {
+        journalDiv.classList.add('glow');
+    }
+    playedShoe++;
 });

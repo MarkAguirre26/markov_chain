@@ -155,7 +155,8 @@ public class BaccaratController {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
-        journalService.saveJournal(new Journal(ZERO, userUuid, ZERO, response.getGameStatus().getHandCount(),
+        String winLose =  response.getGameStatus().getWins()+"/"+ response.getGameStatus().getLosses();
+        journalService.saveJournal(new Journal(ZERO, userUuid,winLose , response.getGameStatus().getHandCount(),
                 response.getGameStatus().getProfit()));
         return response;
 

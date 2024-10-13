@@ -14,12 +14,14 @@ public class JournalResponse {
     private Integer shoe;
     private Integer hand;
     private Integer profit;
+    private String winLose;
     private LocalDate dateCreated;
 
-    public JournalResponse(Integer shoe, Integer hand, Integer profit, LocalDate dateCreated) {
+    public JournalResponse(Integer shoe, Integer hand, Integer profit,String winLose, LocalDate dateCreated) {
         this.shoe = shoe;
         this.hand = hand;
         this.profit = profit;
+        this.winLose =  winLose;
         this.dateCreated = dateCreated;
     }
 

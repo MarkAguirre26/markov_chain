@@ -64,6 +64,7 @@ public class JournalController {
                 .mapToObj(i -> new JournalResponse(i + 1,
                         journals.get(i).getHand(),
                         journals.get(i).getProfit(),
+                        journals.get(i).getWinLose(),
                         journals.get(i).getDateCreated()))
                 .collect(Collectors.toList());
 

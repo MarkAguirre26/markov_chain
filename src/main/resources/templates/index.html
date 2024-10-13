@@ -441,7 +441,7 @@
 
         async function undo() {
             try {
-                
+
                 const response = await $.post('/api/baccarat/undo');
                 console.log(response);
 
@@ -550,7 +550,54 @@
 
                 let totalProfit = 0;
 
-                // Filter valid journals and reverse the order
+                // // Filter valid journals and reverse the order
+                // const validJournals = response.filter(journal => journal.hand !== 0).reverse();
+                // playedShoe = 0;
+                // validJournals.forEach((journal, index) => {
+                //     const journalDiv = document.createElement('div');
+                //     journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
+
+
+
+                //     // Create a flex container for Shoe, Hand, and Profit
+                //     const flexContainer = document.createElement('div');
+                //     flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right');
+
+
+                //     const shoeHeading = document.createElement('h4');
+                //     shoeHeading.classList.add('font-semibold', 'text-sm');
+                //     shoeHeading.textContent = `Shoe: ${journal.shoe}`;
+
+                //     Win/Lose: 20/20  // add this item right after Shoe
+
+
+
+                //     const handProfitContainer = document.createElement('div');
+                //     handProfitContainer.classList.add('text-right');
+
+                //     handProfitContainer.innerHTML = `
+                //         <p>Hand: ${journal.hand}</p>
+                //         <p>Profit: ${journal.profit}</p>
+                //     `;
+
+                //     totalProfit += journal.profit;
+
+                //     // Append elements
+                //     flexContainer.appendChild(shoeHeading);
+                //     flexContainer.appendChild(handProfitContainer);
+                //     journalDiv.appendChild(flexContainer);
+                //     $('#journalContainer').append(journalDiv);
+
+                //     // Add glowing effect to the first valid journal
+                //     if (index === 0) {
+                //         journalDiv.classList.add('glow');
+                //     }
+                //     playedShoe++;
+                // });
+
+
+                console.log(response);
+                
                 const validJournals = response.filter(journal => journal.hand !== 0).reverse();
                 playedShoe = 0;
                 validJournals.forEach((journal, index) => {
@@ -559,16 +606,38 @@
 
                     // Create a flex container for Shoe, Hand, and Profit
                     const flexContainer = document.createElement('div');
-                    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right');
+                    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700');
 
+                    // Create container for left-aligned content (Win/Lose)
+                    const leftContainer = document.createElement('div');
+                    leftContainer.classList.add('flex-grow', 'text-left');
+
+                    // Create "Win/Lose" label
+                    const winLoseLabel = document.createElement('h4');
+                    winLoseLabel.classList.add('text-xs', 'ml-2', 'block');
+                    winLoseLabel.textContent = 'Win/Lose';
+
+                    // Create "20/20" value on a new line
+                    const winLoseValue = document.createElement('span');
+                    winLoseValue.classList.add('text-xs', 'ml-2', 'block');
+                    winLoseValue.textContent = `${journal.winLose}`;  // Adjust the values as needed
+
+                    // Append Win/Lose label and value
+                    leftContainer.appendChild(winLoseLabel);
+                    leftContainer.appendChild(winLoseValue);
+
+                    // Create container for center-aligned content (Shoe)
+                    const centerContainer = document.createElement('div');
+                    centerContainer.classList.add('flex-none', 'text-center');
                     const shoeHeading = document.createElement('h4');
                     shoeHeading.classList.add('font-semibold', 'text-sm');
                     shoeHeading.textContent = `Shoe: ${journal.shoe}`;
+                    centerContainer.appendChild(shoeHeading);
 
-                    const handProfitContainer = document.createElement('div');
-                    handProfitContainer.classList.add('text-right');
-
-                    handProfitContainer.innerHTML = `
+                    // Create container for right-aligned content (Hand, Profit)
+                    const rightContainer = document.createElement('div');
+                    rightContainer.classList.add('flex-grow', 'text-right');
+                    rightContainer.innerHTML = `
                         <p>Hand: ${journal.hand}</p>
                         <p>Profit: ${journal.profit}</p>
                     `;
@@ -576,8 +645,9 @@
                     totalProfit += journal.profit;
 
                     // Append elements
-                    flexContainer.appendChild(shoeHeading);
-                    flexContainer.appendChild(handProfitContainer);
+                    flexContainer.appendChild(leftContainer);
+                    flexContainer.appendChild(centerContainer);
+                    flexContainer.appendChild(rightContainer);
                     journalDiv.appendChild(flexContainer);
                     $('#journalContainer').append(journalDiv);
 
@@ -587,6 +657,9 @@
                     }
                     playedShoe++;
                 });
+
+
+
 
                 // Update header and content based on total profit
                 const headerText = totalProfit > 10 ? "Lucky Day" : "Gaming Rule";
