@@ -27,7 +27,7 @@ public class BaccaratController {
     private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
     private static final String STOP_LOSS_REACHED = "Stop loss reached! Restart the game.";
     private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again tomorrow.";
-    private static final String MAX_HAND_LIMIT_REACHED = "Hands limit reached! Restart the game";
+//    private static final String MAX_HAND_LIMIT_REACHED = "Hands limit reached! Restart the game";
     private static final String PREDICTION_CONFIDENCE_LOW = "Prediction confidence too low, no bet suggested.";
     private static final String TRAILING_STOP_TRIGGERED_LABEL = "Trailing stop triggered";
     private static final String TRAILING_STOP_TRIGGERED = "StopProfitTriggered";
@@ -219,11 +219,11 @@ public class BaccaratController {
         return false;
     }
 
-    private boolean hasReachedHandsLimit(GameResultResponse gameResultResponse) {
-//        GameResultResponse gameResultResponse = getGameResponse();
-        int handCount = gameResultResponse.getGameStatus().getHandCount(); // th is because the first hand is not counted. Do not touch this
-        return handCount >= MAX_HANDS;
-    }
+//    private boolean hasReachedHandsLimit(GameResultResponse gameResultResponse) {
+////        GameResultResponse gameResultResponse = getGameResponse();
+//        int handCount = gameResultResponse.getGameStatus().getHandCount(); // th is because the first hand is not counted. Do not touch this
+//        return handCount >= MAX_HANDS;
+//    }
 
     public int calculateWager(double confidence) {
         if (confidence < 0.6) {
@@ -359,14 +359,7 @@ public class BaccaratController {
             gameResultResponse.setRecommendedBet(WAIT);
 //            return saveAndReturn(provideGameResponse(gameResultResponse));
             return provideGameResponse(gameResultResponse);
-        } else if (hasReachedHandsLimit(gameResultResponse)) {
-            logger.warn(": Reached max hand limit. New profit: {}, New playing fund: {}", profit, playingUnit);
-            gameResultResponse.setMessage(MAX_HAND_LIMIT_REACHED);
-            gameResultResponse.setSuggestedBetUnit(0);
-            gameResultResponse.setRecommendedBet(WAIT);
-//            return saveAndReturn(provideGameResponse(gameResultResponse));
-            return provideGameResponse(gameResultResponse);
-        } else {
+        }  else {
 
             gameResultResponse.setRecommendedBet(nextPredictedBet);
 

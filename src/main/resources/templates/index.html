@@ -397,7 +397,7 @@
                 <div class="bg-white shadow-md rounded-lg overflow-hidden">
                 <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
                     <span id="playedShoe">Shoe: ${playedShoe + 1}/10</span>
-                    <span>Hands: ${handCount}/60</span>
+                    <span>Hands: ${handCount}</span>
                 </div>
                 <div class="p-2 space-y-1">
                     <div class="flex justify-between border-b pb-1">
@@ -589,10 +589,10 @@
                 });
 
                 // Update header and content based on total profit
-                const headerText = totalProfit > 20 ? "Lucky Day" : "Gaming Rule";
-                const contentText = totalProfit > 20
+                const headerText = totalProfit > 10 ? "Lucky Day" : "Gaming Rule";
+                const contentText = totalProfit > 10
                     ? "You're now in profit! Time to call it a day and enjoy your success."
-                    : "Take profit is set at 30 units, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.";
+                    : "Take profit is set at 30 units,Trailing stop activate @ 10u profit, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.";
 
                 $('#infoHeader').text(headerText);
                 $('#infoContent').text(contentText);
