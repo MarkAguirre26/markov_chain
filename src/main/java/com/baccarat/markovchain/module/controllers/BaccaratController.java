@@ -480,19 +480,25 @@ public class BaccaratController {
         int currentLossCount = gameResultResponse.getLossCounter();
 
         if (isToValidate) {
-            if (isWin) {
-                profit += suggestedUnit;
-                playingUnit += suggestedUnit;
-                totalWins++;
-                currentLossCount = 0;
-            } else {
-                currentLossCount = currentLossCount + 1;
-                profit -= suggestedUnit;
-                playingUnit -= suggestedUnit;
-                totalLosses++;
-                betSize -= 2;
-                betSize = betSize == 0 ? 1 : betSize;
 
+            if (gameResultResponse.getSuggestedBetUnit() != 0) {
+
+
+                if (isWin) {
+                    profit += suggestedUnit;
+                    playingUnit += suggestedUnit;
+                    totalWins++;
+                    currentLossCount = 0;
+                } else {
+                    currentLossCount = currentLossCount + 1;
+                    profit -= suggestedUnit;
+                    playingUnit -= suggestedUnit;
+                    totalLosses++;
+                    betSize -= 2;
+                    betSize = betSize == 0 ? 1 : betSize;
+
+
+                }
             }
 
 
