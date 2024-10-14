@@ -352,7 +352,7 @@
 
             async function playGame(userInput) {
 
-               
+
 
                 try {
                     const response = await $.post('/api/baccarat/play', $.param({
@@ -373,8 +373,8 @@
             $('#playerButton').on('click', function () {
 
                 let message = $('#status').text();
-                if(message.includes("Archived")){
-                   return;
+                if (message.includes("Archived")) {
+                    return;
                 }
 
 
@@ -386,13 +386,13 @@
 
             // Event listener for BANKER button
             $('#bankerButton').on('click', function () {
-               
+
                 let message = $('#status').text();
-                if(message.includes("Archived")){
-                   return;
+                if (message.includes("Archived")) {
+                    return;
                 }
 
-                
+
                 $('#bankerButton').prop('disabled', true);
                 showSpinner();
                 playGame('b');
@@ -401,8 +401,8 @@
             // Event listener for UNDO button
             $('#undoButton').on('click', async function () {
                 let message = $('#status').text();
-                if(message.includes("Archived")){
-                   return;
+                if (message.includes("Archived")) {
+                    return;
                 }
 
 
@@ -417,8 +417,8 @@
             $('#resetButton').on('click', async function () {
 
                 let message = $('#status').text();
-                if(message.includes("Archived")){
-                   return;
+                if (message.includes("Archived")) {
+                    return;
                 }
 
                 modal.classList.remove('hidden');
@@ -543,7 +543,7 @@
             try {
 
 
-               
+
 
                 const response = await $.post('/api/baccarat/undo');
                 console.log(response);
@@ -670,7 +670,7 @@
                     flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700');
 
                     flexContainer.id = `${journal.journalId}`;
-
+                    flexContainer.style.cursor = 'pointer';
                     // Add the click event listener to the div
                     flexContainer.addEventListener('click', function () {
 
@@ -762,8 +762,8 @@
         async function getGameArchive(journalId) {
 
 
-            try {             
-              
+            try {
+
 
                 const response = await $.ajax({
                     url: '/api/journals/get-archive',
@@ -793,8 +793,8 @@
 
 
         function getHandResult(handResult) {
-                
-               // console.log(handResult)
+
+            // console.log(handResult)
             const handResultContainer = document.getElementById('handResultContainer');
             handResultContainer.innerHTML = "";
 
@@ -802,7 +802,7 @@
             if (handResult === null) {
                 return;
             }
-         
+
 
             // Create a document fragment to improve performance
             const fragment = document.createDocumentFragment();
