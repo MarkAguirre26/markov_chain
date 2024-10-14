@@ -20,6 +20,7 @@ public class GameResultResponse {
     private int lossCounter;
     private String trailingStop;
     private String handResult;
+    private String riskLevel;
 
     public GameResultResponse(String message, String sequence, GameResultStatus gameStatus, int baseBetUnit,
                               int suggestedBetUnit, int initialPlayingUnits, String recommendedBet,

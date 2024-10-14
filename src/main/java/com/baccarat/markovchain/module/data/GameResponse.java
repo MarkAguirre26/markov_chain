@@ -44,6 +44,9 @@ public class GameResponse {
     @Column(name = "message", length = 50)
     private String message;
 
+    @Column(name = "risk_level", length = 50)
+    private String riskLevel;
+
     @Column(name = "date_last_updated")
     private LocalDateTime dateLastUpdated;
 }

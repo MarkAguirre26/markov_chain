@@ -71,8 +71,10 @@ public class JournalController {
                     gamesArchive.getSuggestedBetUnit(),
                     gamesArchive.getPlayingUnits(),
                     gamesArchive.getRecommendedBet(),
+
                     gamesArchive.getLossCounter()
             );
+            response.setRiskLevel(gamesArchive.getRiskLevel());
             response.setHandResult(gamesArchive.getHandResult());
             return ResponseEntity.ok(response);
         }).orElseGet(() -> ResponseEntity

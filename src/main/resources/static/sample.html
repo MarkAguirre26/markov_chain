@@ -3,77 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>60x20 Grid of Boxes</title>
+    <title>Toggle Switch</title>
     <style>
-        body {
+        /* body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #419b05; /* Light gray background */
-            position: relative;
-        }
-        #grid {
-            display: grid;
-            grid-template-columns: repeat(60, 15px); /* 60 columns, each 15px wide */
-            grid-template-rows: repeat(20, 15px); /* 20 rows, each 15px tall */
-            gap: 2px; /* Space between the boxes */
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1; /* Below the circle container */
-        }
-        .box {
-            background-color: #ffffff; /* White background for boxes */
-            width: 15px;
-            height: 15px; /* Box size */
-            border: 1px solid #c7c7c7; /* Optional border */
-        }
-        #circleContainer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%; /* Full width of the grid */
-            height: 100%; /* Full height of the grid */
-            max-height: 165px;
-            white-space: nowrap;
-            overflow-x: auto;
-            z-index: 2; /* On top of the grid */
-        }
-        #handResultColumn {
+            background-color: #f3f4f6;
+        } */
+        .toggle-container {
             display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            height: 100%;
-            width: 100%;
+            align-items: center;
         }
-        .hidden-scrollbar::-webkit-scrollbar {
-            display: none; /* Hide scrollbar for Webkit browsers */
+        .toggle-label {
+            margin-right: 10px;
+            color: #4a5568; /* Gray text color */
         }
-        .hidden-scrollbar {
-            -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
-            scrollbar-width: none;  /* Hide scrollbar for Firefox */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;  /* Reduced width */
+            height: 20px; /* Reduced height */
+        }
+        .toggle-input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc; /* Track color */
+            transition: .4s;
+            border-radius: 20px; /* Rounded track */
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; /* Reduced knob height */
+            width: 16px;  /* Reduced knob width */
+            left: 2px;    /* Adjusted knob position */
+            bottom: 2px;  /* Adjusted knob position */
+            background-color: white; /* Knob color */
+            transition: .4s;
+            border-radius: 50%;
+        }
+        .toggle-input:checked + .toggle-slider {
+            background-color: #4a90e2; /* Track color when checked */
+        }
+        .toggle-input:checked + .toggle-slider:before {
+            transform: translateX(20px); /* Knob position when checked */
         }
     </style>
 </head>
 <body>
 
-    <!-- Circle Container will overlay the grid -->
-    <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar">
-        <div id="handResultColumn" class="flex flex-row wrap h-full w-full"></div>
+    <div class="toggle-container">
+        <span class="toggle-label">Toggle:</span>
+        <label class="toggle-switch">
+            <input type="checkbox" class="toggle-input" />
+            <span class="toggle-slider"></span>
+        </label>
     </div>
 
-    <div id="grid"></div> <!-- Grid div -->
-
-    <script>
-        const grid = document.getElementById('grid');
-
-        // Create 1200 boxes (60 columns x 20 rows)
-        for (let i = 0; i < 1200; i++) {
-            const box = document.createElement('div');
-            box.className = 'box'; // Assign the box class for styling
-            grid.appendChild(box);
-        }
-    </script>
 </body>
 </html>

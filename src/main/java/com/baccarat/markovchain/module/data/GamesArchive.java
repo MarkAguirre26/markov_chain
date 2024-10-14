@@ -56,8 +56,12 @@ public class GamesArchive {
     @Column(name = "playing_units")
     private Integer playingUnits;
 
-    public GamesArchive(Integer journalId, Integer baseBetUnit, Integer suggestedBetUnit, Integer lossCounter, String recommendedBet, String sequence, String handResult, String message, Integer handCount, Integer wins, Integer losses, Integer profit, Integer playingUnits) {
+    @Column(name = "risk_level")
+    private String riskLevel;
 
+    public GamesArchive(Integer journalId, Integer baseBetUnit, Integer suggestedBetUnit, Integer lossCounter,
+                        String recommendedBet, String sequence, String handResult, String message, Integer handCount,
+                        Integer wins, Integer losses, Integer profit, Integer playingUnits, String riskLevel) {
         this.journalId = journalId;
         this.baseBetUnit = baseBetUnit;
         this.suggestedBetUnit = suggestedBetUnit;
@@ -71,5 +75,6 @@ public class GamesArchive {
         this.losses = losses;
         this.profit = profit;
         this.playingUnits = playingUnits;
+        this.riskLevel = riskLevel;
     }
 }

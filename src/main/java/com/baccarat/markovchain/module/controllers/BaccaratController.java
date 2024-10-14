@@ -1,5 +1,6 @@
 package com.baccarat.markovchain.module.controllers;
 
+import com.baccarat.markovchain.module.common.concrete.RiskLevel;
 import com.baccarat.markovchain.module.common.concrete.UserConfig;
 import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
@@ -65,21 +66,25 @@ public class BaccaratController {
     }
 
 
-
     @PostMapping("/play")
-    public GameResultResponse play(@RequestParam String userInput, @RequestParam String recommendedBet, @RequestParam int suggestedUnit) {
+    public GameResultResponse play(@RequestParam String userInput,
+                                   @RequestParam String recommendedBet,
+                                   @RequestParam String riskLevel,
+                                   @RequestParam int suggestedUnit) {
 
-        return processGame(userInput, recommendedBet, suggestedUnit);
+        return processGame(userInput, recommendedBet,riskLevel, suggestedUnit);
     }
 
 
-    public GameResultResponse processGame(String userInput, String recommendedBet, int suggestedUnit) {
+    public GameResultResponse processGame(String userInput, String recommendedBet,String riskLevel, int suggestedUnit) {
 
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userName = userPrincipal.getUsername();
 
         GameResultResponse existingGame = getGameResponse(userPrincipal);
+
+        existingGame.setRiskLevel(riskLevel);
 
         logger.info(userName + ": Received user input: {}", userInput);
         logger.info(userName + ": Received recommendedBet input: {}", recommendedBet);
@@ -134,6 +139,7 @@ public class BaccaratController {
         gameResponse.setRecommendedBet(game.getRecommendedBet());
         gameResponse.setSequence(game.getSequence());
         gameResponse.setMessage("Initialized");
+        gameResponse.setRiskLevel(game.getRiskLevel());
         gameResponse.setDateLastUpdated(LocalDateTime.now());
         gameResponseService.createOrUpdateGameResponse(gameResponse);
 
@@ -160,13 +166,15 @@ public class BaccaratController {
         Journal savedJournal = journalService.saveJournal(new Journal(ZERO, userUuid, winLose, response.getGameStatus().getHandCount(),
                 response.getGameStatus().getProfit()));
 
-        if (savedJournal != null){
+        if (savedJournal != null) {
 
             GameResultStatus gameResultStatus = response.getGameStatus();
 
-            gamesArchiveService.addGameArchive(new GamesArchive(savedJournal.getJournalId(),response.getBaseBetUnit(),response.getSuggestedBetUnit(),
-                    response.getLossCounter(), response.getRecommendedBet(), response.getSequence(), response.getHandResult(), "Archived",
-                    gameResultStatus.getHandCount(),gameResultStatus.getWins(), gameResultStatus.getLosses(), gameResultStatus.getProfit(),gameResultStatus.getPlayingUnits()));
+            gamesArchiveService.addGameArchive(new GamesArchive(savedJournal.getJournalId(), response.getBaseBetUnit(),
+                    response.getSuggestedBetUnit(), response.getLossCounter(), response.getRecommendedBet(),
+                    response.getSequence(), response.getHandResult(), "Archived", gameResultStatus.getHandCount(),
+                    gameResultStatus.getWins(), gameResultStatus.getLosses(), gameResultStatus.getProfit(),
+                    gameResultStatus.getPlayingUnits(),response.getRiskLevel()));
         }
 
 
@@ -233,14 +241,24 @@ public class BaccaratController {
     }
 
 
-    public int calculateWager(double confidence) {
-        if (confidence < 0.6) {
-            return 1;
-        } else if (confidence < 0.8) {
-            return 2;
+    public int calculateWager(double confidence, GameResultResponse gameResultResponse) {
+
+//        if(gameResultResponse.getRiskLevel() == null){
+//            gameResultResponse.setRiskLevel(RiskLevel.LOW.getValue());
+//        }
+
+        if (gameResultResponse.getRiskLevel().equals(RiskLevel.LOW.getValue())) {
+            if (confidence < 0.6) {
+                return 1;
+            } else if (confidence < 0.8) {
+                return 2;
+            } else {
+                return 3;  // High confidence, maximum bet
+            }
         } else {
-            return 3;  // High confidence, maximum bet
+            return 1; //base unit
         }
+
     }
 
     private GameResultResponse handleBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal,
@@ -252,7 +270,7 @@ public class BaccaratController {
 
 //        int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
 
-        int betSize = calculateWager(combinedPrediction.second);
+        int betSize = calculateWager(combinedPrediction.second, gameResultResponse);
 
         if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
 
@@ -387,7 +405,9 @@ public class BaccaratController {
             }
             // code below will not be executed if the above condition is true
             gameResultResponse.setTrailingStop(gameResultResponseWithTrailingStop.getTrailingStop());
-
+            if (gameResultResponse.getSuggestedBetUnit() <= 0) {
+                gameResultResponse.setSuggestedBetUnit(1);
+            }
             return provideGameResponse(gameResultResponse);
         }
 
@@ -501,7 +521,7 @@ public class BaccaratController {
                     playingUnit -= suggestedUnit;
                     totalLosses++;
                     betSize -= 2;
-                    betSize = betSize == 0 ? 1 : betSize;
+                    betSize = betSize <= 0 ? 1 : betSize;
                     gameResultResponse.setHandResult(gameResultResponse.getHandResult() + "L");
 
                 }
@@ -642,7 +662,7 @@ public class BaccaratController {
         gameResultResponse.setSuggestedBetUnit(1);
         gameResultResponse.setLossCounter(0);
         gameResultResponse.setRecommendedBet(WAIT);
-
+        gameResultResponse.setRiskLevel(RiskLevel.LOW.getValue());
         GameResultStatus gameResultStatus = new GameResultStatus(
                 gameStatus.getHandCount(),
                 gameStatus.getWins(),
@@ -690,7 +710,7 @@ public class BaccaratController {
         response.setSequence(latesGameResponse.getSequence());
         response.setHandResult(latesGameResponse.getHandResult());
         response.setMessage(latesGameResponse.getMessage());
-
+        response.setRiskLevel(latesGameResponse.getRiskLevel());
 
         // Get the GameStatus for the user
         GameStatus gameStatus = gameStatusService.findByGameResponseId(latesGameResponse.getGameResponseId()).orElse(null);
@@ -737,6 +757,7 @@ public class BaccaratController {
         gameResponse.setSequence(gameResultResponse.getSequence());
         gameResponse.setHandResult(gameResultResponse.getHandResult() == null ? "" : gameResultResponse.getHandResult());
         gameResponse.setMessage(gameResultResponse.getMessage());
+        gameResponse.setRiskLevel(gameResultResponse.getRiskLevel());
 //        gameResponse.setDateLastUpdated(LocalDateTime.now());
         // Persist the updated game response
         GameResponse newOneGameResponse = gameResponseService.createOrUpdateGameResponse(gameResponse);
