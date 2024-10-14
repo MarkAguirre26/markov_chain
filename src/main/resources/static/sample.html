@@ -1,47 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fixed Size Circles with Random W or L</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-  #handResultContainer {
-    display: flex;
-    overflow-x: auto; /* Enable horizontal scrolling */
-    white-space: nowrap; /* Prevent circles from wrapping */    
-    scrollbar-width: none; /* Firefox: Hide scrollbar */
-   
-  }
-  #handResultContainer div {
-    flex-shrink: 0; /* Prevent the circles from shrinking */
-  }
-  #handResultContainer div {
-    flex-shrink: 0; /* Prevent the circles from shrinking */
-  }
-  </style>
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Rectangle</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="flex items-center justify-center min-h-screen bg-gray-100">
 
-  <!-- Scrollable container for circles (horizontal scroll) -->
-  <div id="handResultContainer" class="flex overflow-x-auto space-x-1 m-1">
-    <!-- Circles will be dynamically inserted here -->
-  </div>
-
-  <script>
-   const handResultContainer = document.getElementById('handResultContainer');    
-  for (let i = 0; i < 50; i++) {
-    const isWin = Math.random() < 0.5; // 50% chance for each
-    const circle = document.createElement('div');
-    circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${isWin ? 'bg-green-500' : 'bg-red-500'}`;
-    circle.innerText = isWin ? 'W' : 'L';
-    handResultContainer.appendChild(circle);
-
-    // Auto-scroll to the right
-    handResultContainer.scrollLeft = handResultContainer.scrollWidth;
-  }
-  </script>
+    <span class="w-20 h-7 bg-green-500 text-white flex items-center justify-center rounded-lg shadow-lg">
+        Player
+    </span>
 
 </body>
 </html>

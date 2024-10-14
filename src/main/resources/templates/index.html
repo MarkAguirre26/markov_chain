@@ -454,7 +454,14 @@
                     <span class="font-bold text-xs">Stake:</span><span class="text-xs">${response.recommendedBet.includes("Wait") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between">
-                    <span class="font-bold text-xs">Next Bet:</span><span class="text-xs">${statusMessage === 'Wait for virtual win.' ? 'Wait' : response.recommendedBet}</span>
+                    <span class="font-bold text-xs">Next Bet:</span>
+                    
+                    <span style="width: 45px;" class="${statusMessage === 'Wait for virtual win.' ? 'text-xs'
+                        : response.recommendedBet.includes('Wait')?'text-sm'
+                        : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg' 
+                        : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
+                        ${statusMessage === 'Wait for virtual win.' ? 'Wait' : statusMessage.includes('Wait') ? 'Wait' : response.recommendedBet}
+                    </span>
                     </div>
                 </div>
                 </div>
@@ -462,17 +469,17 @@
                 <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
             `);
 
-         
+
 
             if (tempMessage.includes("Restart") || tempMessage.includes("tomorrow")) {
-              
-             
-                $('#infoHeader').text("Game Over"); 
+
+
+                $('#infoHeader').text("Game Over");
                 $('#infoContent').text(tempMessage);
-             
+
 
             } else {
-              
+
                 // Update header and content based on total profit
                 const headerText = totalProfit > 10 ? "Lucky Day" : "Gaming Rule";
                 const contentText = totalProfit > 10
@@ -606,7 +613,7 @@
                 });
 
                 $('#journalContainer').empty();
-                
+
                 $('#dateTime').text(dateCreated);
 
 
