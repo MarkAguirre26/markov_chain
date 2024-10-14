@@ -3,15 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Rectangle</title>
-    <!-- Tailwind CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>60x20 Grid of Boxes</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #419b05; /* Light gray background */
+            position: relative;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(60, 15px); /* 60 columns, each 15px wide */
+            grid-template-rows: repeat(20, 15px); /* 20 rows, each 15px tall */
+            gap: 2px; /* Space between the boxes */
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1; /* Below the circle container */
+        }
+        .box {
+            background-color: #ffffff; /* White background for boxes */
+            width: 15px;
+            height: 15px; /* Box size */
+            border: 1px solid #c7c7c7; /* Optional border */
+        }
+        #circleContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%; /* Full width of the grid */
+            height: 100%; /* Full height of the grid */
+            max-height: 165px;
+            white-space: nowrap;
+            overflow-x: auto;
+            z-index: 2; /* On top of the grid */
+        }
+        #handResultColumn {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            height: 100%;
+            width: 100%;
+        }
+        .hidden-scrollbar::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Webkit browsers */
+        }
+        .hidden-scrollbar {
+            -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+            scrollbar-width: none;  /* Hide scrollbar for Firefox */
+        }
+    </style>
 </head>
-<body class="flex items-center justify-center min-h-screen bg-gray-100">
+<body>
 
-    <span class="w-20 h-7 bg-green-500 text-white flex items-center justify-center rounded-lg shadow-lg">
-        Player
-    </span>
+    <!-- Circle Container will overlay the grid -->
+    <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar">
+        <div id="handResultColumn" class="flex flex-row wrap h-full w-full"></div>
+    </div>
 
+    <div id="grid"></div> <!-- Grid div -->
+
+    <script>
+        const grid = document.getElementById('grid');
+
+        // Create 1200 boxes (60 columns x 20 rows)
+        for (let i = 0; i < 1200; i++) {
+            const box = document.createElement('div');
+            box.className = 'box'; // Assign the box class for styling
+            grid.appendChild(box);
+        }
+    </script>
 </body>
 </html>
