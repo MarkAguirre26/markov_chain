@@ -45,22 +45,25 @@ public class BaccaratController {
     private final GameStatusService gameStatusService;
     private final GameResponseService gameResponseService;
     private final TrailingStopService trailingStopService;
+    private final GamesArchiveService gamesArchiveService;
 
     private final UserConfigService configService;
     private final String WAIT = "Wait..";
 
 
     @Autowired
-    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, GameStatusService gameStatusService, GameResponseService gameResponseService, TrailingStopService trailingStopService, UserConfigService configService) {
+    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, GameStatusService gameStatusService, GameResponseService gameResponseService, TrailingStopService trailingStopService, GamesArchiveService gamesArchiveService, UserConfigService configService) {
         this.markovChain = markovChain;
         this.patternRecognizer = patternRecognizer;
         this.journalService = journalService;
         this.gameStatusService = gameStatusService;
         this.gameResponseService = gameResponseService;
         this.trailingStopService = trailingStopService;
+        this.gamesArchiveService = gamesArchiveService;
         this.configService = configService;
 
     }
+
 
 
     @PostMapping("/play")
@@ -153,9 +156,20 @@ public class BaccaratController {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
-        String winLose =  response.getGameStatus().getWins()+"/"+ response.getGameStatus().getLosses();
-        journalService.saveJournal(new Journal(ZERO, userUuid,winLose , response.getGameStatus().getHandCount(),
+        String winLose = response.getGameStatus().getWins() + "/" + response.getGameStatus().getLosses();
+        Journal savedJournal = journalService.saveJournal(new Journal(ZERO, userUuid, winLose, response.getGameStatus().getHandCount(),
                 response.getGameStatus().getProfit()));
+
+        if (savedJournal != null){
+
+            GameResultStatus gameResultStatus = response.getGameStatus();
+
+            gamesArchiveService.addGameArchive(new GamesArchive(savedJournal.getJournalId(),response.getBaseBetUnit(),response.getSuggestedBetUnit(),
+                    response.getLossCounter(), response.getRecommendedBet(), response.getSequence(), response.getHandResult(), "Archived",
+                    gameResultStatus.getHandCount(),gameResultStatus.getWins(), gameResultStatus.getLosses(), gameResultStatus.getProfit(),gameResultStatus.getPlayingUnits()));
+        }
+
+
         return response;
 
     }
@@ -356,7 +370,7 @@ public class BaccaratController {
             gameResultResponse.setRecommendedBet(WAIT);
 //            return saveAndReturn(provideGameResponse(gameResultResponse));
             return provideGameResponse(gameResultResponse);
-        }  else {
+        } else {
 
             gameResultResponse.setRecommendedBet(nextPredictedBet);
 
@@ -373,6 +387,7 @@ public class BaccaratController {
             }
             // code below will not be executed if the above condition is true
             gameResultResponse.setTrailingStop(gameResultResponseWithTrailingStop.getTrailingStop());
+
             return provideGameResponse(gameResultResponse);
         }
 
@@ -479,7 +494,7 @@ public class BaccaratController {
                     playingUnit += suggestedUnit;
                     totalWins++;
                     currentLossCount = 0;
-                    gameResultResponse.setHandResult(gameResultResponse.getHandResult()+"W");
+                    gameResultResponse.setHandResult(gameResultResponse.getHandResult() + "W");
                 } else {
                     currentLossCount = currentLossCount + 1;
                     profit -= suggestedUnit;
@@ -487,12 +502,10 @@ public class BaccaratController {
                     totalLosses++;
                     betSize -= 2;
                     betSize = betSize == 0 ? 1 : betSize;
-                    gameResultResponse.setHandResult(gameResultResponse.getHandResult()+"L");
+                    gameResultResponse.setHandResult(gameResultResponse.getHandResult() + "L");
 
                 }
             }
-
-
 
 
         } else {
@@ -722,7 +735,7 @@ public class BaccaratController {
         gameResponse.setInitialPlayingUnits(gameResultResponse.getInitialPlayingUnits());
         gameResponse.setRecommendedBet(gameResultResponse.getRecommendedBet());
         gameResponse.setSequence(gameResultResponse.getSequence());
-        gameResponse.setHandResult(gameResultResponse.getHandResult()==null?"":gameResultResponse.getHandResult());
+        gameResponse.setHandResult(gameResultResponse.getHandResult() == null ? "" : gameResultResponse.getHandResult());
         gameResponse.setMessage(gameResultResponse.getMessage());
 //        gameResponse.setDateLastUpdated(LocalDateTime.now());
         // Persist the updated game response

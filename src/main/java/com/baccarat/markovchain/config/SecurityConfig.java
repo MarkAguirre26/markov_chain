@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth").permitAll() // Allow access to the custom login page
                         .requestMatchers("/logout").permitAll() // Allow access to logout
                         .requestMatchers("/api/baccarat/**").permitAll() // Allow access to baccarat API
+                        .requestMatchers("/api/journals/**").permitAll() // Allow access to journal API
                         .requestMatchers("/register").permitAll() // Allow access to registration
                         .requestMatchers("/join").permitAll() // Allow access to join
                         .requestMatchers("/").authenticated() // Home page must be authenticated

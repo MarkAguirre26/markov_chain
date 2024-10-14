@@ -132,7 +132,7 @@
                         <div style="height: 165px;">
                             <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
                                 style="max-height: 165px; white-space: nowrap;">
-                                <div id="handResultColumn" class="flex flex-wrap h-full w-full"></div>
+                                <div id="handResultColumn" class="flex flex-row wrap h-full w-full"></div>
                             </div>
                         </div>
 
@@ -351,6 +351,9 @@
 
 
             async function playGame(userInput) {
+
+               
+
                 try {
                     const response = await $.post('/api/baccarat/play', $.param({
                         userInput,
@@ -368,6 +371,14 @@
 
             // Event listener for PLAYER button
             $('#playerButton').on('click', function () {
+
+                let message = $('#status').text();
+                if(message.includes("Archived")){
+                   return;
+                }
+
+
+
                 $('#playerButton').prop('disabled', true);
                 showSpinner();
                 playGame('p');
@@ -375,6 +386,13 @@
 
             // Event listener for BANKER button
             $('#bankerButton').on('click', function () {
+               
+                let message = $('#status').text();
+                if(message.includes("Archived")){
+                   return;
+                }
+
+                
                 $('#bankerButton').prop('disabled', true);
                 showSpinner();
                 playGame('b');
@@ -382,6 +400,12 @@
 
             // Event listener for UNDO button
             $('#undoButton').on('click', async function () {
+                let message = $('#status').text();
+                if(message.includes("Archived")){
+                   return;
+                }
+
+
                 $('#undoButton').prop('disabled', true);
                 showSpinner();
                 await undo();
@@ -392,6 +416,11 @@
             // Event listener for RESET GAME button
             $('#resetButton').on('click', async function () {
 
+                let message = $('#status').text();
+                if(message.includes("Archived")){
+                   return;
+                }
+
                 modal.classList.remove('hidden');
 
             });
@@ -399,7 +428,7 @@
 
 
         async function displayResultToUi(response) {
-            //console.log(response);
+            // console.log(response);
 
             hideSpinner();
             $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
@@ -451,16 +480,16 @@
                     <span class="text-xs ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between border-b pb-1">
-                    <span class="font-bold text-xs">Stake:</span><span class="text-xs">${response.recommendedBet.includes("Wait") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
+                    <span class="font-bold text-xs">Stake:</span><span class="text-xs">${response.recommendedBet.includes("Wait..") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between">
                     <span class="font-bold text-xs">Next Bet:</span>
                     
                     <span style="width: 45px;" class="${statusMessage === 'Wait for virtual win.' ? 'text-xs'
-                        : response.recommendedBet.includes('Wait')?'text-sm'
-                        : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg' 
-                        : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
-                        ${statusMessage === 'Wait for virtual win.' ? 'Wait' : statusMessage.includes('Wait') ? 'Wait' : response.recommendedBet}
+                    : response.recommendedBet.includes('Wait') ? 'text-sm'
+                        : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
+                            : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
+                        ${statusMessage === 'Wait for virtual win.' ? 'Wait' : statusMessage.includes('Wait..') ? 'Wait' : response.recommendedBet}
                     </span>
                     </div>
                 </div>
@@ -513,6 +542,9 @@
         async function undo() {
             try {
 
+
+               
+
                 const response = await $.post('/api/baccarat/undo');
                 console.log(response);
 
@@ -559,6 +591,9 @@
             if (!results.length) return; // Early return if results are empty
             // Clear previous results
             document.getElementById('handResultColumn').innerHTML = '';
+            document.getElementById('handResultContainer').innerHTML = '';
+
+
 
             let currentChar = results[0];
             let group = currentChar; // Initialize the group with the first character
@@ -633,6 +668,15 @@
                     // Create a flex container for Shoe, Hand, and Profit
                     const flexContainer = document.createElement('div');
                     flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700');
+
+                    flexContainer.id = `${journal.journalId}`;
+
+                    // Add the click event listener to the div
+                    flexContainer.addEventListener('click', function () {
+
+                        getGameArchive(flexContainer.id)
+                    });
+
 
                     // Create container for left-aligned content (Win/Lose)
                     const leftContainer = document.createElement('div');
@@ -715,30 +759,71 @@
         }
 
 
-        function getHandResult(handResult) {
+        async function getGameArchive(journalId) {
 
-            // console.log(handResult)
+
+            try {             
+              
+
+                const response = await $.ajax({
+                    url: '/api/journals/get-archive',
+                    type: 'GET',
+                    data: { journalId }
+                });
+
+                // Function to handle the successful response
+                displayResultToUi(response);
+
+                $('#infoHeader').text("Archive");
+                $('#infoContent').text("Note: This is for viewing purposes only and cannot be modified. Please refresh your page to restore the original state.");
+
+            } catch (xhr) {
+                // Log the error details in case of failure
+                console.error('Error fetching archive:', xhr);
+
+                // Optionally, handle error cases (e.g., show a message to the user)
+                // $('#status').text('Failed to fetch archive. Please try again.');
+                // $("#status").text("Archived");
+                // $('#infoHeader').text("Error");
+                // $('#infoContent').text("Error fetching archive");
+
+            }
+
+        }
+
+
+        function getHandResult(handResult) {
+                
+               // console.log(handResult)
             const handResultContainer = document.getElementById('handResultContainer');
             handResultContainer.innerHTML = "";
+
+
+            if (handResult === null) {
+                return;
+            }
+         
 
             // Create a document fragment to improve performance
             const fragment = document.createDocumentFragment();
 
-            handResult.split('').forEach(r => {
+            handResult.replace(/[^WL]/g, '').split('').forEach(r => {
                 const circle = document.createElement('div');
                 circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${r === 'W' ? 'bg-green-500' : r === 'L' ? 'bg-red-500' : 'bg-yellow-500'}`;
                 circle.innerText = r === 'W' ? 'W' : r === 'L' ? 'L' : 'S';
                 fragment.appendChild(circle);
             });
 
-            // Append all circles at once
             handResultContainer.appendChild(fragment);
 
-            // Auto-scroll to the right after a slight delay
+
             setTimeout(() => {
                 handResultContainer.scrollLeft = handResultContainer.scrollWidth;
             }, 0); // Delay to ensure DOM has updated
         }
+
+
+
 
     </script>
 
