@@ -27,10 +27,8 @@ public class BaccaratController {
     private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
     private static final String STOP_LOSS_REACHED = "Stop loss reached! Restart the game.";
     private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again tomorrow.";
-//    private static final String MAX_HAND_LIMIT_REACHED = "Hands limit reached! Restart the game";
     private static final String PREDICTION_CONFIDENCE_LOW = "Prediction confidence too low, no bet suggested.";
-    private static final String TRAILING_STOP_TRIGGERED_LABEL = "Trailing stop triggered";
-    private static final String TRAILING_STOP_TRIGGERED = "StopProfitTriggered";
+    private static final String TRAILING_STOP_TRIGGERED_LABEL = "Trailing stop triggered! Restart the game.";
     private static final String PLACE_YOUR_BET = "Place your bet";
     private static final int ZERO = 0;
 
