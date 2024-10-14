@@ -83,6 +83,29 @@
             transform: rotate(360deg);
         }
     }
+
+    #handResultContainer {
+        display: flex;
+        overflow-x: auto;
+        /* Enable horizontal scrolling */
+        white-space: nowrap;
+        /* Prevent circles from wrapping */
+        scrollbar-width: none;
+        /* Firefox: Hide scrollbar */
+
+    }
+
+    #handResultContainer div {
+        flex-shrink: 0;
+        /* Prevent the circles from shrinking */
+    }
+
+    #handResultContainer div {
+        flex-shrink: 0;
+        /* Prevent the circles from shrinking */
+        margin: 1px;
+        /* Added 1px margin around each circle */
+    }
 </style>
 
 <body class="bg-gray-100">
@@ -109,16 +132,23 @@
                         <div style="height: 165px;">
                             <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
                                 style="max-height: 165px; white-space: nowrap;">
-                                <div id="handResultColumn" class="flex flex-row h-full w-full"></div>
+                                <div id="handResultColumn" class="flex flex-wrap h-full w-full"></div>
                             </div>
                         </div>
 
                     </form>
                 </div>
 
-                <div id="results" class="bg-white mt-4 rounded-md shadow-sm">
-                    <div id="status" class="text-sm text-center">
-                    </div>
+                <!-- Win and Lose -->
+                <div class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
+                    style="max-height: 165px; white-space: nowrap; margin-top: 5px !important;">
+                    <div id="handResultContainer" class="flex flex-row  wrap h-full w-full"></div>
+                </div>
+
+
+
+
+                <div id="results" class="bg-white mt-4 rounded-md shadow-sm" style="margin-top: 2px !important;">                              
                     <div id="bettingResults" class="text-gray-700"></div>
                     <div id="finalStats" class="mt-2 font-bold text-gray-900"></div>
                 </div>
@@ -145,6 +175,8 @@
                     </button>
                 </div>
 
+                <div id="status" class="text-sm text-center" style="display: none">
+                </div>        
 
                 <div class="mt-4">
                     <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
@@ -367,7 +399,7 @@
 
 
         async function displayResultToUi(response) {
-            // console.log(response);
+            //console.log(response);
 
             hideSpinner();
             $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
@@ -424,7 +456,9 @@
                 <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
             `);
 
+            
             displayResults(response.sequence.toUpperCase());
+            getHandResult(response.handResult);
 
             // Handle button visibility after game result
             if (statusMessage.includes("reached")) {
@@ -550,54 +584,9 @@
 
                 let totalProfit = 0;
 
-                // // Filter valid journals and reverse the order
-                // const validJournals = response.filter(journal => journal.hand !== 0).reverse();
-                // playedShoe = 0;
-                // validJournals.forEach((journal, index) => {
-                //     const journalDiv = document.createElement('div');
-                //     journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
 
+                // console.log(response);
 
-
-                //     // Create a flex container for Shoe, Hand, and Profit
-                //     const flexContainer = document.createElement('div');
-                //     flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right');
-
-
-                //     const shoeHeading = document.createElement('h4');
-                //     shoeHeading.classList.add('font-semibold', 'text-sm');
-                //     shoeHeading.textContent = `Shoe: ${journal.shoe}`;
-
-                //     Win/Lose: 20/20  // add this item right after Shoe
-
-
-
-                //     const handProfitContainer = document.createElement('div');
-                //     handProfitContainer.classList.add('text-right');
-
-                //     handProfitContainer.innerHTML = `
-                //         <p>Hand: ${journal.hand}</p>
-                //         <p>Profit: ${journal.profit}</p>
-                //     `;
-
-                //     totalProfit += journal.profit;
-
-                //     // Append elements
-                //     flexContainer.appendChild(shoeHeading);
-                //     flexContainer.appendChild(handProfitContainer);
-                //     journalDiv.appendChild(flexContainer);
-                //     $('#journalContainer').append(journalDiv);
-
-                //     // Add glowing effect to the first valid journal
-                //     if (index === 0) {
-                //         journalDiv.classList.add('glow');
-                //     }
-                //     playedShoe++;
-                // });
-
-
-                console.log(response);
-                
                 const validJournals = response.filter(journal => journal.hand !== 0).reverse();
                 playedShoe = 0;
                 validJournals.forEach((journal, index) => {
@@ -693,6 +682,33 @@
                 $('#status').text(`Error: ${xhr.responseText}`);
             }
         }
+
+
+        function getHandResult(handResult) {
+
+            // console.log(handResult)
+            const handResultContainer = document.getElementById('handResultContainer');
+            handResultContainer.innerHTML = "";
+
+            // Create a document fragment to improve performance
+            const fragment = document.createDocumentFragment();
+
+            handResult.split('').forEach(r => {
+                const circle = document.createElement('div');
+                circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${r==='W' ? 'bg-green-500' : r==='L'? 'bg-red-500': 'bg-yellow-500'}`;
+                circle.innerText = r==='W' ? 'W' : r==='L'? 'L':'S';
+                fragment.appendChild(circle);
+            });
+
+            // Append all circles at once
+            handResultContainer.appendChild(fragment);
+
+            // Auto-scroll to the right after a slight delay
+            setTimeout(() => {
+                handResultContainer.scrollLeft = handResultContainer.scrollWidth;
+            }, 0); // Delay to ensure DOM has updated
+        }
+
     </script>
 
 </body>

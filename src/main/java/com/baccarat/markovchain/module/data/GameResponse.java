@@ -38,6 +38,9 @@ public class GameResponse {
     @Column(name = "sequence", length = 50)
     private String sequence;
 
+    @Column(name = "hand_result", length = 50)
+    private String handResult;
+
     @Column(name = "message", length = 50)
     private String message;
 

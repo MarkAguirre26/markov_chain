@@ -1,50 +1,47 @@
-// Hard-coded response data (instead of an API response)
-const response = [
-    { shoe: 1, hand: 3, profit: 200 },
-    { shoe: 2, hand: 4, profit: 150 },
-    { shoe: 3, hand: 0, profit: 0 },   // This will be filtered out (hand is 0)
-    { shoe: 4, hand: 5, profit: 300 },
-    { shoe: 5, hand: 6, profit: 50 }
-];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixed Size Circles with Random W or L</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+  #handResultContainer {
+    display: flex;
+    overflow-x: auto; /* Enable horizontal scrolling */
+    white-space: nowrap; /* Prevent circles from wrapping */    
+    scrollbar-width: none; /* Firefox: Hide scrollbar */
+   
+  }
+  #handResultContainer div {
+    flex-shrink: 0; /* Prevent the circles from shrinking */
+  }
+  #handResultContainer div {
+    flex-shrink: 0; /* Prevent the circles from shrinking */
+  }
+  </style>
+  
+</head>
+<body>
 
-// Filter valid journals and reverse the order
-const validJournals = response.filter(journal => journal.hand !== 0).reverse();
-let playedShoe = 0;
-let totalProfit = 0;
+  <!-- Scrollable container for circles (horizontal scroll) -->
+  <div id="handResultContainer" class="flex overflow-x-auto space-x-1 m-1">
+    <!-- Circles will be dynamically inserted here -->
+  </div>
 
-// Limit to 4 valid journals (hard-coded case with max 4 journals)
-const journalsToDisplay = validJournals.slice(0, 4);
+  <script>
+   const handResultContainer = document.getElementById('handResultContainer');    
+  for (let i = 0; i < 50; i++) {
+    const isWin = Math.random() < 0.5; // 50% chance for each
+    const circle = document.createElement('div');
+    circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${isWin ? 'bg-green-500' : 'bg-red-500'}`;
+    circle.innerText = isWin ? 'W' : 'L';
+    handResultContainer.appendChild(circle);
 
-journalsToDisplay.forEach((journal, index) => {
-    const journalDiv = document.createElement('div');
-    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
+    // Auto-scroll to the right
+    handResultContainer.scrollLeft = handResultContainer.scrollWidth;
+  }
+  </script>
 
-    // Create a flex container for Shoe, Hand, and Profit
-    const flexContainer = document.createElement('div');
-    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700', 'text-right');
-
-    const shoeHeading = document.createElement('h4');
-    shoeHeading.classList.add('font-semibold', 'text-sm');
-    shoeHeading.textContent = `Shoe: ${journal.shoe}`;
-
-    const handProfitContainer = document.createElement('div');
-    handProfitContainer.classList.add('text-right');
-    handProfitContainer.innerHTML = `
-        <p>Hand: ${journal.hand}</p>
-        <p>Profit: ${journal.profit}</p>
-    `;
-
-    totalProfit += journal.profit;
-
-    // Append elements
-    flexContainer.appendChild(shoeHeading);
-    flexContainer.appendChild(handProfitContainer);
-    journalDiv.appendChild(flexContainer);
-    document.getElementById('journalContainer').appendChild(journalDiv);
-
-    // Add glowing effect to the first valid journal
-    if (index === 0) {
-        journalDiv.classList.add('glow');
-    }
-    playedShoe++;
-});
+</body>
+</html>

@@ -19,6 +19,7 @@ public class GameResultResponse {
     private boolean isDailyLimitReached;
     private int lossCounter;
     private String trailingStop;
+    private String handResult;
 
     public GameResultResponse(String message, String sequence, GameResultStatus gameStatus, int baseBetUnit,
                               int suggestedBetUnit, int initialPlayingUnits, String recommendedBet,
@@ -64,6 +65,7 @@ public class GameResultResponse {
                 ", isDailyLimitReached=" + isDailyLimitReached +
                 ", lossCounter=" + lossCounter +
                 ", trailingStop='" + trailingStop + '\'' +
+                ", handResult='" + handResult + '\'' +
                 '}';
     }
 }

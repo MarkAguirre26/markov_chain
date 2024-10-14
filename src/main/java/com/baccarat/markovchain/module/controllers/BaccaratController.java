@@ -220,11 +220,6 @@ public class BaccaratController {
         return false;
     }
 
-//    private boolean hasReachedHandsLimit(GameResultResponse gameResultResponse) {
-////        GameResultResponse gameResultResponse = getGameResponse();
-//        int handCount = gameResultResponse.getGameStatus().getHandCount(); // th is because the first hand is not counted. Do not touch this
-//        return handCount >= MAX_HANDS;
-//    }
 
     public int calculateWager(double confidence) {
         if (confidence < 0.6) {
@@ -236,7 +231,9 @@ public class BaccaratController {
         }
     }
 
-    private GameResultResponse handleBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal, String userInput, Pair<Character, Double> combinedPrediction, String predictedBet, int suggestedUnit) {
+    private GameResultResponse handleBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal,
+                                         String userInput, Pair<Character, Double> combinedPrediction,
+                                         String predictedBet, int suggestedUnit) {
 
 
         String username = userPrincipal.getUsername();
@@ -260,6 +257,7 @@ public class BaccaratController {
 
         String prediction = String.valueOf(combinedPrediction.first);
         String recommendedBet = Objects.equals(prediction, "p") ? "Player" : "Banker";
+
         return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet);
     }
 
@@ -426,7 +424,7 @@ public class BaccaratController {
             gameResultResponse.setTrailingStop(trailingStop);
         }
         gameResultResponse.setSequence(gameResultResponse.getSequence().replace("1111", ""));
-
+//        gameResultResponse.setHandResult(gameResultResponse.getHandResult());
 
         return gameResultResponse;
     }
@@ -483,6 +481,7 @@ public class BaccaratController {
                     playingUnit += suggestedUnit;
                     totalWins++;
                     currentLossCount = 0;
+                    gameResultResponse.setHandResult(gameResultResponse.getHandResult()+"W");
                 } else {
                     currentLossCount = currentLossCount + 1;
                     profit -= suggestedUnit;
@@ -490,16 +489,12 @@ public class BaccaratController {
                     totalLosses++;
                     betSize -= 2;
                     betSize = betSize == 0 ? 1 : betSize;
-
+                    gameResultResponse.setHandResult(gameResultResponse.getHandResult()+"L");
 
                 }
             }
 
 
-//            int currentProfit = gameResultResponse.getGameStatus().getProfit();
-//            if (currentProfit > 10) {
-//                trailingStop = TrailingStop.evaluate(currentProfit);
-//            }
 
 
         } else {
@@ -509,6 +504,8 @@ public class BaccaratController {
                 betSize -= 2;
                 betSize = betSize == 0 ? 1 : betSize;
             }
+
+            gameResultResponse.setHandResult(gameResultResponse.getHandResult());
         }
 
 
@@ -680,6 +677,7 @@ public class BaccaratController {
         response.setLossCounter(latesGameResponse.getLossCounter());
         response.setRecommendedBet(latesGameResponse.getRecommendedBet());
         response.setSequence(latesGameResponse.getSequence());
+        response.setHandResult(latesGameResponse.getHandResult());
         response.setMessage(latesGameResponse.getMessage());
 
 
@@ -726,6 +724,7 @@ public class BaccaratController {
         gameResponse.setInitialPlayingUnits(gameResultResponse.getInitialPlayingUnits());
         gameResponse.setRecommendedBet(gameResultResponse.getRecommendedBet());
         gameResponse.setSequence(gameResultResponse.getSequence());
+        gameResponse.setHandResult(gameResultResponse.getHandResult()==null?"":gameResultResponse.getHandResult());
         gameResponse.setMessage(gameResultResponse.getMessage());
 //        gameResponse.setDateLastUpdated(LocalDateTime.now());
         // Persist the updated game response
