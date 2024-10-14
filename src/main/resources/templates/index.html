@@ -481,10 +481,12 @@
             } else {
 
                 // Update header and content based on total profit
-                const headerText = totalProfit > 10 ? "Lucky Day" : "Gaming Rule";
+                const headerText = totalProfit > 10 ? "Lucky Day" : "Game Conditions";
                 const contentText = totalProfit > 10
                     ? "You're now in profit! Time to call it a day and enjoy your success."
-                    : "Take profit is set at 30 units. Trailing stop activates at 10u profit, stop loss at -10 units, with a daily shoe limit of 10. Your total daily units (u) should be 100, with each wager being 1 unit. For example, if your bankroll is $100, 1 unit (1u) equals $1. Follow the app's guidelines to protect your bankroll.";
+                    : `Take profit: 30u | Trailing stop activate: 10u | Stop loss: -10u | Daily shoe limit: 10\n\n                    
+                    Note: Follow the app's guidelines to protect your bankroll.`;
+
 
                 $('#infoHeader').text(headerText);
                 $('#infoContent').text(contentText);
