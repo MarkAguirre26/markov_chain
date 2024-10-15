@@ -6,8 +6,6 @@ WORKDIR /app
 
 # Copy the Maven build files
 COPY pom.xml ./
-# If you're using Gradle, use the following line instead:
-# COPY build.gradle ./
 
 # Copy the source code
 COPY src ./src
@@ -23,11 +21,9 @@ WORKDIR /app
 
 # Copy the jar file from the build stage
 COPY --from=build /app/target/*.jar app.jar
-# If you're using Gradle, use the following line instead:
-# COPY --from=build /app/build/libs/*.jar app.jar
 
 # Expose the port that your application runs on
 EXPOSE 8081
 
 # Command to run the application
-ENTRYPOINT ["java", "-jar", "PlayerCompanion-1.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
