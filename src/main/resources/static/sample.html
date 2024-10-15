@@ -3,34 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toggle Switch</title>
+    <title>Toast Message with Toggle Switch</title>
     <style>
-        /* body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f3f4f6;
-        } */
+        /* Toast container */
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+            transition: visibility 0s, opacity 0.5s linear;
+            opacity: 0;
+        }
+
+        /* Show the toast */
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Toggle switch styles */
         .toggle-container {
             display: flex;
             align-items: center;
+            margin: 20px;
         }
+
         .toggle-label {
-            margin-right: 10px;
-            color: #4a5568; /* Gray text color */
+            margin: 0 10px;
         }
+
         .toggle-switch {
             position: relative;
             display: inline-block;
-            width: 40px;  /* Reduced width */
-            height: 20px; /* Reduced height */
+            width: 60px;
+            height: 34px;
         }
+
         .toggle-input {
             opacity: 0;
             width: 0;
             height: 0;
         }
+
         .toggle-slider {
             position: absolute;
             cursor: pointer;
@@ -38,38 +61,72 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc; /* Track color */
+            background-color: #ccc;
             transition: .4s;
-            border-radius: 20px; /* Rounded track */
+            border-radius: 34px;
         }
+
         .toggle-slider:before {
             position: absolute;
             content: "";
-            height: 16px; /* Reduced knob height */
-            width: 16px;  /* Reduced knob width */
-            left: 2px;    /* Adjusted knob position */
-            bottom: 2px;  /* Adjusted knob position */
-            background-color: white; /* Knob color */
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
             transition: .4s;
             border-radius: 50%;
         }
+
         .toggle-input:checked + .toggle-slider {
-            background-color: #4a90e2; /* Track color when checked */
+            background-color: #2196F3;
         }
+
         .toggle-input:checked + .toggle-slider:before {
-            transform: translateX(20px); /* Knob position when checked */
+            transform: translateX(26px);
         }
     </style>
 </head>
 <body>
 
     <div class="toggle-container">
-        <span class="toggle-label">Toggle:</span>
+        <span class="toggle-label">Low</span>
         <label class="toggle-switch">
-            <input type="checkbox" class="toggle-input" />
+            <input type="checkbox" class="toggle-input" id="riskLevelToggleSwitch" />
             <span class="toggle-slider"></span>
         </label>
+        <span class="toggle-label">Very Low</span>
     </div>
+
+    <div id="toast" class="toast">Game already started</div>
+
+    <script>
+
+
+document.getElementById("riskLevelToggleSwitch").addEventListener("change", function () {
+            if (this.checked) {
+                showToast(); // Show toast if the switch is checked (Low)
+            }
+        });
+
+
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.classList.add("show");
+
+            // Hide the toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 3000);
+        }
+
+        function toggleSwitchChanged() {
+            const toggle = document.getElementById("riskLevelToggleSwitch");
+            if (toggle.checked) {
+                showToast();
+            }
+        }
+    </script>
 
 </body>
 </html>

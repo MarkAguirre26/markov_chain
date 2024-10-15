@@ -15,8 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,7 +27,7 @@ public class BaccaratController {
 
     private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
     private static final String STOP_LOSS_REACHED = "Stop loss reached! Restart the game.";
-    private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again tomorrow.";
+    private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again after ";
     private static final String PREDICTION_CONFIDENCE_LOW = "Prediction confidence too low, no bet suggested.";
     private static final String TRAILING_STOP_TRIGGERED_LABEL = "Trailing stop triggered! Restart the game.";
     private static final String PLACE_YOUR_BET = "Place your bet";
@@ -91,10 +91,36 @@ public class BaccaratController {
         logger.info(userName + ": Received suggestedUnit input: {}", suggestedUnit);
 
         if (hasReachedDailyJournalLimit()) {
+
+
+            // Get the current time in UTC
+            ZonedDateTime nowUTC = ZonedDateTime.now(ZoneOffset.UTC);
+
+            // Define another time in UTC (e.g., 2 hours ago)
+            ZonedDateTime pastUTC = nowUTC.minusHours(4);
+
+            // Calculate the difference between the two times
+            Duration duration = Duration.between(pastUTC, nowUTC);
+
+            // Get the difference in various units
+            long hours = duration.toHours();
+            long minutes = duration.toMinutes();
+            long seconds = duration.getSeconds();
+
+            String diff;
+            if(hours>1){
+                diff = hours+" hours";
+            }else{
+                diff = minutes+" minutes";
+            }
+
+            System.out.println("Time difference: " + hours + " hours, " + minutes + " minutes");
+
+
             existingGame.setDailyLimitReached(true);
-            existingGame.setMessage(DAILY_LIMIT_REACHED);
+            existingGame.setMessage(DAILY_LIMIT_REACHED+ diff);
             existingGame.setRecommendedBet(recommendedBet);
-            logger.info(userName + ": Daily limit reached, skipping game");
+            logger.info(userName + ": "+existingGame.getMessage());
             return existingGame;
         }
 
@@ -195,7 +221,16 @@ public class BaccaratController {
 
     private boolean hasReachedDailyJournalLimit() {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userPrincipal.getUserUuid(), LocalDate.now());
+
+        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneOffset.UTC);
+
+        // Extract just the date portion
+        LocalDate currentUTCDate = nowUTC.toLocalDate();
+
+
+
+
+        List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userPrincipal.getUserUuid(),currentUTCDate);
         int maxDailyJournalLimit = getDailyLimit();
         return journals.size() >= maxDailyJournalLimit;
     }

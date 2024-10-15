@@ -136,52 +136,71 @@
     /* ---------------------------------------------------- */
 
     .toggle-container {
-            display: flex;
-            align-items: center;
-        }
-        .toggle-label {
-            margin-right: 10px;
-            color: #4a5568; /* Gray text color */
-        }
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 40px;  /* Reduced width */
-            height: 20px; /* Reduced height */
-        }
-        .toggle-input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc; /* Track color */
-            transition: .4s;
-            border-radius: 20px; /* Rounded track */
-        }
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 16px; /* Reduced knob height */
-            width: 16px;  /* Reduced knob width */
-            left: 2px;    /* Adjusted knob position */
-            bottom: 2px;  /* Adjusted knob position */
-            background-color: white; /* Knob color */
-            transition: .4s;
-            border-radius: 50%;
-        }
-        .toggle-input:checked + .toggle-slider {
-            background-color: #4a90e2; /* Track color when checked */
-        }
-        .toggle-input:checked + .toggle-slider:before {
-            transform: translateX(20px); /* Knob position when checked */
-        }
+        display: flex;
+        align-items: center;
+    }
+
+    .toggle-label {
+        margin-right: 10px;
+        color: #4a5568;
+        /* Gray text color */
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        /* Reduced width */
+        height: 20px;
+        /* Reduced height */
+    }
+
+    .toggle-input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        /* Track color */
+        transition: .4s;
+        border-radius: 20px;
+        /* Rounded track */
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        /* Reduced knob height */
+        width: 16px;
+        /* Reduced knob width */
+        left: 2px;
+        /* Adjusted knob position */
+        bottom: 2px;
+        /* Adjusted knob position */
+        background-color: white;
+        /* Knob color */
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    .toggle-input:checked+.toggle-slider {
+        background-color: #4a90e2;
+        /* Track color when checked */
+    }
+
+    .toggle-input:checked+.toggle-slider:before {
+        transform: translateX(20px);
+        /* Knob position when checked */
+    }
 </style>
 
 <body class="bg-gray-100">
@@ -346,7 +365,6 @@
 
 
 
-
     <script>
 
         let playedShoe = 0;
@@ -429,7 +447,7 @@
             async function playGame(userInput) {
 
                 const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
-                const isCheckedVeryLowRisk = toggleSwitch.checked; 
+                const isCheckedVeryLowRisk = toggleSwitch.checked;
                 var riskLevelValue = isCheckedVeryLowRisk ? 'VERY_LOW' : 'LOW'
                 try {
                     const response = await $.post('/api/baccarat/play', $.param({
@@ -517,6 +535,10 @@
             hideSpinner();
             $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
 
+           
+           
+
+
             const { handCount, wins, losses, profit } = response.gameStatus;
             const statusMessage = response.message;
             const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : statusMessage;
@@ -555,13 +577,13 @@
                    <div class="toggle-container">
                         <span class="toggle-label">Low</span>
                         <label class="toggle-switch">
-                            <input type="checkbox" class="toggle-input" id="riskLevelToggleSwitch" />
+                            <input type="checkbox" class="toggle-input" id="riskLevelToggleSwitch"  />
                             <span class="toggle-slider"></span>
                         </label>
                         <span class="toggle-label">Very Low</span>
                     </div>
                     
-                    <span>Hands: ${handCount}</span>
+                    <span id="handCount" >Hands: ${handCount}</span>
                 </div>
 
 
@@ -604,7 +626,7 @@
 
 
 
-            if (tempMessage.includes("Restart") || tempMessage.includes("tomorrow")) {
+            if (tempMessage.includes("Restart") || tempMessage.includes("Daily limit")) {
 
 
                 $('#infoHeader').text("Game Over");
@@ -625,7 +647,7 @@
                 $('#infoContent').text(contentText);
             }
 
-
+  
 
             displayResults(response.sequence.toUpperCase());
             getHandResult(response.handResult);
@@ -643,17 +665,17 @@
             }
 
 
-            const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
-            toggleSwitch.disabled = false;
+     
+        const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
 
-// console.log(response.riskLevel);
+            // console.log(response.riskLevel);
 
-            if(response.riskLevel === 'LOW'){
+            if (response.riskLevel === 'LOW') {
                 toggleSwitch.checked = false; // Set the switch to false (checked)
-            }else{
+            } else {
                 toggleSwitch.checked = true; // Set the switch to true (checked)
             }
-          
+
         }
 
         async function undo() {
@@ -705,8 +727,17 @@
 
         function displayResults(playerAndBankerCollections) {
 
+            const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
             const results = playerAndBankerCollections.replace("1111", "").split('');
+
+            toggleSwitch.disabled = false; // enable the toggle once there is no handCount
             if (!results.length) return; // Early return if results are empty
+          
+            toggleSwitch.disabled = true; // disable the toggle once there is handCount
+           
+          
+           
+
             // Clear previous results
             document.getElementById('handResultColumn').innerHTML = '';
             document.getElementById('handResultContainer').innerHTML = '';
@@ -888,8 +919,8 @@
                     type: 'GET',
                     data: { journalId }
                 });
-                
-                
+
+
                 // Function to handle the successful response
                 displayResultToUi(response);
 
@@ -945,8 +976,7 @@
             }, 0); // Delay to ensure DOM has updated
         }
 
-
-
+     
 
     </script>
 
