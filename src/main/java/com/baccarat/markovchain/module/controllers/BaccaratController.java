@@ -142,8 +142,8 @@ public class BaccaratController {
 
         // Generate predictions using Markov chain and pattern recognition
         String sequence = gameResultResponse.getSequence();
-        markovChain.train(sequence);
-        Optional<Pair<Character, Double>> markovPrediction = markovChain.predictNext(sequence.charAt(sequence.length() - 1));
+//        markovChain.train(sequence);
+        Optional<Pair<Character, Double>> markovPrediction = markovChain.predictNext(sequence);
 //        String patternPrediction = patternRecognizer.findPattern(sequence);
 //
 //        logger.info(userPrincipal.getUsername() + ":Pattern Prediction: {}", patternPrediction);
