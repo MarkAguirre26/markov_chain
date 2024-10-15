@@ -149,7 +149,7 @@ public class BaccaratController {
 //        logger.info(userPrincipal.getUsername() + ":Pattern Prediction: {}", patternPrediction);
 
         // Combine predictions and handle the bet
-        Pair<Character, Double> combinedPrediction = combinePredictions(markovPrediction, "");
+        Pair<Character, Double> combinedPrediction = combinePredictions(markovPrediction);
 
         return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, suggestedUnit);
     }
@@ -317,10 +317,10 @@ public class BaccaratController {
 
         int betSize = calculateWager(combinedPrediction.second, gameResultResponse);
 
-        if (combinedPrediction.first == null || combinedPrediction.second < 0.6) {
+        if (combinedPrediction.second < 0.5) {
 
 
-            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW);
+            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW+" "+combinedPrediction.second);
             gameResultResponse.setMessage(PREDICTION_CONFIDENCE_LOW);
 
             gameResultResponse.setSequence(gameResultResponse.getSequence());
@@ -742,9 +742,9 @@ public class BaccaratController {
 
 
 
-    private Pair<Character, Double> combinePredictions(Optional<Pair<Character, Double>> markovResult, String patternResult) {
+    private Pair<Character, Double> combinePredictions(Optional<Pair<Character, Double>> markovResult) {
         // Handle both results being absent
-        if (markovResult.isEmpty() && (patternResult == null || patternResult.isEmpty())) {
+        if (markovResult.isEmpty()) {
             return new Pair<>(null, 0.0);
         }
 
@@ -753,22 +753,14 @@ public class BaccaratController {
 //            return new Pair<>(patternResult.charAt(0), DEFAULT_PATTERN_CONFIDENCE);
 //        }
 
-        // Handle the case where only patternResult is absent
-        if (patternResult == null || patternResult.isEmpty()) {
-            return markovResult.get();
-        }
 
-        // Get values from markovResult
-        char markovPrediction = markovResult.get().first;
-        double markovConfidence = markovResult.get().second;
-        char patternPrediction = patternResult.charAt(0);
 
-        // Combine predictions based on confidence and predictions matching
-        if (markovPrediction == patternPrediction) {
-            return new Pair<>(markovPrediction, Math.min(markovConfidence + CONFIDENCE_INCREMENT, 1.0));
-        }
+//        // Get values from markovResult
+//        char markovPrediction = markovResult.get().first;
+//        double markovConfidence = markovResult.get().second;
 
-        return (markovConfidence >= 0.5) ? markovResult.get() : new Pair<>(patternPrediction, DEFAULT_PATTERN_CONFIDENCE);
+
+        return markovResult.get();
     }
 
 
