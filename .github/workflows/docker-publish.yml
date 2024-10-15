@@ -32,4 +32,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: marksraguirre/playerCompanion-1:latest
+          tags: marksraguirre/markov_baccarat-1:latest
