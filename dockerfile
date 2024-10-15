@@ -1,10 +1,10 @@
-# Use a base image that includes Java 21
-FROM openjdk:21-jdk-slim as build
+# Use a Maven image for the build stage
+FROM maven:3.9.4-openjdk-21-slim AS build
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the Maven or Gradle build files
+# Copy the Maven build files
 COPY pom.xml ./
 # If you're using Gradle, use the following line instead:
 # COPY build.gradle ./
@@ -14,9 +14,6 @@ COPY src ./src
 
 # Build the application (for Maven)
 RUN mvn clean package -DskipTests
-
-# For Gradle, use the following line instead:
-# RUN ./gradlew build -x test
 
 # Use a new base image for running the application
 FROM openjdk:21-jdk-slim
