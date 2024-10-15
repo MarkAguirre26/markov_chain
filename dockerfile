@@ -27,7 +27,7 @@ COPY --from=build /app/target/*.jar app.jar
 # COPY --from=build /app/build/libs/*.jar app.jar
 
 # Expose the port that your application runs on
-EXPOSE 8080
+EXPOSE 8081
 
 # Command to run the application
 ENTRYPOINT ["java", "-jar", "PlayerCompanion-1.jar"]
