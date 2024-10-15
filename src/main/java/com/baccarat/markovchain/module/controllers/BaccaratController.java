@@ -16,7 +16,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.*;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,6 +49,7 @@ public class BaccaratController {
 
     private final UserConfigService configService;
     private final String WAIT = "Wait..";
+    private final String WAIT_FOR_VIRTUAL_WIN = "Wait for virtual win.";
 
 
     @Autowired
@@ -72,11 +72,11 @@ public class BaccaratController {
                                    @RequestParam String riskLevel,
                                    @RequestParam int suggestedUnit) {
 
-        return processGame(userInput, recommendedBet,riskLevel, suggestedUnit);
+        return processGame(userInput, recommendedBet, riskLevel, suggestedUnit);
     }
 
 
-    public GameResultResponse processGame(String userInput, String recommendedBet,String riskLevel, int suggestedUnit) {
+    public GameResultResponse processGame(String userInput, String recommendedBet, String riskLevel, int suggestedUnit) {
 
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -108,19 +108,19 @@ public class BaccaratController {
             long seconds = duration.getSeconds();
 
             String diff;
-            if(hours>1){
-                diff = hours+" hours";
-            }else{
-                diff = minutes+" minutes";
+            if (hours > 1) {
+                diff = hours + " hours";
+            } else {
+                diff = minutes + " minutes";
             }
 
             System.out.println("Time difference: " + hours + " hours, " + minutes + " minutes");
 
 
             existingGame.setDailyLimitReached(true);
-            existingGame.setMessage(DAILY_LIMIT_REACHED+ diff);
+            existingGame.setMessage(DAILY_LIMIT_REACHED + diff);
             existingGame.setRecommendedBet(recommendedBet);
-            logger.info(userName + ": "+existingGame.getMessage());
+            logger.info(userName + ": " + existingGame.getMessage());
             return existingGame;
         }
 
@@ -200,7 +200,7 @@ public class BaccaratController {
                     response.getSuggestedBetUnit(), response.getLossCounter(), response.getRecommendedBet(),
                     response.getSequence(), response.getHandResult(), "Archived", gameResultStatus.getHandCount(),
                     gameResultStatus.getWins(), gameResultStatus.getLosses(), gameResultStatus.getProfit(),
-                    gameResultStatus.getPlayingUnits(),response.getRiskLevel()));
+                    gameResultStatus.getPlayingUnits(), response.getRiskLevel()));
         }
 
 
@@ -228,9 +228,7 @@ public class BaccaratController {
         LocalDate currentUTCDate = nowUTC.toLocalDate();
 
 
-
-
-        List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userPrincipal.getUserUuid(),currentUTCDate);
+        List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userPrincipal.getUserUuid(), currentUTCDate);
         int maxDailyJournalLimit = getDailyLimit();
         return journals.size() >= maxDailyJournalLimit;
     }
@@ -291,7 +289,12 @@ public class BaccaratController {
                 return 3;  // High confidence, maximum bet
             }
         } else {
-            return 1; //base unit
+            if (gameResultResponse.getLossCounter() >= 2) {
+                return 0; //base unit
+            } else {
+                return 1; //base unit
+            }
+
         }
 
     }
@@ -430,7 +433,7 @@ public class BaccaratController {
             if (gameResultResponse.getLossCounter() >= 2
                     && !gameResultResponse.getMessage().equals("Virtual won!")) {
                 gameResultResponse.setSuggestedBetUnit(0);
-                gameResultResponse.setMessage("Wait for virtual win.");
+                gameResultResponse.setMessage(WAIT_FOR_VIRTUAL_WIN);
             }
 
             //evaluate trailing stop
@@ -440,9 +443,25 @@ public class BaccaratController {
             }
             // code below will not be executed if the above condition is true
             gameResultResponse.setTrailingStop(gameResultResponseWithTrailingStop.getTrailingStop());
-            if (gameResultResponse.getSuggestedBetUnit() <= 0) {
-                gameResultResponse.setSuggestedBetUnit(1);
+
+            if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
+
+
+                if (!gameResultResponse.getRecommendedBet().equals(WAIT)) {
+                    if (gameResultResponse.getSuggestedBetUnit() <= 0 && !gameResultResponse.getMessage().equals(WAIT_FOR_VIRTUAL_WIN)) {
+                        gameResultResponse.setSuggestedBetUnit(1);
+                    }
+
+                } else {
+                    if (gameResultResponse.getMessage().equals(WAIT_FOR_VIRTUAL_WIN)) {
+                        if (gameResultResponse.getSuggestedBetUnit() > 0) {
+                            gameResultResponse.setSuggestedBetUnit(0);
+                        }
+                    }
+
+                }
             }
+
             return provideGameResponse(gameResultResponse);
         }
 
@@ -530,7 +549,8 @@ public class BaccaratController {
     }
 
 
-    private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse, int suggestedUnit, int betSize, boolean isWin) {
+    private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse,
+                                                   int suggestedUnit, int betSize, boolean isWin) {
 
 
         int profit = gameResultResponse.getGameStatus().getProfit();

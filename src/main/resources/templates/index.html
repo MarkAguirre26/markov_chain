@@ -446,6 +446,9 @@
 
             async function playGame(userInput) {
 
+
+               
+
                 const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
                 const isCheckedVeryLowRisk = toggleSwitch.checked;
                 var riskLevelValue = isCheckedVeryLowRisk ? 'VERY_LOW' : 'LOW'
@@ -541,7 +544,7 @@
 
             const { handCount, wins, losses, profit } = response.gameStatus;
             const statusMessage = response.message;
-            const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : statusMessage;
+            // const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : statusMessage;
 
             // Handle status, reset, and undo button visibility
             $('#status').toggle(handCount > 0 || statusMessage.includes("Daily limit!"));
@@ -550,7 +553,7 @@
 
             // $('#status').text(tempMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
             $('#status')
-                .text(tempMessage)
+                .text(statusMessage)
                 .css({
                     'color': statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black',
                     'display': 'none' // Add this line to hide the element
@@ -610,9 +613,11 @@
                     
                     <span style="width: 45px;" class="${statusMessage === 'Wait for virtual win.' ? 'text-xs'
                     : response.recommendedBet.includes('Wait') ? 'text-sm'
-                        : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
-                            : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
-                        ${statusMessage === 'Wait for virtual win.' ? 'Wait' : statusMessage.includes('Wait..') ? 'Wait' : response.recommendedBet}
+                    : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
+                    : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
+                        ${statusMessage === 'Wait for virtual win.' ? 'Wait..' 
+                        : statusMessage.includes('Wait') ? 'Wait..' 
+                        : response.recommendedBet}
                     </span>
                     </div>
                 
@@ -626,11 +631,11 @@
 
 
 
-            if (tempMessage.includes("Restart") || tempMessage.includes("Daily limit")) {
+            if (statusMessage.includes("Restart") || statusMessage.includes("Daily limit")) {
 
 
                 $('#infoHeader').text("Game Over");
-                $('#infoContent').text(tempMessage);
+                $('#infoContent').text(statusMessage);
 
 
             } else {
