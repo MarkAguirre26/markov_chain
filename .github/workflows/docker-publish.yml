@@ -1,10 +1,9 @@
 name: Build and Push Docker Image
 
-# This will trigger the workflow on push to the main branch
 on:
   push:
     branches:
-      - master  # You can specify other branches if needed
+      - master  # Trigger when changes are pushed to the 'main' branch
 
 jobs:
   build:
@@ -15,28 +14,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Set up Java (version 21 in this case)
-      - name: Set up JDK 21
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: '21'
+      # Step 2: Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      # Step 3: Build the project using Maven or Gradle (choose the one you use)
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
-
-      # Step 4: Log in to Docker Hub using the credentials from GitHub Secrets
+      # Step 3: Log in to Docker Hub using secrets stored in GitHub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # Step 5: Build the Docker image
-      - name: Build Docker image
-        run: docker build . -t marksraguirre/markov_baccarat:latest
-
-      # Step 6: Push the Docker image to Docker Hub
-      - name: Push Docker image
-        run: docker push marksraguirre/markov_baccarat:latest
+      # Step 4: Build the Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: marksraguirre/PlayerCompanion-1:latest
