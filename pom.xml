@@ -112,6 +112,8 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+						<source>21</source> <!-- Change this to your desired version -->
+						<target>21</target> <!-- Change this to your desired version -->
 				</configuration>
 			</plugin>
 		</plugins>
