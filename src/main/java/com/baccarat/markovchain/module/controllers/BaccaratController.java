@@ -95,19 +95,19 @@ public class BaccaratController {
         if (hasReachedDailyJournalLimit()) {
 
 
-            // Get the current time in UTC
-            ZonedDateTime nowUTC = ZonedDateTime.now(ZoneOffset.UTC);
+            // Get the current UTC time
+            ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneOffset.UTC);
+            // Get the start of the next day (12:00 AM UTC of the next day)
+            LocalDate tomorrow = LocalDate.now(ZoneOffset.UTC).plusDays(1);
+            ZonedDateTime nextMidnightUtc = tomorrow.atStartOfDay(ZoneOffset.UTC);
+            // Calculate the duration between the current time and the next midnight
+            Duration duration = Duration.between(currentUtcTime, nextMidnightUtc);
 
-            // Define another time in UTC (e.g., 2 hours ago)
-            ZonedDateTime pastUTC = nowUTC.minusHours(4);
 
-            // Calculate the difference between the two times
-            Duration duration = Duration.between(pastUTC, nowUTC);
-
-            // Get the difference in various units
+            // Get the hours, minutes, and seconds remaining until the next midnight
             long hours = duration.toHours();
-            long minutes = duration.toMinutes();
-            long seconds = duration.getSeconds();
+            long minutes = duration.toMinutes() % 60;
+            long seconds = duration.getSeconds() % 60;
 
             String diff;
             if (hours > 1) {

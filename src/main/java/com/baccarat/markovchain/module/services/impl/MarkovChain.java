@@ -15,6 +15,7 @@ public class MarkovChain {
     public void train(String sequence) {
         for (int i = 0; i < sequence.length() - 1; i++) {
             char currentChar = sequence.charAt(i), nextChar = sequence.charAt(i + 1);
+            System.out.println("currentChar: "+currentChar);
             transitions.computeIfAbsent(currentChar, k -> new HashMap<>()).merge(nextChar, 1, Integer::sum);
             totalCounts.merge(currentChar, 1, Integer::sum);
         }
