@@ -107,7 +107,7 @@ public class BaccaratController {
             // Get the hours, minutes, and seconds remaining until the next midnight
             long hours = duration.toHours();
             long minutes = duration.toMinutes() % 60;
-            long seconds = duration.getSeconds() % 60;
+//            long seconds = duration.getSeconds() % 60;
 
             String diff;
             if (hours > 1) {
