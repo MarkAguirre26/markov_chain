@@ -1,5 +1,5 @@
 # Use a Maven image for the build stage
-FROM maven:3.9.4-openjdk-21 AS build
+FROM maven:3.9.3-openjdk-17-slim AS build
 
 # Set the working directory
 WORKDIR /app
@@ -27,7 +27,7 @@ COPY --from=build /app/target/*.jar app.jar
 # COPY --from=build /app/build/libs/*.jar app.jar
 
 # Expose the port that your application runs on
-EXPOSE 8081
+EXPOSE 8080
 
 # Command to run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
