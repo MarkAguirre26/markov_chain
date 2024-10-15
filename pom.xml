@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.virtualsoft</groupId>
 	<artifactId>PlayerCompanion</artifactId>
-	<version>1</version>
+	<version>1.9.1</version>
 	<name>Player Companion</name>
 	<description>Player Companion Baccarat Game Tracker</description>
 	<url/>
@@ -27,7 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>18</java.version>
 	</properties>
 	<dependencies>
 
@@ -102,16 +102,6 @@
 
 	<build>
 		<plugins>
-			<!-- Maven Compiler Plugin -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version> <!-- Use a suitable version -->
-				<configuration>
-					<source>21</source> <!-- Set the source version -->
-					<target>21</target> <!-- Set the target version -->
-				</configuration>
-			</plugin>
 
 			<!-- Spring Boot Maven Plugin -->
 			<plugin>
