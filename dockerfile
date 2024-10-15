@@ -1,5 +1,5 @@
 # Use a Maven image for the build stage
-FROM maven:3.9.4-openjdk-21-slim AS build
+FROM maven:3.9.4-openjdk-21 AS build
 
 # Set the working directory
 WORKDIR /app
