@@ -49,6 +49,8 @@ public class BaccaratController {
 
     private final UserConfigService configService;
     private final String WAIT = "Wait..";
+    private final String PLAYER = "Player";
+    private final String BANKER = "Banker";
     private final String WAIT_FOR_VIRTUAL_WIN = "Wait for virtual win.";
 
 
@@ -462,6 +464,8 @@ public class BaccaratController {
                 }
             }
 
+//            String nextBet =  gameResultResponse.getRecommendedBet().equals(PLAYER)?BANKER:PLAYER;
+//            gameResultResponse.setRecommendedBet(nextBet);
             return provideGameResponse(gameResultResponse);
         }
 
