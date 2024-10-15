@@ -144,9 +144,9 @@ public class BaccaratController {
         String sequence = gameResultResponse.getSequence();
         markovChain.train(sequence);
         Optional<Pair<Character, Double>> markovPrediction = markovChain.predictNext(sequence.charAt(sequence.length() - 1));
-        String patternPrediction = patternRecognizer.findPattern(sequence);
-
-        logger.info(userPrincipal.getUsername() + ":Pattern Prediction: {}", patternPrediction);
+//        String patternPrediction = patternRecognizer.findPattern(sequence);
+//
+//        logger.info(userPrincipal.getUsername() + ":Pattern Prediction: {}", patternPrediction);
 
         // Combine predictions and handle the bet
         Pair<Character, Double> combinedPrediction = combinePredictions(markovPrediction, "");
