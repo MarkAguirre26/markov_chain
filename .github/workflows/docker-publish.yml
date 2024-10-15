@@ -35,8 +35,8 @@ jobs:
 
       # Step 5: Build the Docker image
       - name: Build Docker image
-        run: docker build . -t marksraguirre/markovchain:latest
+        run: docker build . -t marksraguirre/markov_baccarat:latest
 
       # Step 6: Push the Docker image to Docker Hub
       - name: Push Docker image
-        run: docker push marksraguirre/markovchain:latest
+        run: docker push marksraguirre/markov_baccarat:latest
