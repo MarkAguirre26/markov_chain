@@ -102,6 +102,18 @@
 
 	<build>
 		<plugins>
+			<!-- Maven Compiler Plugin -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version> <!-- Use a suitable version -->
+				<configuration>
+					<source>21</source> <!-- Set the source version -->
+					<target>21</target> <!-- Set the target version -->
+				</configuration>
+			</plugin>
+
+			<!-- Spring Boot Maven Plugin -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -112,11 +124,10 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
-						<source>21</source> <!-- Change this to your desired version -->
-						<target>21</target> <!-- Change this to your desired version -->
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+
 
 </project>
