@@ -42,6 +42,7 @@ public class BaccaratController {
 
     private static final double STOP_PROFIT_PERCENTAGE = 0.30;
     private static final double STOP_LOSS_PERCENTAGE = 0.10;
+    private static final double CONFIDENCE_THRESHOLD = 0.55;
     private static final int MAX_HANDS = 60;
     private static final int TRAILING_STOP_ACTIVATION = 7;
 
@@ -318,7 +319,7 @@ public class BaccaratController {
 
         int betSize = calculateWager(combinedPrediction.second, gameResultResponse);
 
-        if (combinedPrediction.second < 0.6) {
+        if (combinedPrediction.second < CONFIDENCE_THRESHOLD) {
 
 
             logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW+" "+combinedPrediction.second);
@@ -469,7 +470,16 @@ public class BaccaratController {
                     }
 
                 }
+            }else {
+                if(gameResultResponse.getLossCounter()>0){
+                    if (gameResultResponse.getSuggestedBetUnit() < 0) {
+                        gameResultResponse.setSuggestedBetUnit(1);
+                    }
+                }
             }
+
+
+
 
             double confidence  =  gameResultResponse.getConfidence() == null? 0: gameResultResponse.getConfidence();
             gameResultResponse.setConfidence(confidence);
