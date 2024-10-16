@@ -118,6 +118,7 @@
 			</plugin>
 
 		</plugins>
+		<finalName>PlayerCompanion</finalName>
 	</build>
 
 
