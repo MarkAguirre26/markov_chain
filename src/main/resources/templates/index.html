@@ -256,31 +256,34 @@
                     <div class="flex justify-between items-center">
 
                         <!-- Logout button on the left -->
-                        <form th:action="@{/logout}" method="post" >
+                        <form th:action="@{/logout}" method="post">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <button type="submit" 
-                            class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200" 
-                            style="background-color: rgb(75 85 99 / 0%);">
+                            <button type="submit"
+                                class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200"
+                                style="background-color: rgb(75 85 99 / 0%);">
                                 <!-- <i class="fas fa-sign-out-alt text-base"></i> -->
-                                <img  src="/img/logout.png" class="w-7 h-7" alt="logout">
+                                <img src="/img/logout.png" class="w-7 h-7" alt="logout">
                             </button>
                         </form>
 
 
                         <!-- Icons on the right -->
-                        <div class="flex space-x-4 pl-2 ml-auto"  style="margin-right: 10px;">
-                            <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)" aria-label="Change Risk Level">
+                        <div class="flex space-x-4 pl-2 ml-auto" style="margin-right: 10px;">
+                            <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)"
+                                aria-label="Change Risk Level">
                                 <img id="riskLevelImage" src="/img/risk_medium.png" class="w-7 h-7" alt="Risk Level">
                             </button>
-                            <button id="shieldButton" class="cursor-pointer" onclick="changeShield(this)" aria-label="Change Shield Status" style="display: none;">
-                                <img id="shieldImage" src="/img/shield_disabled.png" class="w-7 h-7" alt="Shield Status">
+                            <button id="shieldButton" class="cursor-pointer" onclick="changeShield(this)"
+                                aria-label="Change Shield Status" style="display: none;">
+                                <img id="shieldImage" src="/img/shield_disabled.png" class="w-7 h-7"
+                                    alt="Shield Status">
                             </button>
                         </div>
-                
-                        
+
+
                     </div>
                 </div>
-                
+
 
 
                 <div id="inputsContainer" style="margin-top: 5px;">
@@ -314,22 +317,26 @@
 
                 <div class="flex justify-between mb-2">
                     <button type="button" id="playerButton"
-                        class="flex-1 bg-blue-500 text-white py-3 rounded hover:bg-blue-600 transition duration-200 mr-2">
-                        PLAYER
-                    </button>
+                    class="flex-1 bg-gradient-to-r from-blue-500 to-blue-800 text-white py-3 rounded hover:from-blue-600 hover:to-blue-700 transition duration-300 shadow-lg mr-2">
+                    PLAYER
+                </button>
+                
+
                     <button type="button" id="bankerButton"
-                        class="flex-1 bg-red-500 text-white py-3 rounded hover:bg-red-600 transition duration-200 ml-2">
-                        BANKER
-                    </button>
+                    class="flex-1 bg-gradient-to-r from-red-500 to-red-800 text-white py-3 rounded hover:from-red-600 hover:to-red-700 transition duration-300 shadow-lg ml-2">
+                    BANKER
+                </button>
+                
+
                 </div>
 
                 <div class="flex justify-between mb-2"> <!-- Added margin-bottom for spacing -->
                     <button type="button" id="resetButton" style="display: none;"
-                        class="flex-1 bg-yellow-500 text-white py-1 rounded hover:bg-yellow-600 transition duration-200 mr-2">
+                        class="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-700 text-white py-1 rounded hover:bg-yellow-600 transition duration-200 mr-2">
                         Reset Game
                     </button>
                     <button type="button" id="undoButton" style="display: none;"
-                        class="flex-1 bg-green-500 text-white py-1 rounded hover:bg-green-600 transition duration-200 ml-2">
+                        class="flex-1 bg-gradient-to-r from-green-500 to-green-700 text-white py-1 rounded hover:bg-green-600 transition duration-200 ml-2">
                         Undo
                     </button>
                 </div>
@@ -857,7 +864,7 @@
 
         }
 
-        function changeShield() {    
+        function changeShield() {
 
             const shieldImage = document.getElementById('shieldImage');
 
@@ -871,12 +878,12 @@
 
         }
 
-        function setShieldState(){
-            var shieldState  =  getShieldValue();
-            if(shieldState == 1){
+        function setShieldState() {
+            var shieldState = getShieldValue();
+            if (shieldState == 1) {
                 shieldImage.src = '/img/shield_active.png';
                 setShieldValue(1);
-            }else{
+            } else {
                 shieldImage.src = '/img/shield_disabled.png';
                 setShieldValue(0);
             }
