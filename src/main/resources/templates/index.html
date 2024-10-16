@@ -204,47 +204,87 @@
 
     /* ------------------PRGRESS BAR-------------------------------- */
     .progress-container {
-            width: 100%;
-            background-color: #e0e0df;
-            border-radius: 25px;
-            padding: 1px;            
-        }
+        width: 100%;
+        background-color: #e0e0df;
+        border-radius: 25px;
+        padding: 1px;
+    }
 
-        .progress-bar {
-            height: 2px; /* Smaller height */
-            width: 0;
-            background-color: green;
-            border-radius: 25px;
-            transition: width 0.5s ease;
-        }
+    .progress-bar {
+        height: 2px;
+        /* Smaller height */
+        width: 0;
+        background-color: green;
+        border-radius: 25px;
+        transition: width 0.5s ease;
+    }
 
-        /* Color based on percentage */
-        .low { background-color: red; }
-        .medium { background-color: orange; }
-        .high { background-color: green; }
+    /* Color based on percentage */
+    .low {
+        background-color: red;
+    }
+
+    .medium {
+        background-color: orange;
+    }
+
+    .high {
+        background-color: green;
+    }
 </style>
 
 <body class="bg-gray-100">
     <div class="container mx-auto p-2 relative">
         <!-- Logout Icon - Improved -->
-        <div class="absolute top-4 right-4 z-10">
+        <!-- <div class="absolute top-4 right-4 z-10">
             <form th:action="@{/logout}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                 <button type="submit"
                     class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200 shadow-md"
-                    style="background-color: rgb(75 85 99 / 42%);"> <!-- Less transparent -->
+                    style="background-color: rgb(75 85 99 / 42%);"> 
                     <i class="fas fa-sign-out-alt text-base"></i>
                 </button>
             </form>
-        </div>
+        </div> -->
 
 
         <div class="flex flex-col md:flex-row">
-            <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg p-4 mb-4" style="margin: 0.25%;">
-                <div id="inputsContainer">
+            <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg mb-4" style="margin: 0.25%;padding: 0.5rem;">
+
+                <!-- Header with icons -->
+                <div class="bg-gradient-to-r from-blue-200 to-gray-200 rounded-t-lg shadow-md">
+                    <div class="flex justify-between items-center">
+
+                        <!-- Logout button on the left -->
+                        <form th:action="@{/logout}" method="post" >
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" 
+                            class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200" 
+                            style="background-color: rgb(75 85 99 / 0%);">
+                                <!-- <i class="fas fa-sign-out-alt text-base"></i> -->
+                                <img  src="/img/logout.png" class="w-7 h-7" alt="logout">
+                            </button>
+                        </form>
+
+
+                        <!-- Icons on the right -->
+                        <div class="flex space-x-4 pl-2 ml-auto"  style="margin-right: 10px;">
+                            <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)" aria-label="Change Risk Level">
+                                <img id="riskLevelImage" src="/img/risk_medium.png" class="w-7 h-7" alt="Risk Level">
+                            </button>
+                            <button id="shieldButton" class="cursor-pointer" onclick="changeShield(this)" aria-label="Change Shield Status" style="display: none;">
+                                <img id="shieldImage" src="/img/shield_disabled.png" class="w-7 h-7" alt="Shield Status">
+                            </button>
+                        </div>
+                
+                        
+                    </div>
+                </div>
+                
+
+
+                <div id="inputsContainer" style="margin-top: 5px;">
                     <form id="gameForm">
-
-
                         <div style="height: 145px;">
                             <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
                                 style="max-height: 145px; white-space: nowrap;">
@@ -264,7 +304,7 @@
                 <div class="progress-container">
                     <div id="progressBar" class="progress-bar"></div>
                 </div>
-                
+
 
 
                 <div id="results" class="bg-white mt-4 rounded-md shadow-sm" style="margin-top: 2px !important;">
@@ -393,6 +433,7 @@
 
         let playedShoe = 0;
         let dateCreated;
+        var shieldState = false;
 
         function showSpinner() {
             const circleContainer = document.getElementById("circleContainer");
@@ -471,11 +512,15 @@
             async function playGame(userInput) {
 
 
-               
 
-                const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
-                const isCheckedVeryLowRisk = toggleSwitch.checked;
-                var riskLevelValue = isCheckedVeryLowRisk ? 'VERY_LOW' : 'LOW'
+
+                const riskLevelImage = document.getElementById('riskLevelImage');
+
+                const currentSrc = riskLevelImage.src; // Get the full URL of the current image             
+
+                var riskLevelValue = currentSrc.includes('risk_low.png') ? 'VERY_LOW' : 'LOW'
+
+
                 try {
                     const response = await $.post('/api/baccarat/play', $.param({
                         userInput,
@@ -553,6 +598,10 @@
                 modal.classList.remove('hidden');
 
             });
+
+
+
+            setShieldState();
         });
 
 
@@ -562,8 +611,8 @@
             hideSpinner();
             $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
 
-           
-           
+
+
 
 
             const { handCount, wins, losses, profit } = response.gameStatus;
@@ -601,14 +650,7 @@
                 <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
                     <span id="playedShoe">Shoe: ${playedShoe}/10</span>
 
-                   <div class="toggle-container">
-                        <span class="toggle-label">Low</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" class="toggle-input" id="riskLevelToggleSwitch"  />
-                            <span class="toggle-slider"></span>
-                        </label>
-                        <span class="toggle-label">Very Low</span>
-                    </div>
+                   
                     
                     <span id="handCount" >Hands: ${handCount}</span>
                 </div>
@@ -637,10 +679,10 @@
                     
                     <span style="width: 45px;" class="${statusMessage === 'Wait for virtual win.' ? 'text-xs'
                     : response.recommendedBet.includes('Wait') ? 'text-sm'
-                    : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
-                    : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
-                        ${statusMessage === 'Wait for virtual win.' ? 'Wait..' 
-                        : statusMessage.includes('Wait') ? 'Wait..' 
+                        : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
+                            : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
+                        ${statusMessage === 'Wait for virtual win.' ? 'Wait..'
+                    : statusMessage.includes('Wait') ? 'Wait..'
                         : response.recommendedBet}
                     </span>
                     </div>
@@ -676,7 +718,7 @@
                 $('#infoContent').text(contentText);
             }
 
-  
+
 
             displayResults(response.sequence.toUpperCase());
             getHandResult(response.handResult);
@@ -694,15 +736,16 @@
             }
 
 
-     
-        const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
+
+            const riskLevelImage = document.getElementById('riskLevelImage');
+
 
             // console.log(response.riskLevel);
 
             if (response.riskLevel === 'LOW') {
-                toggleSwitch.checked = false; // Set the switch to false (checked)
+                riskLevelImage.src = '/img/risk_medium.png'
             } else {
-                toggleSwitch.checked = true; // Set the switch to true (checked)
+                riskLevelImage.src = '/img/risk_low.png'
             }
 
 
@@ -759,16 +802,16 @@
 
         function displayResults(playerAndBankerCollections) {
 
-            const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
+            const riskLevelImage = document.getElementById('riskLevelImage');
             const results = playerAndBankerCollections.replace("1111", "").split('');
 
-            toggleSwitch.disabled = false; // enable the toggle once there is no handCount
+            // riskLevelImage.disabled = false; // enable the toggle once there is no handCount
+            riskLevelImage.onclick = changeRiskLevel;// Remove the click event
             if (!results.length) return; // Early return if results are empty
-          
-            toggleSwitch.disabled = true; // disable the toggle once there is handCount
-           
-          
-           
+            riskLevelImage.onclick = null;
+
+
+
 
             // Clear previous results
             document.getElementById('handResultColumn').innerHTML = '';
@@ -799,6 +842,54 @@
             setTimeout(() => {
                 circleContainer.scrollLeft = circleContainer.scrollWidth;
             }, 0); // Using a timeout to ensure rendering is complete before scrolling
+        }
+
+        function changeRiskLevel(event) {
+            event.stopPropagation();
+            const riskLevelImage = document.getElementById('riskLevelImage');
+            // console.log(riskLevelImage.src);
+
+            if (riskLevelImage.src.includes('risk_medium.png')) {
+                riskLevelImage.src = '/img/risk_low.png';
+            } else {
+                riskLevelImage.src = '/img/risk_medium.png';
+            }
+
+        }
+
+        function changeShield() {    
+
+            const shieldImage = document.getElementById('shieldImage');
+
+            if (shieldImage.src.includes('shield_disabled.png')) {
+                shieldImage.src = '/img/shield_active.png';
+                setShieldValue(1);
+            } else {
+                shieldImage.src = '/img/shield_disabled.png';
+                setShieldValue(0);
+            }
+
+        }
+
+        function setShieldState(){
+            var shieldState  =  getShieldValue();
+            if(shieldState == 1){
+                shieldImage.src = '/img/shield_active.png';
+                setShieldValue(1);
+            }else{
+                shieldImage.src = '/img/shield_disabled.png';
+                setShieldValue(0);
+            }
+        }
+
+
+
+        function setShieldValue(value) {
+            localStorage.setItem('isShieldActive', value);
+        }
+
+        function getShieldValue() {
+            return localStorage.getItem('isShieldActive');
         }
 
         // Function to modify the date
@@ -956,8 +1047,8 @@
                 // Function to handle the successful response
                 displayResultToUi(response);
 
-                const toggleSwitch = document.getElementById('riskLevelToggleSwitch');
-                toggleSwitch.disabled = true; // Set the switch to disabled
+                const riskLevelImage = document.getElementById('riskLevelImage');
+                riskLevelImage.onclick = false; // Set the switch to disabled
 
 
                 $('#infoHeader').text("Archive");
@@ -1009,24 +1100,24 @@
         }
 
         function updateProgressBar(percentageInput) {
-        
-        var percentage = percentageInput * 100;
-        const progressBar = document.getElementById('progressBar');
-        progressBar.style.width = percentage + '%';
 
-        // Change color based on percentage
-        if (percentage < 30) {
-            progressBar.className = 'progress-bar low';
-        } else if (percentage < 55) {
-            progressBar.className = 'progress-bar medium';
-        } else {
-            progressBar.className = 'progress-bar high';
+            var percentage = percentageInput * 100;
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percentage + '%';
+
+            // Change color based on percentage
+            if (percentage < 30) {
+                progressBar.className = 'progress-bar low';
+            } else if (percentage < 65) {
+                progressBar.className = 'progress-bar medium';
+            } else {
+                progressBar.className = 'progress-bar high';
+            }
         }
-    }
 
 
 
-     
+
 
     </script>
 
