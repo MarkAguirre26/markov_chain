@@ -43,6 +43,7 @@ public class BaccaratController {
     private static final double STOP_PROFIT_PERCENTAGE = 0.30;
     private static final double STOP_LOSS_PERCENTAGE = 0.10;
     private static final int MAX_HANDS = 60;
+    private static final int TRAILING_STOP_ACTIVATION = 7;
 
     private final MarkovChain markovChain;
     private final PatternRecognizer patternRecognizer;
@@ -317,7 +318,7 @@ public class BaccaratController {
 
         int betSize = calculateWager(combinedPrediction.second, gameResultResponse);
 
-        if (combinedPrediction.second < 0.5) {
+        if (combinedPrediction.second < 0.6) {
 
 
             logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW+" "+combinedPrediction.second);
@@ -329,6 +330,7 @@ public class BaccaratController {
 
         }
 
+        gameResultResponse.setConfidence(combinedPrediction.second);
 
         String prediction = String.valueOf(combinedPrediction.first);
         String recommendedBet = Objects.equals(prediction, "p") ? "Player" : "Banker";
@@ -469,8 +471,9 @@ public class BaccaratController {
                 }
             }
 
-//            String nextBet =  gameResultResponse.getRecommendedBet().equals(PLAYER)?BANKER:PLAYER;
-//            gameResultResponse.setRecommendedBet(nextBet);
+            double confidence  =  gameResultResponse.getConfidence() == null? 0: gameResultResponse.getConfidence();
+            gameResultResponse.setConfidence(confidence);
+
             return provideGameResponse(gameResultResponse);
         }
 
@@ -479,7 +482,7 @@ public class BaccaratController {
     private GameResultResponse trailingStop(GameResultResponse gameResultResponse, boolean isUndo) {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         int profit = gameResultResponse.getGameStatus().getProfit();
-        if (gameResultResponse.getGameStatus().getProfit() >= 10) {
+        if (gameResultResponse.getGameStatus().getProfit() >= TRAILING_STOP_ACTIVATION) {
 
             int currentProfit = gameResultResponse.getGameStatus().getProfit();
             double trailingPercent = 5;
@@ -789,6 +792,7 @@ public class BaccaratController {
         response.setHandResult(latesGameResponse.getHandResult());
         response.setMessage(latesGameResponse.getMessage());
         response.setRiskLevel(latesGameResponse.getRiskLevel());
+        response.setConfidence(latesGameResponse.getConfidence());
 
         // Get the GameStatus for the user
         GameStatus gameStatus = gameStatusService.findByGameResponseId(latesGameResponse.getGameResponseId()).orElse(null);
@@ -836,6 +840,7 @@ public class BaccaratController {
         gameResponse.setHandResult(gameResultResponse.getHandResult() == null ? "" : gameResultResponse.getHandResult());
         gameResponse.setMessage(gameResultResponse.getMessage());
         gameResponse.setRiskLevel(gameResultResponse.getRiskLevel());
+        gameResponse.setConfidence(gameResultResponse.getConfidence());
 //        gameResponse.setDateLastUpdated(LocalDateTime.now());
         // Persist the updated game response
         GameResponse newOneGameResponse = gameResponseService.createOrUpdateGameResponse(gameResponse);

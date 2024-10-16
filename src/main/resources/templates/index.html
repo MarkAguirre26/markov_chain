@@ -201,6 +201,27 @@
         transform: translateX(20px);
         /* Knob position when checked */
     }
+
+    /* ------------------PRGRESS BAR-------------------------------- */
+    .progress-container {
+            width: 100%;
+            background-color: #e0e0df;
+            border-radius: 25px;
+            padding: 1px;            
+        }
+
+        .progress-bar {
+            height: 2px; /* Smaller height */
+            width: 0;
+            background-color: green;
+            border-radius: 25px;
+            transition: width 0.5s ease;
+        }
+
+        /* Color based on percentage */
+        .low { background-color: red; }
+        .medium { background-color: orange; }
+        .high { background-color: green; }
 </style>
 
 <body class="bg-gray-100">
@@ -240,7 +261,10 @@
                     <div id="handResultContainer" class="flex flex-row  wrap h-full w-full"></div>
                 </div>
 
-
+                <div class="progress-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+                
 
 
                 <div id="results" class="bg-white mt-4 rounded-md shadow-sm" style="margin-top: 2px !important;">
@@ -575,7 +599,7 @@
 
 
                 <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
-                    <span id="playedShoe">Shoe: ${playedShoe + 1}/10</span>
+                    <span id="playedShoe">Shoe: ${playedShoe}/10</span>
 
                    <div class="toggle-container">
                         <span class="toggle-label">Low</span>
@@ -606,7 +630,7 @@
                     <span class="text-xs ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between border-b pb-1">
-                    <span class="font-bold text-xs">Stake:</span><span class="text-xs">${response.recommendedBet.includes("Wait..") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
+                    <span class="font-bold text-xs">Stake:</span><span class="text-sm font-bold">${response.recommendedBet.includes("Wait..") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between">
                     <span class="font-bold text-xs">Next Bet:</span>
@@ -644,7 +668,7 @@
                 const headerText = totalProfit > 10 ? "Lucky Day" : "Game Conditions";
                 const contentText = totalProfit > 10
                     ? "You're now in profit! Time to call it a day and enjoy your success."
-                    : `Take profit: 30u | Trailing stop activate: 10u | Stop loss: -10u | Daily shoe limit: 10\n\n                    
+                    : `Take profit: 30u | Trailing stop activate: 7u | Stop loss: -10u | Daily shoe limit: 10\n\n                    
                     Note: Follow the app's guidelines to protect your bankroll.`;
 
 
@@ -680,6 +704,9 @@
             } else {
                 toggleSwitch.checked = true; // Set the switch to true (checked)
             }
+
+
+            updateProgressBar(response.confidence);
 
         }
 
@@ -980,6 +1007,24 @@
                 handResultContainer.scrollLeft = handResultContainer.scrollWidth;
             }, 0); // Delay to ensure DOM has updated
         }
+
+        function updateProgressBar(percentageInput) {
+        
+        var percentage = percentageInput * 100;
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = percentage + '%';
+
+        // Change color based on percentage
+        if (percentage < 30) {
+            progressBar.className = 'progress-bar low';
+        } else if (percentage < 70) {
+            progressBar.className = 'progress-bar medium';
+        } else {
+            progressBar.className = 'progress-bar high';
+        }
+    }
+
+
 
      
 

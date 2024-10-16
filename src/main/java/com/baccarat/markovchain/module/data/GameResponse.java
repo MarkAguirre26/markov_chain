@@ -47,6 +47,10 @@ public class GameResponse {
     @Column(name = "risk_level", length = 50)
     private String riskLevel;
 
+    @Column(name = "confidence", length = 10)
+    private Double confidence;
+
+
     @Column(name = "date_last_updated")
     private LocalDateTime dateLastUpdated;
 }
