@@ -9,24 +9,6 @@ import java.util.*;
 @Service
 public class MarkovChain {
 
-    /**
-     * Trains the Markov Chain model on the provided sequence of characters.
-     *
-     * @param sequence the sequence of characters to train on
-     */
-//    public void train(String sequence) {
-//        if (sequence == null) {
-//            throw new IllegalArgumentException("Sequence cannot be null for training.");
-//        }
-//        for (int i = 0; i < sequence.length() - 1; i++) {
-//            char current = sequence.charAt(i);
-//            char next = sequence.charAt(i + 1);
-//            transitions
-//                    .computeIfAbsent(current, k -> new HashMap<>())
-//                    .merge(next, 1, Integer::sum);
-//            totalCounts.merge(current, 1, Integer::sum);
-//        }
-//    }
 
     /**
      * Predicts the next character based on the current character.

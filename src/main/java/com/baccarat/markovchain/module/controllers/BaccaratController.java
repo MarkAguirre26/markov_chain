@@ -631,6 +631,7 @@ public class BaccaratController {
         }
 
 
+
         gameResultResponse.setSuggestedBetUnit(betSize);
 
         return gameResultResponse;
@@ -760,19 +761,6 @@ public class BaccaratController {
         if (markovResult.isEmpty()) {
             return new Pair<>(null, 0.0);
         }
-
-//        // Handle the case where only markovResult is absent
-//        if (markovResult.isEmpty()) {
-//            return new Pair<>(patternResult.charAt(0), DEFAULT_PATTERN_CONFIDENCE);
-//        }
-
-
-
-//        // Get values from markovResult
-//        char markovPrediction = markovResult.get().first;
-//        double markovConfidence = markovResult.get().second;
-
-
         return markovResult.get();
     }
 
