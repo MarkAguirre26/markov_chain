@@ -5,6 +5,7 @@ import com.baccarat.markovchain.module.common.concrete.UserConfig;
 import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
 import com.baccarat.markovchain.module.data.response.GameResultStatus;
+import com.baccarat.markovchain.module.helper.ShoePatternAnalyzer;
 import com.baccarat.markovchain.module.model.Pair;
 import com.baccarat.markovchain.module.model.UserPrincipal;
 import com.baccarat.markovchain.module.services.TrailingStopService;
@@ -317,7 +318,16 @@ public class BaccaratController {
 
 //        int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
 
-        int betSize = calculateWager(combinedPrediction.second, gameResultResponse);
+        int betSize  = 0;
+
+
+        if(Boolean.TRUE.equals(ShoePatternAnalyzer.analyzeShoe(gameResultResponse.getSequence()))){
+            betSize = 1;  // 1 unit if shoe pattern detected is choppy
+        }else{
+            betSize = calculateWager(combinedPrediction.second, gameResultResponse); // Calculate bet size based on confidence if shoe pattern is streak or volatile
+        }
+
+
 
         if (combinedPrediction.second < CONFIDENCE_THRESHOLD) {
 

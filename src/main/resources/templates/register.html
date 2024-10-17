@@ -159,11 +159,11 @@
                 data: JSON.stringify(userData),
                 success: function (response) {
 
-                    console.log(response);
+                    // console.log(response);
 
                     // Handle success response
                     $('#registrationForm')[0].reset();
-                    $('#message').addClass('text-green-500').text("created successfully! email will be sent once your account is activated.");
+                    $('#message').addClass('text-green-500').text("created successfully! You can now login.");
                     // console.log("User created:", response);
                 },
                 error: function (xhr, status, error) {

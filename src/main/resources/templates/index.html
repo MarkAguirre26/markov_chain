@@ -235,18 +235,6 @@
 
 <body class="bg-gray-100">
     <div class="container mx-auto p-2 relative">
-        <!-- Logout Icon - Improved -->
-        <!-- <div class="absolute top-4 right-4 z-10">
-            <form th:action="@{/logout}" method="post">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                <button type="submit"
-                    class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200 shadow-md"
-                    style="background-color: rgb(75 85 99 / 42%);"> 
-                    <i class="fas fa-sign-out-alt text-base"></i>
-                </button>
-            </form>
-        </div> -->
-
 
         <div class="flex flex-col md:flex-row">
             <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg mb-4" style="margin: 0.25%;padding: 0.5rem;">
@@ -266,6 +254,10 @@
                             </button>
                         </form>
 
+                        <div class="flex items-center" style="margin-left: 5px;">
+                            <span id="activeUsersCount" class="text-gray-500 font-semibold mr-2 text-xs">0</span>
+                            <i class="fas fa-user-check w-5 h-5 text-green-500"></i> <!-- Font Awesome icon -->
+                        </div>
 
                         <!-- Icons on the right -->
                         <div class="flex space-x-4 pl-2 ml-auto" style="margin-right: 10px;">
@@ -317,16 +309,16 @@
 
                 <div class="flex justify-between mb-2">
                     <button type="button" id="playerButton"
-                    class="flex-1 bg-gradient-to-l from-blue-600 to-blue-800 text-white py-3 rounded hover:from-blue-600 hover:to-blue-700 transition duration-300 shadow-lg mr-2">
-                    PLAYER
-                </button>
-                
+                        class="flex-1 bg-gradient-to-l from-blue-600 to-blue-800 text-white py-3 rounded hover:from-blue-600 hover:to-blue-700 transition duration-300 shadow-lg mr-2">
+                        PLAYER
+                    </button>
+
 
                     <button type="button" id="bankerButton"
-                    class="flex-1 bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded hover:from-red-600 hover:to-red-700 transition duration-300 shadow-lg ml-2">
-                    BANKER
-                </button>
-                
+                        class="flex-1 bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded hover:from-red-600 hover:to-red-700 transition duration-300 shadow-lg ml-2">
+                        BANKER
+                    </button>
+
 
                 </div>
 
@@ -714,11 +706,10 @@
             } else {
 
                 // Update header and content based on total profit
-                const headerText = totalProfit > 10 ? "Lucky Day" : "Game Conditions";
+                const headerText = totalProfit > 10 ? "Lucky Day" : "Reminder";
                 const contentText = totalProfit > 10
                     ? "You're now in profit! Time to call it a day and enjoy your success."
-                    : `Take profit: 30u | Trailing stop activate: 7u | Stop loss: -10u | Daily shoe limit: 10\n\n                    
-                    Note: Follow the app's guidelines to protect your bankroll.`;
+                    : `Follow the app's guidelines to protect your bankroll.`;
 
 
                 $('#infoHeader').text(headerText);
@@ -729,7 +720,7 @@
 
             displayResults(response.sequence.toUpperCase());
             getHandResult(response.handResult);
-
+            getActiveUsers();
             // Handle button visibility after game result
             if (statusMessage.includes("reached")) {
                 $('#playerButton, #bankerButton').prop('disabled', true);
@@ -1014,6 +1005,9 @@
 
                 $('#totalProfit').text(totalProfit);
 
+               
+                
+
             } catch (xhr) {
                 console.error('Error fetching journals:', xhr);
                 alert('An error occurred while fetching journals. Please try again.');
@@ -1065,11 +1059,7 @@
                 // Log the error details in case of failure
                 console.error('Error fetching archive:', xhr);
 
-                // Optionally, handle error cases (e.g., show a message to the user)
-                // $('#status').text('Failed to fetch archive. Please try again.');
-                // $("#status").text("Archived");
-                // $('#infoHeader').text("Error");
-                // $('#infoContent').text("Error fetching archive");
+
 
             }
 
@@ -1123,6 +1113,23 @@
         }
 
 
+        async function getActiveUsers() {
+            try {
+                const response = await $.ajax({
+                    url: '/active-users',  // Ensure this endpoint exists in your backend
+                    type: 'GET'            // Method type
+                });
+
+                $('#activeUsersCount').text(response);
+
+            } catch (error) {
+                // Log the error details
+                console.error('Error fetching active users:', error);
+            }
+        }
+
+
+       
 
 
 
