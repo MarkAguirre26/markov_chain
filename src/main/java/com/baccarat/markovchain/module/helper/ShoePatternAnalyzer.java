@@ -1,5 +1,7 @@
 package com.baccarat.markovchain.module.helper;
 
+import org.hibernate.event.spi.SaveOrUpdateEvent;
+
 public class ShoePatternAnalyzer {
 
     public static boolean isShoePatternTrendChoppy(String outcomes) {
@@ -16,9 +18,9 @@ public class ShoePatternAnalyzer {
             String lastCharacter = String.valueOf(outcomes.charAt(outcomes.length() - 1));
             String secondToLastCharacter = String.valueOf(outcomes.charAt(outcomes.length() - 2));
 
-            if (!lastCharacter.equals(secondToLastCharacter)) {
-             return true;
-            }
+            System.out.println("Last Character: " + lastCharacter);
+            System.out.println("Second to Last Character: " + secondToLastCharacter);
+            return !(lastCharacter.equals(secondToLastCharacter) && lastCharacter.equals("W"));
 
 
         }
