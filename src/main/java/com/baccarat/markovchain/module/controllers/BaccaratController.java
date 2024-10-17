@@ -29,7 +29,6 @@ public class BaccaratController {
     private static final double CONFIDENCE_INCREMENT = 0.1;
 
 
-
     private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
     private static final String STOP_LOSS_REACHED = "Stop loss reached! Restart the game.";
     private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again after ";
@@ -318,21 +317,22 @@ public class BaccaratController {
 
 //        int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
 
-        int betSize  = 0;
+        int betSize = 0;
 
 
-        if(Boolean.TRUE.equals(ShoePatternAnalyzer.analyzeShoe(gameResultResponse.getSequence()))){
+        if (Boolean.TRUE.equals(ShoePatternAnalyzer.isShoePatternTrendChoppy(gameResultResponse.getHandResult()))) {
+            System.out.println("Shoe Pattern detected as choppy");
             betSize = 1;  // 1 unit if shoe pattern detected is choppy
-        }else{
+        } else {
+            System.out.println("Shoe Pattern detected as streak or volatile");
             betSize = calculateWager(combinedPrediction.second, gameResultResponse); // Calculate bet size based on confidence if shoe pattern is streak or volatile
         }
-
 
 
         if (combinedPrediction.second < CONFIDENCE_THRESHOLD) {
 
 
-            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW+" "+combinedPrediction.second);
+            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.second);
             gameResultResponse.setMessage(PREDICTION_CONFIDENCE_LOW);
 
             gameResultResponse.setSequence(gameResultResponse.getSequence());
@@ -480,8 +480,8 @@ public class BaccaratController {
                     }
 
                 }
-            }else {
-                if(gameResultResponse.getLossCounter()>0){
+            } else {
+                if (gameResultResponse.getLossCounter() > 0) {
                     if (gameResultResponse.getSuggestedBetUnit() < 0) {
                         gameResultResponse.setSuggestedBetUnit(1);
                     }
@@ -489,9 +489,7 @@ public class BaccaratController {
             }
 
 
-
-
-            double confidence  =  gameResultResponse.getConfidence() == null? 0: gameResultResponse.getConfidence();
+            double confidence = gameResultResponse.getConfidence() == null ? 0 : gameResultResponse.getConfidence();
             gameResultResponse.setConfidence(confidence);
 
             return provideGameResponse(gameResultResponse);
@@ -641,7 +639,6 @@ public class BaccaratController {
         }
 
 
-
         gameResultResponse.setSuggestedBetUnit(betSize);
 
         return gameResultResponse;
@@ -764,8 +761,6 @@ public class BaccaratController {
     }
 
 
-
-
     private Pair<Character, Double> combinePredictions(Optional<Pair<Character, Double>> markovResult) {
         // Handle both results being absent
         if (markovResult.isEmpty()) {
@@ -773,7 +768,6 @@ public class BaccaratController {
         }
         return markovResult.get();
     }
-
 
 
     private GameResultResponse getGameResponse(UserPrincipal userPrincipal) {
