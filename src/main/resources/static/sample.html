@@ -107,9 +107,35 @@
                 </div>
             </div>
 
-            <!-- Second Panel -->
-            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-2 mb-2" style="margin: 0.25%;">
-                <h2 class="text-xs font-semibold mb-1">Game Results Overview</h2>
+            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-2 mb-2" style="margin: 0.25%;">               
+                <div class="bg-gray-100 border rounded-lg p-2 mb-1 flex items-center justify-between"> <!-- Reduced padding to p-2 -->
+                    <div>
+                        <h3 class="font-semibold text-xs"> <!-- Reduced font size to text-xs -->
+                            Total Profit (u): <span id="totalProfit">0.00</span> <!-- Default value -->
+                        </h3>
+                        <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime">2024-10-18 10:00</span></p> <!-- Default value -->
+                    </div>
+                
+                    <div class="flex space-x-2">
+                        <!-- Back Icon -->
+                        <button onclick="getJournal('back')" class="p-1 rounded hover:bg-gray-200"> <!-- Reduced padding to p-1 -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <!-- Forward Icon -->
+                        <button onclick="getJournal('forward')" class="p-1 rounded hover:bg-gray-200"> <!-- Reduced padding to p-1 -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+            
+                
+
+
 
                 <!-- Tab Navigation -->
                 <div class="flex mb-2">
@@ -121,42 +147,28 @@
 
                 <!-- Journal Tab Content -->
                 <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">
-
-                    <div class="flex space-x-2">
-                        <!-- Back Icon -->
-                        <button onclick="getJournal('back')">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-                        <!-- Forward Icon -->
-                        <button onclick="getJournal('forward')">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </div>
-
+                    <!-- Main Card -->                    
+                
                     <!-- Journal entries will be populated here -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalEntriesContainer"></div>
                 </div>
+                
 
                 <!-- Graph Tab Content -->
                 <div class="hidden" id="graphContainer">
                     <div class="flex items-center mb-4">
-                        <label class="mr-2 text-gray-700">View By:</label>
-                        <input type="radio" id="day" name="viewBy" value="day" class="mr-1" checked>
+                        <label class="mr-2 text-gray-700" style="margin-right: 10px;">View By:</label>
+                        <input type="radio" id="dayRadio" name="viewBy" value="day" class="mr-1" checked
+                            onchange="handleViewChange()">
                         <label for="day" class="mr-4 text-gray-700">Day</label>
-                        <input type="radio" id="week" name="viewBy" value="week" class="mr-1">
+                        <input type="radio" id="weekRadio" name="viewBy" value="week" class="mr-1"
+                            onchange="handleViewChange()">
                         <label for="week" class="text-gray-700">Week</label>
                     </div>
                     <canvas id="profitsGraph" width="400" height="200"></canvas>
                 </div>
-                
+
+
             </div>
         </div>
     </div>

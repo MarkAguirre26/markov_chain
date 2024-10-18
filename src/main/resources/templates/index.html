@@ -347,7 +347,40 @@
 
             <!-- Second Panel -->
             <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-2 mb-2" style="margin: 0.25%;">
-                <h2 class="text-xs font-semibold mb-1">Game Results Overview</h2>
+                <div class="bg-gray-100 border rounded-lg p-2 mb-1 flex items-center justify-between">
+                    <!-- Reduced padding to p-2 -->
+                    <div>
+                        <h3 class="font-semibold text-xs"> <!-- Reduced font size to text-xs -->
+                            Total Profit (u): <span id="totalProfit">0.00</span> <!-- Default value -->
+                        </h3>
+                        <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime">2024-10-18 10:00</span></p>
+                        <!-- Default value -->
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <!-- Back Icon -->
+                        <button onclick="getJournal('back')" class="p-1 rounded hover:bg-gray-200">
+                            <!-- Reduced padding to p-1 -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <!-- Forward Icon -->
+                        <button onclick="getJournal('forward')" class="p-1 rounded hover:bg-gray-200">
+                            <!-- Reduced padding to p-1 -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+
+
 
                 <!-- Tab Navigation -->
                 <div class="flex mb-2">
@@ -360,39 +393,11 @@
                 <!-- Journal Tab Content -->
                 <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">
                     <!-- Main Card -->
-                    <div class="bg-gray-100 border rounded-lg p-1 mb-1 flex items-center justify-between">
-                        <div>
-                            <h3 class="font-semibold text-sm">
-                                Total Profit(u): <span id="totalProfit"></span>
-                            </h3>
-                            <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime"></span></p>
-                        </div>
-                    </div>
-
-                    <div class="flex space-x-2">
-                        <!-- Back Icon -->
-                        <button onclick="getJournal('back')">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-                        <!-- Forward Icon -->
-                        <button onclick="getJournal('forward')">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </div>
 
                     <!-- Journal entries will be populated here -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalEntriesContainer"></div>
-
-
                 </div>
+
 
                 <!-- Graph Tab Content -->
                 <div class="hidden" id="graphContainer">
@@ -952,6 +957,7 @@
 
 
                     // console.log(response);
+                    totalProfit = 0;
 
                     const validJournals = response.filter(journal => journal.hand !== 0).reverse();
                     playedShoe = 0;
@@ -1121,12 +1127,13 @@
             }
 
             function updateProgressBar(percentageInput) {
-
-                var percentage = percentageInput * 100;
+                const percentage = percentageInput * 100; // Convert to percentage
                 const progressBar = document.getElementById('progressBar');
-                progressBar.style.width = percentage + '%';
 
-                // Change color based on percentage
+                // Set the width of the progress bar
+                progressBar.style.width = `${percentage}%`;
+
+                // Change class based on percentage to adjust color
                 if (percentage < 30) {
                     progressBar.className = 'progress-bar low';
                 } else if (percentage < 65) {
@@ -1157,33 +1164,23 @@
                 const dayRadio = document.getElementById('dayRadio');
                 const weekRadio = document.getElementById('weekRadio');
 
-                if (dayRadio.checked) {
-                    getProfitGraph("Day");
-                } else if (weekRadio.checked) {
-                    getProfitGraph("Week");
-                    // Your logic for week view goes here
+                // Determine the filter based on which radio button is checked
+                const filterBy = dayRadio.checked ? 'Day' : weekRadio.checked ? 'Week' : null;
+
+                if (filterBy) {
+                    getProfitGraph(filterBy);
                 }
             }
 
 
 
 
-            // Dummy data for the graph
-            function getProfitGraph(filterBy) {
 
 
-
+            function getProfitGraph() {
                 const dayRadio = document.getElementById('dayRadio');
-                const weekRadio = document.getElementById('weekRadio');
+                const filterBy = dayRadio.checked ? 'Day' : 'Week'; // Use a ternary operator for clarity
 
-                if (dayRadio.checked) {
-                    filterBy = 'Day';
-                } else {
-                    filterBy = 'Week';
-                }
-
-              
-                // fetch(`/api/journals/profit-data?filterBy=${filterBy}`)
                 fetch(`/api/journals/profit-data?filterBy=${filterBy}`)
                     .then(response => {
                         if (!response.ok) {
@@ -1207,8 +1204,8 @@
                             data: {
                                 labels: profitData.labels,  // Use the labels for the x-axis
                                 datasets: [{
-                                    label: 'Dummy Profit Data',  // Single label for the dataset
-                                    data: profitData.data,        // Use the data from the response
+                                    label: 'Profit/Loss',  // Single label for the dataset
+                                    data: profitData.data,  // Use the data from the response
                                     fill: false,
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     tension: 0.1
@@ -1224,9 +1221,11 @@
                             }
                         });
                     })
-                    .catch(error => console.error('Error fetching profit data:', error));
-
+                    .catch(error => {
+                        console.error('Error fetching profit data:', error);
+                    });
             }
+
 
 
 
