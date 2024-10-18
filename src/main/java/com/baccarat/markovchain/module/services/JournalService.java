@@ -13,5 +13,7 @@ public interface JournalService {
     void deleteJournal(Integer journalId);
     List<Journal> getJournalsByUserUuidAndDateCreated(String userUuid, LocalDate dateCreated);
     List<Journal> getJournalsByUserUuidAndDateLastModified(String userUuid, LocalDateTime dateCreated);
+List<Object[]> getTotalProfitByDate(String userUuid);
+List<Object[]> getTotalProfitByWeek(String userUuid);
 }
 

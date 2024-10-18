@@ -45,11 +45,21 @@ public class JournalServiceImpl implements JournalService {
 
     @Override
     public List<Journal> getJournalsByUserUuidAndDateCreated(String userUuid, LocalDate dateCreated) {
-        return journalRepository.findByUserUuidAndDateCreated(userUuid,dateCreated);
+        return journalRepository.findByUserUuidAndDateCreated(userUuid, dateCreated);
     }
 
     @Override
     public List<Journal> getJournalsByUserUuidAndDateLastModified(String userUuid, LocalDateTime dateLastModified) {
-        return journalRepository.findByUserUuidAndDateLastModified(userUuid,dateLastModified);
+        return journalRepository.findByUserUuidAndDateLastModified(userUuid, dateLastModified);
+    }
+
+    @Override
+    public List<Object[]> getTotalProfitByDate(String userUuid) {
+        return journalRepository.getTotalProfitByDate(userUuid);
+    }
+
+    @Override
+    public List<Object[]> getTotalProfitByWeek(String userUuid) {
+        return journalRepository.getTotalProfitByWeek(userUuid);
     }
 }

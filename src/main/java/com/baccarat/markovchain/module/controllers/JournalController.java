@@ -3,12 +3,13 @@ package com.baccarat.markovchain.module.controllers;
 import com.baccarat.markovchain.module.common.concrete.UserConfig;
 import com.baccarat.markovchain.module.data.Config;
 import com.baccarat.markovchain.module.data.GamesArchive;
-import com.baccarat.markovchain.module.services.impl.GamesArchiveService;
 import com.baccarat.markovchain.module.data.Journal;
+import com.baccarat.markovchain.module.data.ProfitAndLose;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
 import com.baccarat.markovchain.module.data.response.GameResultStatus;
 import com.baccarat.markovchain.module.model.UserPrincipal;
 import com.baccarat.markovchain.module.response.JournalResponse;
+import com.baccarat.markovchain.module.services.impl.GamesArchiveService;
 import com.baccarat.markovchain.module.services.impl.JournalServiceImpl;
 import com.baccarat.markovchain.module.services.impl.UserConfigService;
 import org.slf4j.Logger;
@@ -17,9 +18,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -126,6 +131,36 @@ public class JournalController {
         // Continue with your logic using userUuid
         return configService.getConfigsByUserUuid(userUuid).stream().filter(config -> config.getName().equals(UserConfig.DAILY_LIMIT.getValue())).map(Config::getValue).map(Integer::parseInt).findFirst().orElse(0);
 
+    }
+
+    @GetMapping("/profit-data")
+    public ProfitAndLose getProfitData(@RequestParam("filterBy") String filterBy) {
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
+
+
+        // Get the list of total profit by date
+        List<Object[]> totalProfitByDate  =  null;
+        if(filterBy.equals("Day")){
+            totalProfitByDate  = journalService.getTotalProfitByDate(userUuid);
+        }else if(filterBy.equals("Week")){
+            totalProfitByDate = journalService.getTotalProfitByWeek(userUuid);
+        }
+
+        // Initialize labels and data arrays
+        String[] labels = new String[totalProfitByDate.size()];
+        Integer[] data = new Integer[totalProfitByDate.size()];
+
+        // Populate the arrays
+        int index = 0;
+        for (Object[] row : totalProfitByDate) {
+            labels[index] = row[1].toString();           // Assuming row[1] is the date (created_date)
+            data[index] = ((Number) row[0]).intValue();  // Assuming row[0] is the profit (total_profit)
+            index++;
+        }
+
+        return new ProfitAndLose(Arrays.asList(labels), Arrays.asList(data));
     }
 
 }

@@ -1,56 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Small Progress Bar</title>
-    <style>
-        .progress-container {
-            width: 100%;
-            background-color: #e0e0df;
-            border-radius: 25px;
-            padding: 1px;
-            margin: 20px 0;
-        }
-
-        .progress-bar {
-            height: 5px; /* Smaller height */
-            width: 0;
-            background-color: green;
-            border-radius: 25px;
-            transition: width 0.5s ease;
-        }
-
-        /* Color based on percentage */
-        .low { background-color: red; }
-        .medium { background-color: orange; }
-        .high { background-color: green; }
-    </style>
+    <title>Player Companion Baccarat App Game Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
 
-<div class="progress-container">
-    <div id="progressBar" class="progress-bar"></div>
-</div>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-2 relative">
+        <div class="flex flex-col md:flex-row">
+            <div class="w-full md:w-2/5 bg-white shadow-md rounded-lg mb-4" style="margin: 0.25%;padding: 0.5rem;">
+                <!-- Header with icons -->
+                <div class="bg-gradient-to-r from-blue-200 to-gray-200 rounded-t-lg shadow-md">
+                    <div class="flex justify-between items-center">
+                        <!-- Logout button on the left -->
+                        <form th:action="@{/logout}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit"
+                                class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200"
+                                style="background-color: rgb(75 85 99 / 0%);">
+                                <img src="/img/logout.png" class="w-7 h-7" alt="logout">
+                            </button>
+                        </form>
 
-<script>
-    function updateProgressBar(percentage) {
-        const progressBar = document.getElementById('progressBar');
-        progressBar.style.width = percentage + '%';
+                        <div class="flex items-center" style="margin-left: 5px;">
+                            <span id="activeUsersCount" class="text-gray-500 font-semibold mr-2 text-xs">0</span>
+                            <i class="fas fa-user-check w-5 h-5 text-green-500"></i>
+                        </div>
 
-        // Change color based on percentage
-        if (percentage < 30) {
-            progressBar.className = 'progress-bar low';
-        } else if (percentage < 70) {
-            progressBar.className = 'progress-bar medium';
-        } else {
-            progressBar.className = 'progress-bar high';
+                        <!-- Icons on the right -->
+                        <div class="flex space-x-4 pl-2 ml-auto" style="margin-right: 10px;">
+                            <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)"
+                                aria-label="Change Risk Level">
+                                <img id="riskLevelImage" src="/img/risk_medium.png" class="w-7 h-7" alt="Risk Level">
+                            </button>
+                            <button id="shieldButton" class="cursor-pointer" onclick="changeShield(this)"
+                                aria-label="Change Shield Status" style="display: none;">
+                                <img id="shieldImage" src="/img/shield_disabled.png" class="w-7 h-7"
+                                    alt="Shield Status">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="inputsContainer" style="margin-top: 5px;">
+                    <form id="gameForm">
+                        <div style="height: 145px;">
+                            <div id="circleContainer" class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
+                                style="max-height: 145px; white-space: nowrap;">
+                                <div id="handResultColumn" class="flex flex-row wrap h-full w-full"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Win and Lose -->
+                <div class="gap-2 mb-2 w-full overflow-x-auto hidden-scrollbar"
+                    style="white-space: nowrap; margin-top: 5px !important;">
+                    <div id="handResultContainer" class="flex flex-row  wrap h-full w-full"></div>
+                </div>
+
+                <div class="progress-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+
+                <div id="results" class="bg-white mt-4 rounded-md shadow-sm" style="margin-top: 2px !important;">
+                    <div id="bettingResults" class="text-gray-700"></div>
+                    <div id="finalStats" class="mt-2 font-bold text-gray-900"></div>
+                </div>
+
+                <div class="flex justify-between mb-2">
+                    <button type="button" id="playerButton"
+                        class="text-xs flex-1 bg-gradient-to-l from-blue-700 to-blue-800 text-white py-3 rounded hover:from-blue-600 hover:to-blue-700 transition duration-300 shadow-lg mr-2">
+                        PLAYER
+                    </button>
+
+                    <button type="button" id="bankerButton"
+                        class="text-xs flex-1 bg-gradient-to-r from-red-700 to-red-800 text-white py-3 rounded hover:from-red-600 hover:to-red-700 transition duration-300 shadow-lg ml-2">
+                        BANKER
+                    </button>
+                </div>
+
+                <div class="flex justify-between mb-2">
+                    <button type="button" id="resetButton" style="display: none;"
+                        class="text-xs flex-1 bg-gradient-to-l from-yellow-700 to-yellow-800 text-white py-1 rounded hover:from-yellow-600 hover:to-yellow-700 transition duration-200 mr-2">
+                        Reset Game
+                    </button>
+                    <button type="button" id="undoButton" style="display: none;"
+                        class="text-xs flex-1 bg-gradient-to-r from-green-700 to-green-800 text-white py-1 rounded hover:from-green-600 hover:to-green-700 transition duration-200 ml-2">
+                        Undo
+                    </button>
+                </div>
+
+                <div id="status" class="text-sm text-center"></div>
+
+                <div class="mt-4">
+                    <div class="bg-blue-100 border border-blue-300 rounded-lg p-2 mb-2">
+                        <h3 id="infoHeader" class="font-semibold text-xs"></h3>
+                        <p id="infoContent" class="text-gray-700 text-xs"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Panel -->
+            <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-2 mb-2" style="margin: 0.25%;">
+                <h2 class="text-xs font-semibold mb-1">Game Results Overview</h2>
+
+                <!-- Tab Navigation -->
+                <div class="flex mb-2">
+                    <button id="journalTab" class="flex-1 py-2 text-gray-700 text-xs border-b-2 border-blue-500"
+                        onclick="showTab('journal')">Journal</button>
+                    <button id="graphTab" class="flex-1 py-2 text-gray-500 border-b-2 text-xs"
+                        onclick="showTab('graph')">Profit/Loss</button>
+                </div>
+
+                <!-- Journal Tab Content -->
+                <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">
+
+                    <div class="flex space-x-2">
+                        <!-- Back Icon -->
+                        <button onclick="getJournal('back')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <!-- Forward Icon -->
+                        <button onclick="getJournal('forward')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Journal entries will be populated here -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalEntriesContainer"></div>
+                </div>
+
+                <!-- Graph Tab Content -->
+                <div class="hidden" id="graphContainer">
+                    <div class="flex items-center mb-4">
+                        <label class="mr-2 text-gray-700">View By:</label>
+                        <input type="radio" id="day" name="viewBy" value="day" class="mr-1" checked>
+                        <label for="day" class="mr-4 text-gray-700">Day</label>
+                        <input type="radio" id="week" name="viewBy" value="week" class="mr-1">
+                        <label for="week" class="text-gray-700">Week</label>
+                    </div>
+                    <canvas id="profitsGraph" width="400" height="200"></canvas>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+        // Dummy data for the graph
+        function getProfitGraph() {
+
+
+            const ctx = document.getElementById('profitsGraph').getContext('2d');
+            const dummyGraph = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                    datasets: [{
+                        label: 'Dummy Profit Data',
+                        data: [10, 20, 30, 81, 90, 105, 150],
+                        fill: false,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
-    }
 
-    // Example: update progress to 50%
-    updateProgressBar(50);
-</script>
+        // getProfitGraph();
 
+        function showTab(tab) {
+            const journalContainer = document.getElementById('journalContainer');
+            const graphContainer = document.getElementById('graphContainer');
+            const journalTab = document.getElementById('journalTab');
+            const graphTab = document.getElementById('graphTab');
+
+            if (tab === 'journal') {
+                journalContainer.classList.remove('hidden');
+                graphContainer.classList.add('hidden');
+                journalTab.classList.add('border-blue-500', 'text-gray-700');
+                graphTab.classList.remove('border-blue-500', 'text-gray-700');
+                graphTab.classList.add('text-gray-500');
+            } else {
+                journalContainer.classList.add('hidden');
+                graphContainer.classList.remove('hidden');
+                graphTab.classList.add('border-blue-500', 'text-gray-700');
+                journalTab.classList.remove('border-blue-500', 'text-gray-700');
+                journalTab.classList.add('text-gray-500');
+            }
+        }
+
+
+        
+    </script>
 </body>
+
 </html>

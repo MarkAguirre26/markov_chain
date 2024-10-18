@@ -8,7 +8,7 @@
     <title>Player Companion Baccarat App Game Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
@@ -309,13 +309,13 @@
 
                 <div class="flex justify-between mb-2">
                     <button type="button" id="playerButton"
-                        class="flex-1 bg-gradient-to-l from-blue-600 to-blue-800 text-white py-3 rounded hover:from-blue-600 hover:to-blue-700 transition duration-300 shadow-lg mr-2">
+                        class="flex-1 bg-gradient-to-l from-blue-700 to-blue-800 text-white py-3 rounded hover:from-blue-600 hover:to-blue-700 transition duration-300 shadow-lg mr-2">
                         PLAYER
                     </button>
 
 
                     <button type="button" id="bankerButton"
-                        class="flex-1 bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded hover:from-red-600 hover:to-red-700 transition duration-300 shadow-lg ml-2">
+                        class="flex-1 bg-gradient-to-r from-red-700 to-red-800 text-white py-3 rounded hover:from-red-600 hover:to-red-700 transition duration-300 shadow-lg ml-2">
                         BANKER
                     </button>
 
@@ -324,11 +324,11 @@
 
                 <div class="flex justify-between mb-2"> <!-- Added margin-bottom for spacing -->
                     <button type="button" id="resetButton" style="display: none;"
-                        class="flex-1 bg-gradient-to-l from-yellow-600 to-yellow-800 text-white py-1 rounded hover:from-yellow-600 hover:to-yellow-700 transition duration-200 mr-2">
+                        class="flex-1 bg-gradient-to-l from-yellow-700 to-yellow-800 text-white py-1 rounded hover:from-yellow-600 hover:to-yellow-700 transition duration-200 mr-2">
                         Reset Game
                     </button>
                     <button type="button" id="undoButton" style="display: none;"
-                        class="flex-1 bg-gradient-to-r from-green-600 to-green-800 text-white py-1 rounded hover:from-green-600 hover:to-green-700 transition duration-200 ml-2">
+                        class="flex-1 bg-gradient-to-r from-green-700 to-green-800 text-white py-1 rounded hover:from-green-600 hover:to-green-700 transition duration-200 ml-2">
                         Undo
                     </button>
                 </div>
@@ -344,19 +344,31 @@
                 </div>
             </div>
 
+
             <!-- Second Panel -->
             <div class="w-full md:w-3/5 bg-white shadow-md rounded-lg p-2 mb-2" style="margin: 0.25%;">
-                <h2 class="text-sm font-semibold mb-1">Game Results Overview</h2>
-                <p class="text-gray-700 text-xs">Each result below represents the profit details for each shoe.</p>
+                <h2 class="text-xs font-semibold mb-1">Game Results Overview</h2>
 
-                <!-- Main Card -->
-                <div class="bg-gray-100 border rounded-lg p-1 mb-1 flex items-center justify-between">
-                    <div>
-                        <h3 class="font-semibold text-sm">
-                            Total Profit(u): <span id="totalProfit"></span>
-                        </h3>
-                        <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime"></span></p>
+                <!-- Tab Navigation -->
+                <div class="flex mb-2">
+                    <button id="journalTab" class="flex-1 py-2 text-gray-700 text-xs border-b-2 border-blue-500"
+                        onclick="showTab('journal')">Journal</button>
+                    <button id="graphTab" class="flex-1 py-2 text-gray-500 border-b-2 text-xs"
+                        onclick="showTab('graph')">Profit/Loss</button>
+                </div>
+
+                <!-- Journal Tab Content -->
+                <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">
+                    <!-- Main Card -->
+                    <div class="bg-gray-100 border rounded-lg p-1 mb-1 flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-sm">
+                                Total Profit(u): <span id="totalProfit"></span>
+                            </h3>
+                            <p class="text-gray-700 text-xs">Date/Time: <span id="dateTime"></span></p>
+                        </div>
                     </div>
+
                     <div class="flex space-x-2">
                         <!-- Back Icon -->
                         <button onclick="getJournal('back')">
@@ -375,273 +387,286 @@
                             </svg>
                         </button>
                     </div>
-                </div>
 
-
-                <!-- Sub Card Container -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalContainer">
                     <!-- Journal entries will be populated here -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalEntriesContainer"></div>
+
+
+                </div>
+
+                <!-- Graph Tab Content -->
+                <div class="hidden" id="graphContainer">
+                    <div class="flex items-center mb-4">
+                        <label class="mr-2 text-gray-700" style="margin-right: 10px;">View By:</label>
+                        <input type="radio" id="dayRadio" name="viewBy" value="day" class="mr-1" checked
+                            onchange="handleViewChange()">
+                        <label for="day" class="mr-4 text-gray-700">Day</label>
+                        <input type="radio" id="weekRadio" name="viewBy" value="week" class="mr-1"
+                            onchange="handleViewChange()">
+                        <label for="week" class="text-gray-700">Week</label>
+                    </div>
+                    <canvas id="profitsGraph" width="400" height="200"></canvas>
+                </div>
+
+
+            </div>
+        </div>
+
+
+
+
+        <div class="overlay" id="spinnerOverlay">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Yes or No Dialog Modal -->
+        <div id="yesNoModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+            <div class="bg-white rounded-lg shadow-lg w-96">
+                <!-- Modal Header -->
+                <div class="px-4 py-2 border-b">
+                    <h3 class="text-lg font-semibold">Confirmation</h3>
+                </div>
+                <!-- Modal Body -->
+                <div class="p-4">
+                    <p>Do you want to add this game result to your journal?</p>
+                </div>
+                <!-- Modal Footer -->
+                <div class="px-4 py-2 border-t flex flex-col space-y-2">
+                    <button id="yesButton"
+                        class="text-xs bg-green-700 text-white w-full py-2 rounded-lg shadow hover:bg-green-600 transition duration-300 transform hover:scale-105">
+                        Yes
+                    </button>
+                    <button id="noButton"
+                        class="text-xs bg-blue-700 text-white w-full py-2 rounded-lg shadow hover:bg-blue-600 transition duration-300 transform hover:scale-105">
+                        No
+                    </button>
+                    <button id="cancelButton" style="margin-top: 20px;"
+                        class="text-xs bg-gray-500 text-white w-full py-2 rounded-lg shadow hover:bg-gray-600 transition duration-300 transform hover:scale-105">
+                        Cancel
+                    </button>
                 </div>
             </div>
-
         </div>
-    </div>
 
 
+        <script>
+
+            let playedShoe = 0;
+            let dateCreated;
+            var shieldState = false;
+            var totalProfit = 0;
+
+            const ctx = document.getElementById('profitsGraph').getContext('2d');
+            let dummyGraph; // Variable to hold the chart instance
+
+            function showSpinner() {
+                const circleContainer = document.getElementById("circleContainer");
+                const spinnerOverlay = document.getElementById("spinnerOverlay");
+
+                // Get the position and dimensions of circleContainer
+                const rect = circleContainer.getBoundingClientRect();
+
+                // Show the spinner overlay
+                spinnerOverlay.style.display = "flex";
+                spinnerOverlay.style.position = "fixed"; // Change to fixed for screen-wide overlay
+                spinnerOverlay.style.top = "0"; // Cover the whole screen
+                spinnerOverlay.style.left = "0"; // Cover the whole screen
+                spinnerOverlay.style.width = "100vw"; // Full viewport width
+                spinnerOverlay.style.height = "100vh"; // Full viewport height
+                spinnerOverlay.style.zIndex = "9999"; // Ensure it is above everything, including modals
+            }
 
 
-    <div class="overlay" id="spinnerOverlay">
-        <div class="spinner"></div>
-    </div>
-
-    <!-- Yes or No Dialog Modal -->
-    <div id="yesNoModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
-        <div class="bg-white rounded-lg shadow-lg w-96">
-            <!-- Modal Header -->
-            <div class="px-4 py-2 border-b">
-                <h3 class="text-lg font-semibold">Confirmation</h3>
-            </div>
-            <!-- Modal Body -->
-            <div class="p-4">
-                <p>Do you want to add this game result to your journal?</p>
-            </div>
-            <!-- Modal Footer -->
-            <div class="px-4 py-2 border-t flex flex-col space-y-2">
+            function hideSpinner() {
+                // Hide the overlay and spinner
+                document.getElementById("spinnerOverlay").style.display = "none";
+            }
 
 
-                <button id="yesButton"
-                    class="bg-green-500 text-white w-full py-1 rounded hover:bg-green-600 transition duration-200 text-sm">
-                    Yes
-                </button>
-                <button id="noButton"
-                    class="bg-blue-500 text-white w-full py-1 rounded hover:bg-blue-600 transition duration-200 text-sm">
-                    No
-                </button>
+            $(document).ready(function () {
+                (async () => {
+                    await getJournal('today');
+                    await currentState();
+                })();
 
-                <button id="cancelButton" style="margin-top: 20px;"
-                    class="bg-gray-500 text-white w-full py-1 rounded hover:bg-gray-600 transition duration-200 text-sm">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
+                // Get modal and buttons
+                const modal = document.getElementById('yesNoModal');
+                const openModalButton = document.getElementById('openModalButton');
+                const yesButton = document.getElementById('yesButton');
+                const noButton = document.getElementById('noButton');
+                const cancelButton = document.getElementById('cancelButton');
 
 
-
-    <script>
-
-        let playedShoe = 0;
-        let dateCreated;
-        var shieldState = false;
-
-        function showSpinner() {
-            const circleContainer = document.getElementById("circleContainer");
-            const spinnerOverlay = document.getElementById("spinnerOverlay");
-
-            // Get the position and dimensions of circleContainer
-            const rect = circleContainer.getBoundingClientRect();
-
-            // Show the spinner overlay
-            spinnerOverlay.style.display = "flex";
-            spinnerOverlay.style.position = "fixed"; // Change to fixed for screen-wide overlay
-            spinnerOverlay.style.top = "0"; // Cover the whole screen
-            spinnerOverlay.style.left = "0"; // Cover the whole screen
-            spinnerOverlay.style.width = "100vw"; // Full viewport width
-            spinnerOverlay.style.height = "100vh"; // Full viewport height
-            spinnerOverlay.style.zIndex = "9999"; // Ensure it is above everything, including modals
-        }
-
-
-        function hideSpinner() {
-            // Hide the overlay and spinner
-            document.getElementById("spinnerOverlay").style.display = "none";
-        }
-
-
-        $(document).ready(function () {
-            (async () => {
-                await getJournal('today');
-                await currentState();
-            })();
-
-            // Get modal and buttons
-            const modal = document.getElementById('yesNoModal');
-            const openModalButton = document.getElementById('openModalButton');
-            const yesButton = document.getElementById('yesButton');
-            const noButton = document.getElementById('noButton');
-            const cancelButton = document.getElementById('cancelButton');
-
-
-            // Close modal and handle Yes/No actions
-            cancelButton.addEventListener('click', () => {
-                modal.classList.add('hidden');
-
-            });
-
-
-
-            // Close modal and handle Yes/No actions
-            noButton.addEventListener('click', () => {
-                processEventToReset("no");
-            });
-
-
-            yesButton.addEventListener('click', async () => {
-                processEventToReset("yes");
-            });
-
-
-            async function processEventToReset(answer) {
-                showSpinner();
-                try {
-                    const response = await $.post('/api/baccarat/reset', { yesNo: answer });
-                    displayResultToUi(response);
-                } catch (error) {
-                    $('#resetButton').prop('disabled', false);
-                    $('#status').text(`Error: ${error.responseText || 'Unexpected error'}`);
-                } finally {
-                    hideSpinner();
+                // Close modal and handle Yes/No actions
+                cancelButton.addEventListener('click', () => {
                     modal.classList.add('hidden');
-                }
-            }
 
-
-
-
-            async function playGame(userInput) {
-
-
-
-
-                const riskLevelImage = document.getElementById('riskLevelImage');
-
-                const currentSrc = riskLevelImage.src; // Get the full URL of the current image             
-
-                var riskLevelValue = currentSrc.includes('risk_low.png') ? 'VERY_LOW' : 'LOW'
-
-
-                try {
-                    const response = await $.post('/api/baccarat/play', $.param({
-                        userInput,
-                        recommendedBet: $('#recommendedBet').text(),
-                        riskLevel: riskLevelValue,
-                        suggestedUnit: $('#suggestedBetUnit').text()
-                    }));
-
-                    displayResultToUi(response);
-                } catch (xhr) {
-                    $('#playerButton, #bankerButton').prop('disabled', false);
-                    $('#status').text(`Error: ${xhr.responseText || 'Unexpected error'}`);
-                }
-            }
-
-
-            // Event listener for PLAYER button
-            $('#playerButton').on('click', function () {
-
-                let message = $('#status').text();
-                if (message.includes("Archived")) {
-                    return;
-                }
-
-
-
-
-
-                $('#playerButton').prop('disabled', true);
-                showSpinner();
-                playGame('p');
-            });
-
-            // Event listener for BANKER button
-            $('#bankerButton').on('click', function () {
-
-                let message = $('#status').text();
-                if (message.includes("Archived")) {
-                    return;
-                }
-
-
-
-                $('#bankerButton').prop('disabled', true);
-                showSpinner();
-                playGame('b');
-            });
-
-            // Event listener for UNDO button
-            $('#undoButton').on('click', async function () {
-                let message = $('#status').text();
-                if (message.includes("Archived")) {
-                    return;
-                }
-
-
-
-
-
-                $('#undoButton').prop('disabled', true);
-                showSpinner();
-                await undo();
-            });
-
-
-
-            // Event listener for RESET GAME button
-            $('#resetButton').on('click', async function () {
-
-                let message = $('#status').text();
-                if (message.includes("Archived")) {
-                    return;
-                }
-
-                modal.classList.remove('hidden');
-
-            });
-
-
-
-            setShieldState();
-        });
-
-
-        async function displayResultToUi(response) {
-            // console.log(response);
-
-            hideSpinner();
-            $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
-
-
-
-
-
-            const { handCount, wins, losses, profit } = response.gameStatus;
-            const statusMessage = response.message;
-            // const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : statusMessage;
-
-            // Handle status, reset, and undo button visibility
-            $('#status').toggle(handCount > 0 || statusMessage.includes("Daily limit!"));
-            $('#resetButton, #undoButton').toggle(handCount > 0);
-            if (handCount === 1) $('#undoButton').hide();
-
-            // $('#status').text(tempMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
-            $('#status')
-                .text(statusMessage)
-                .css({
-                    'color': statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black',
-                    'display': 'none' // Add this line to hide the element
                 });
 
-            if (statusMessage.includes("reset") || statusMessage.includes("Initialized")) {
-                $("#handResultColumn").empty();
-                $('#status').text("");
-                await getJournal("today");
-            }
 
-            $("#baseBetUnit").val(response.baseBetUnit);
-            $("#initialPlayingUnit").val(response.initialPlayingUnits);
 
-            // Display betting results
-            $('#bettingResults').html(`
+                // Close modal and handle Yes/No actions
+                noButton.addEventListener('click', () => {
+                    processEventToReset("no");
+                });
+
+
+                yesButton.addEventListener('click', async () => {
+                    processEventToReset("yes");
+                });
+
+
+                async function processEventToReset(answer) {
+                    showSpinner();
+                    try {
+                        const response = await $.post('/api/baccarat/reset', { yesNo: answer });
+                        displayResultToUi(response);
+                    } catch (error) {
+                        $('#resetButton').prop('disabled', false);
+                        $('#status').text(`Error: ${error.responseText || 'Unexpected error'}`);
+                    } finally {
+                        hideSpinner();
+                        modal.classList.add('hidden');
+                    }
+                }
+
+
+
+
+                async function playGame(userInput) {
+
+
+
+
+                    const riskLevelImage = document.getElementById('riskLevelImage');
+
+                    const currentSrc = riskLevelImage.src; // Get the full URL of the current image             
+
+                    var riskLevelValue = currentSrc.includes('risk_low.png') ? 'VERY_LOW' : 'LOW'
+
+
+                    try {
+                        const response = await $.post('/api/baccarat/play', $.param({
+                            userInput,
+                            recommendedBet: $('#recommendedBet').text(),
+                            riskLevel: riskLevelValue,
+                            suggestedUnit: $('#suggestedBetUnit').text()
+                        }));
+
+                        displayResultToUi(response);
+                    } catch (xhr) {
+                        $('#playerButton, #bankerButton').prop('disabled', false);
+                        $('#status').text(`Error: ${xhr.responseText || 'Unexpected error'}`);
+                    }
+                }
+
+
+                // Event listener for PLAYER button
+                $('#playerButton').on('click', function () {
+
+                    let message = $('#status').text();
+                    if (message.includes("Archived")) {
+                        return;
+                    }
+
+
+
+
+
+                    $('#playerButton').prop('disabled', true);
+                    showSpinner();
+                    playGame('p');
+                });
+
+                // Event listener for BANKER button
+                $('#bankerButton').on('click', function () {
+
+                    let message = $('#status').text();
+                    if (message.includes("Archived")) {
+                        return;
+                    }
+
+
+
+                    $('#bankerButton').prop('disabled', true);
+                    showSpinner();
+                    playGame('b');
+                });
+
+                // Event listener for UNDO button
+                $('#undoButton').on('click', async function () {
+                    let message = $('#status').text();
+                    if (message.includes("Archived")) {
+                        return;
+                    }
+
+
+
+
+
+                    $('#undoButton').prop('disabled', true);
+                    showSpinner();
+                    await undo();
+                });
+
+
+
+                // Event listener for RESET GAME button
+                $('#resetButton').on('click', async function () {
+
+                    let message = $('#status').text();
+                    if (message.includes("Archived")) {
+                        return;
+                    }
+
+                    modal.classList.remove('hidden');
+
+                });
+
+
+
+                setShieldState();
+            });
+
+
+            async function displayResultToUi(response) {
+                // console.log(response);
+
+                hideSpinner();
+                $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
+
+
+
+
+
+                const { handCount, wins, losses, profit } = response.gameStatus;
+                const statusMessage = response.message;
+                // const tempMessage = (statusMessage.includes('Wait') && statusMessage.includes('Wait for virtual win')) ? "" : statusMessage;
+
+                // Handle status, reset, and undo button visibility
+                $('#status').toggle(handCount > 0 || statusMessage.includes("Daily limit!"));
+                $('#resetButton, #undoButton').toggle(handCount > 0);
+                if (handCount === 1) $('#undoButton').hide();
+
+                // $('#status').text(tempMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
+                $('#status')
+                    .text(statusMessage)
+                    .css({
+                        'color': statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black',
+                        'display': 'none' // Add this line to hide the element
+                    });
+
+                if (statusMessage.includes("reset") || statusMessage.includes("Initialized")) {
+                    $("#handResultColumn").empty();
+                    $('#status').text("");
+                    await getJournal("today");
+                }
+
+                $("#baseBetUnit").val(response.baseBetUnit);
+                $("#initialPlayingUnit").val(response.initialPlayingUnits);
+
+                // Display betting results
+                $('#bettingResults').html(`
                 <div class="bg-white shadow-md rounded-lg overflow-hidden">
 
 
@@ -677,12 +702,12 @@
                     <span class="font-bold text-xs">Next Bet:</span>
                     
                     <span style="width: 45px;" class="${statusMessage === 'Wait for virtual win.' ? 'text-xs'
-                    : response.recommendedBet.includes('Wait') ? 'text-sm'
-                        : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
-                            : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
+                        : response.recommendedBet.includes('Wait') ? 'text-sm'
+                            : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
+                                : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
                         ${statusMessage === 'Wait for virtual win.' ? 'Wait..'
-                    : statusMessage.includes('Wait') ? 'Wait..'
-                        : response.recommendedBet}
+                        : statusMessage.includes('Wait') ? 'Wait..'
+                            : response.recommendedBet}
                     </span>
                     </div>
                 
@@ -696,444 +721,539 @@
 
 
 
-            if (statusMessage.includes("Restart") || statusMessage.includes("Daily limit")) {
+                if (statusMessage.includes("Restart") || statusMessage.includes("Daily limit")) {
 
 
-                $('#infoHeader').text("Game Over");
-                $('#infoContent').text(statusMessage);
+                    $('#infoHeader').text("Game Over");
+                    $('#infoContent').text(statusMessage);
 
 
-            } else {
-
-                // Update header and content based on total profit
-                const headerText = totalProfit > 10 ? "Lucky Day" : "Reminder";
-                const contentText = totalProfit > 10
-                    ? "You're now in profit! Time to call it a day and enjoy your success."
-                    : `Follow the app's guidelines to protect your bankroll.`;
-
-
-                $('#infoHeader').text(headerText);
-                $('#infoContent').text(contentText);
-            }
-
-
-
-            displayResults(response.sequence.toUpperCase());
-            getHandResult(response.handResult);
-            getActiveUsers();
-            // Handle button visibility after game result
-            if (statusMessage.includes("reached")) {
-                $('#playerButton, #bankerButton').prop('disabled', true);
-                $('#undoButton').hide();
-                $('#resetButton').show();
-                await getJournal("today");
-            }
-
-            if (response.dailyLimitReached) {
-                $('#resetButton').hide();
-            }
-
-
-
-            const riskLevelImage = document.getElementById('riskLevelImage');
-
-
-            // console.log(response.riskLevel);
-
-            if (response.riskLevel === 'LOW') {
-                riskLevelImage.src = '/img/risk_medium.png'
-            } else {
-                riskLevelImage.src = '/img/risk_low.png'
-            }
-
-
-            updateProgressBar(response.confidence);
-
-        }
-
-        async function undo() {
-            try {
-
-
-
-
-                const response = await $.post('/api/baccarat/undo');
-                // console.log(response);
-
-                displayResultToUi(response);
-            } catch (xhr) {
-                $('#undoButton').prop('disabled', false);
-                $('#responseMessage').text(`An error occurred: ${xhr.responseText || 'Unexpected error'}`);
-                console.error("Error details:", xhr);
-            }
-        }
-
-        function addContainer(group) {
-            const container = document.createElement('div');
-            container.classList.add('flex', 'flex-col', 'items-start', 'justify-start', 'h-full');
-
-            // Create circles for each character in the group         
-            let circleNumber = 1;
-            for (const char of group) {
-                const circle = document.createElement('div');
-                circle.classList.add('flex', 'items-center', 'justify-center', 'w-6', 'h-6', 'border', 'rounded-full', char === 'P' ? 'bg-blue-500' : 'bg-red-500');
-
-
-                // Create a smaller white circle inside
-                const innerCircle = document.createElement('div');
-                innerCircle.classList.add('flex', 'items-center', 'justify-center', 'w-4', 'h-4', 'bg-white', 'rounded-full', 'text-xs', 'text-gray-400');
-                innerCircle.textContent = "";
-
-
-                innerCircle.textContent = circleNumber >= 7 ? circleNumber : "";
-
-
-                // Add the inner circle to the outer circle
-                circle.appendChild(innerCircle);
-                // Add the outer circle to the container
-                container.appendChild(circle);
-                circleNumber++;
-            }
-
-            return container; // Return the container with circles
-        }
-
-        function displayResults(playerAndBankerCollections) {
-
-            const riskLevelImage = document.getElementById('riskLevelImage');
-            const results = playerAndBankerCollections.replace("1111", "").split('');
-
-            // riskLevelImage.disabled = false; // enable the toggle once there is no handCount
-            riskLevelImage.onclick = changeRiskLevel;// Remove the click event
-            if (!results.length) return; // Early return if results are empty
-            riskLevelImage.onclick = null;
-
-
-
-
-            // Clear previous results
-            document.getElementById('handResultColumn').innerHTML = '';
-            document.getElementById('handResultContainer').innerHTML = '';
-
-
-
-            let currentChar = results[0];
-            let group = currentChar; // Initialize the group with the first character
-            const column = document.getElementById('handResultColumn');
-            const circleContainer = document.getElementById('circleContainer'); // Reference to the outer container
-
-            for (let i = 1; i < results.length; i++) {
-                if (results[i] === currentChar) {
-                    group += results[i]; // Add to the current group if same
                 } else {
 
-                    column.appendChild(addContainer(group));
-                    currentChar = results[i]; // Update currentChar
-                    group = currentChar; // Start a new group
+                    // Update header and content based on total profit
+                    const headerText = totalProfit > 10 ? "Lucky Day" : "Reminder";
+                    const contentText = totalProfit > 10
+                        ? "You're now in profit! Time to call it a day and enjoy your success."
+                        : `Follow the app's guidelines to protect your bankroll.`;
+
+
+                    $('#infoHeader').text(headerText);
+                    $('#infoContent').text(contentText);
+                }
+
+
+
+                displayResults(response.sequence.toUpperCase());
+                getHandResult(response.handResult);
+                getActiveUsers();
+                // Handle button visibility after game result
+                if (statusMessage.includes("reached")) {
+                    $('#playerButton, #bankerButton').prop('disabled', true);
+                    $('#undoButton').hide();
+                    $('#resetButton').show();
+                    await getJournal("today");
+                }
+
+                if (response.dailyLimitReached) {
+                    $('#resetButton').hide();
+                }
+
+
+
+                const riskLevelImage = document.getElementById('riskLevelImage');
+
+
+                // console.log(response.riskLevel);
+
+                if (response.riskLevel === 'LOW') {
+                    riskLevelImage.src = '/img/risk_medium.png'
+                } else {
+                    riskLevelImage.src = '/img/risk_low.png'
+                }
+
+
+                updateProgressBar(response.confidence);
+
+            }
+
+            async function undo() {
+                try {
+
+
+
+
+                    const response = await $.post('/api/baccarat/undo');
+                    // console.log(response);
+
+                    displayResultToUi(response);
+                } catch (xhr) {
+                    $('#undoButton').prop('disabled', false);
+                    $('#responseMessage').text(`An error occurred: ${xhr.responseText || 'Unexpected error'}`);
+                    console.error("Error details:", xhr);
                 }
             }
 
-            // Append the last group after the loop
-            column.appendChild(addContainer(group));
+            function addContainer(group) {
+                const container = document.createElement('div');
+                container.classList.add('flex', 'flex-col', 'items-start', 'justify-start', 'h-full');
 
-            // Auto-scroll the circleContainer to the right after adding new content
-            setTimeout(() => {
-                circleContainer.scrollLeft = circleContainer.scrollWidth;
-            }, 0); // Using a timeout to ensure rendering is complete before scrolling
-        }
+                // Create circles for each character in the group         
+                let circleNumber = 1;
+                for (const char of group) {
+                    const circle = document.createElement('div');
+                    circle.classList.add('flex', 'items-center', 'justify-center', 'w-6', 'h-6', 'border', 'rounded-full', char === 'P' ? 'bg-blue-500' : 'bg-red-500');
 
-        function changeRiskLevel(event) {
-            event.stopPropagation();
-            const riskLevelImage = document.getElementById('riskLevelImage');
-            // console.log(riskLevelImage.src);
 
-            if (riskLevelImage.src.includes('risk_medium.png')) {
-                riskLevelImage.src = '/img/risk_low.png';
-            } else {
-                riskLevelImage.src = '/img/risk_medium.png';
+                    // Create a smaller white circle inside
+                    const innerCircle = document.createElement('div');
+                    innerCircle.classList.add('flex', 'items-center', 'justify-center', 'w-4', 'h-4', 'bg-white', 'rounded-full', 'text-xs', 'text-gray-400');
+                    innerCircle.textContent = "";
+
+
+                    innerCircle.textContent = circleNumber >= 7 ? circleNumber : "";
+
+
+                    // Add the inner circle to the outer circle
+                    circle.appendChild(innerCircle);
+                    // Add the outer circle to the container
+                    container.appendChild(circle);
+                    circleNumber++;
+                }
+
+                return container; // Return the container with circles
             }
 
-        }
+            function displayResults(playerAndBankerCollections) {
 
-        function changeShield() {
+                const riskLevelImage = document.getElementById('riskLevelImage');
+                const results = playerAndBankerCollections.replace("1111", "").split('');
 
-            const shieldImage = document.getElementById('shieldImage');
+                // riskLevelImage.disabled = false; // enable the toggle once there is no handCount
+                riskLevelImage.onclick = changeRiskLevel;// Remove the click event
+                if (!results.length) return; // Early return if results are empty
+                riskLevelImage.onclick = null;
 
-            if (shieldImage.src.includes('shield_disabled.png')) {
-                shieldImage.src = '/img/shield_active.png';
-                setShieldValue(1);
-            } else {
-                shieldImage.src = '/img/shield_disabled.png';
-                setShieldValue(0);
+
+
+
+                // Clear previous results
+                document.getElementById('handResultColumn').innerHTML = '';
+                document.getElementById('handResultContainer').innerHTML = '';
+
+
+
+                let currentChar = results[0];
+                let group = currentChar; // Initialize the group with the first character
+                const column = document.getElementById('handResultColumn');
+                const circleContainer = document.getElementById('circleContainer'); // Reference to the outer container
+
+                for (let i = 1; i < results.length; i++) {
+                    if (results[i] === currentChar) {
+                        group += results[i]; // Add to the current group if same
+                    } else {
+
+                        column.appendChild(addContainer(group));
+                        currentChar = results[i]; // Update currentChar
+                        group = currentChar; // Start a new group
+                    }
+                }
+
+                // Append the last group after the loop
+                column.appendChild(addContainer(group));
+
+                // Auto-scroll the circleContainer to the right after adding new content
+                setTimeout(() => {
+                    circleContainer.scrollLeft = circleContainer.scrollWidth;
+                }, 0); // Using a timeout to ensure rendering is complete before scrolling
             }
 
-        }
+            function changeRiskLevel(event) {
+                event.stopPropagation();
+                const riskLevelImage = document.getElementById('riskLevelImage');
+                // console.log(riskLevelImage.src);
 
-        function setShieldState() {
-            var shieldState = getShieldValue();
-            if (shieldState == 1) {
-                shieldImage.src = '/img/shield_active.png';
-                setShieldValue(1);
-            } else {
-                shieldImage.src = '/img/shield_disabled.png';
-                setShieldValue(0);
+                if (riskLevelImage.src.includes('risk_medium.png')) {
+                    riskLevelImage.src = '/img/risk_low.png';
+                } else {
+                    riskLevelImage.src = '/img/risk_medium.png';
+                }
+
             }
-        }
+
+            function changeShield() {
+
+                const shieldImage = document.getElementById('shieldImage');
+
+                if (shieldImage.src.includes('shield_disabled.png')) {
+                    shieldImage.src = '/img/shield_active.png';
+                    setShieldValue(1);
+                } else {
+                    shieldImage.src = '/img/shield_disabled.png';
+                    setShieldValue(0);
+                }
+
+            }
+
+            function setShieldState() {
+                var shieldState = getShieldValue();
+                if (shieldState == 1) {
+                    shieldImage.src = '/img/shield_active.png';
+                    setShieldValue(1);
+                } else {
+                    shieldImage.src = '/img/shield_disabled.png';
+                    setShieldValue(0);
+                }
+            }
 
 
 
-        function setShieldValue(value) {
-            localStorage.setItem('isShieldActive', value);
-        }
+            function setShieldValue(value) {
+                localStorage.setItem('isShieldActive', value);
+            }
 
-        function getShieldValue() {
-            return localStorage.getItem('isShieldActive');
-        }
+            function getShieldValue() {
+                return localStorage.getItem('isShieldActive');
+            }
 
-        // Function to modify the date
-        function modifyDate(dateString, days, options) {
-            const dateObj = new Date(dateString);
-            dateObj.setUTCDate(dateObj.getUTCDate() + days);
-            return dateObj.toLocaleDateString('en-CA', options);  // Return the new date in YYYY-MM-DD format
-        }
+            // Function to modify the date
+            function modifyDate(dateString, days, options) {
+                const dateObj = new Date(dateString);
+                dateObj.setUTCDate(dateObj.getUTCDate() + days);
+                return dateObj.toLocaleDateString('en-CA', options);  // Return the new date in YYYY-MM-DD format
+            }
 
-        async function getJournal(purpose) {
-            const currentDate = new Date();
-            const options = { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' };
-            const utcDate = currentDate.toLocaleDateString('en-CA', options); // Format: YYYY-MM-DD
+            async function getJournal(purpose) {
+                const currentDate = new Date();
+                const options = { timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' };
+                const utcDate = currentDate.toLocaleDateString('en-CA', options); // Format: YYYY-MM-DD
 
-            // Set dateCreated initially if not already set
-            dateCreated = dateCreated || utcDate;
+                // Set dateCreated initially if not already set
+                dateCreated = dateCreated || utcDate;
 
-            // Modify dateCreated based on purpose
-            dateCreated = purpose === 'back'
-                ? modifyDate(dateCreated, -1, options)
-                : purpose === 'forward'
-                    ? modifyDate(dateCreated, 1, options)
-                    : utcDate;
+                // Modify dateCreated based on purpose
+                dateCreated = purpose === 'back'
+                    ? modifyDate(dateCreated, -1, options)
+                    : purpose === 'forward'
+                        ? modifyDate(dateCreated, 1, options)
+                        : utcDate;
 
-            try {
-                const response = await $.ajax({
-                    url: '/api/journals/dateCreated',
-                    type: 'GET',
-                    data: { dateCreated }
-                });
-
-                $('#journalContainer').empty();
-
-                $('#dateTime').text(dateCreated);
-
-
-                let totalProfit = 0;
-
-
-                // console.log(response);
-
-                const validJournals = response.filter(journal => journal.hand !== 0).reverse();
-                playedShoe = 0;
-                validJournals.forEach((journal, index) => {
-                    const journalDiv = document.createElement('div');
-                    journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
-
-                    // Create a flex container for Shoe, Hand, and Profit
-                    const flexContainer = document.createElement('div');
-                    flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700');
-
-                    flexContainer.id = `${journal.journalId}`;
-                    flexContainer.style.cursor = 'pointer';
-                    // Add the click event listener to the div
-                    flexContainer.addEventListener('click', function () {
-
-                        getGameArchive(flexContainer.id)
+                try {
+                    const response = await $.ajax({
+                        url: '/api/journals/dateCreated',
+                        type: 'GET',
+                        data: { dateCreated }
                     });
 
+                    $('#journalContainer').empty();
 
-                    // Create container for left-aligned content (Win/Lose)
-                    const leftContainer = document.createElement('div');
-                    leftContainer.classList.add('flex-grow', 'text-left');
+                    $('#dateTime').text(dateCreated);
 
-                    // Create "Win/Lose" label
-                    const winLoseLabel = document.createElement('h4');
-                    winLoseLabel.classList.add('text-xs', 'ml-2', 'block');
-                    winLoseLabel.textContent = 'Win/Lose';
 
-                    // Create "20/20" value on a new line
-                    const winLoseValue = document.createElement('span');
-                    winLoseValue.classList.add('text-xs', 'ml-2', 'block');
-                    winLoseValue.textContent = `${journal.winLose}`;  // Adjust the values as needed
 
-                    // Append Win/Lose label and value
-                    leftContainer.appendChild(winLoseLabel);
-                    leftContainer.appendChild(winLoseValue);
 
-                    // Create container for center-aligned content (Shoe)
-                    const centerContainer = document.createElement('div');
-                    centerContainer.classList.add('flex-none', 'text-center');
-                    const shoeHeading = document.createElement('h4');
-                    shoeHeading.classList.add('font-semibold', 'text-sm');
-                    shoeHeading.textContent = `Shoe: ${journal.shoe}`;
-                    centerContainer.appendChild(shoeHeading);
+                    // console.log(response);
 
-                    // Create container for right-aligned content (Hand, Profit)
-                    const rightContainer = document.createElement('div');
-                    rightContainer.classList.add('flex-grow', 'text-right');
-                    rightContainer.innerHTML = `
+                    const validJournals = response.filter(journal => journal.hand !== 0).reverse();
+                    playedShoe = 0;
+                    validJournals.forEach((journal, index) => {
+                        const journalDiv = document.createElement('div');
+                        journalDiv.classList.add('bg-white', 'border', 'border-gray-300', 'rounded-lg', 'p-2', 'mb-2');
+
+                        // Create a flex container for Shoe, Hand, and Profit
+                        const flexContainer = document.createElement('div');
+                        flexContainer.classList.add('flex', 'justify-between', 'items-center', 'text-xs', 'text-gray-700');
+
+                        flexContainer.id = `${journal.journalId}`;
+                        flexContainer.style.cursor = 'pointer';
+                        // Add the click event listener to the div
+                        flexContainer.addEventListener('click', function () {
+
+                            getGameArchive(flexContainer.id)
+                        });
+
+
+                        // Create container for left-aligned content (Win/Lose)
+                        const leftContainer = document.createElement('div');
+                        leftContainer.classList.add('flex-grow', 'text-left');
+
+                        // Create "Win/Lose" label
+                        const winLoseLabel = document.createElement('h4');
+                        winLoseLabel.classList.add('text-xs', 'ml-2', 'block');
+                        winLoseLabel.textContent = 'Win/Lose';
+
+                        // Create "20/20" value on a new line
+                        const winLoseValue = document.createElement('span');
+                        winLoseValue.classList.add('text-xs', 'ml-2', 'block');
+                        winLoseValue.textContent = `${journal.winLose}`;  // Adjust the values as needed
+
+                        // Append Win/Lose label and value
+                        leftContainer.appendChild(winLoseLabel);
+                        leftContainer.appendChild(winLoseValue);
+
+                        // Create container for center-aligned content (Shoe)
+                        const centerContainer = document.createElement('div');
+                        centerContainer.classList.add('flex-none', 'text-center');
+                        const shoeHeading = document.createElement('h4');
+                        shoeHeading.classList.add('font-semibold', 'text-sm');
+                        shoeHeading.textContent = `Shoe: ${journal.shoe}`;
+                        centerContainer.appendChild(shoeHeading);
+
+                        // Create container for right-aligned content (Hand, Profit)
+                        const rightContainer = document.createElement('div');
+                        rightContainer.classList.add('flex-grow', 'text-right');
+                        rightContainer.innerHTML = `
                         <p>Hand: ${journal.hand}</p>
                         <p>Profit: ${journal.profit}</p>
                     `;
 
-                    totalProfit += journal.profit;
+                        totalProfit += journal.profit;
 
-                    // Append elements
-                    flexContainer.appendChild(leftContainer);
-                    flexContainer.appendChild(centerContainer);
-                    flexContainer.appendChild(rightContainer);
-                    journalDiv.appendChild(flexContainer);
-                    $('#journalContainer').append(journalDiv);
+                        // Append elements
+                        flexContainer.appendChild(leftContainer);
+                        flexContainer.appendChild(centerContainer);
+                        flexContainer.appendChild(rightContainer);
+                        journalDiv.appendChild(flexContainer);
+                        $('#journalContainer').append(journalDiv);
 
-                    // Add glowing effect to the first valid journal
-                    if (index === 0) {
-                        journalDiv.classList.add('glow');
-                    }
-                    playedShoe++;
+                        // Add glowing effect to the first valid journal
+                        if (index === 0) {
+                            journalDiv.classList.add('glow');
+                        }
+                        playedShoe++;
+                    });
+
+
+
+
+
+
+                    $('#totalProfit').text(totalProfit);
+
+
+                    getProfitGraph("");
+
+                } catch (xhr) {
+                    console.error('Error fetching journals:', xhr);
+                    alert('An error occurred while fetching journals. Please try again.');
+                }
+            }
+
+            async function currentState() {
+
+
+                try {
+                    const statusMessage = $('#status').text();
+                    const response = await $.ajax({
+                        url: '/api/baccarat/current-state',
+                        type: 'GET',
+                        data: { message: statusMessage }
+                    });
+                    displayResultToUi(response);
+                } catch (xhr) {
+                    console.error('Error fetching current state:', xhr);
+                    $('#status').text(`Error: ${xhr.responseText}`);
+                }
+            }
+
+
+            async function getGameArchive(journalId) {
+
+
+                try {
+
+
+                    const response = await $.ajax({
+                        url: '/api/journals/get-archive',
+                        type: 'GET',
+                        data: { journalId }
+                    });
+
+
+                    // Function to handle the successful response
+                    displayResultToUi(response);
+
+                    const riskLevelImage = document.getElementById('riskLevelImage');
+                    riskLevelImage.onclick = false; // Set the switch to disabled
+
+
+                    $('#infoHeader').text("Archive");
+                    $('#infoContent').text("Note: This is for viewing purposes only and cannot be modified. Please refresh your page to restore the original state.");
+
+                } catch (xhr) {
+                    // Log the error details in case of failure
+                    console.error('Error fetching archive:', xhr);
+
+
+
+                }
+
+            }
+
+
+            function getHandResult(handResult) {
+
+                // console.log(handResult)
+                const handResultContainer = document.getElementById('handResultContainer');
+                handResultContainer.innerHTML = "";
+
+
+                if (handResult === null) {
+                    return;
+                }
+
+
+                // Create a document fragment to improve performance
+                const fragment = document.createDocumentFragment();
+
+                handResult.replace(/[^WL]/g, '').split('').forEach(r => {
+                    const circle = document.createElement('div');
+                    circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${r === 'W' ? 'bg-green-500' : r === 'L' ? 'bg-red-500' : 'bg-yellow-500'}`;
+                    circle.innerText = r === 'W' ? 'W' : r === 'L' ? 'L' : 'S';
+                    fragment.appendChild(circle);
                 });
 
+                handResultContainer.appendChild(fragment);
 
 
-
-
-
-                $('#totalProfit').text(totalProfit);
-
-               
-                
-
-            } catch (xhr) {
-                console.error('Error fetching journals:', xhr);
-                alert('An error occurred while fetching journals. Please try again.');
-            }
-        }
-
-        async function currentState() {
-
-
-            try {
-                const statusMessage = $('#status').text();
-                const response = await $.ajax({
-                    url: '/api/baccarat/current-state',
-                    type: 'GET',
-                    data: { message: statusMessage }
-                });
-                displayResultToUi(response);
-            } catch (xhr) {
-                console.error('Error fetching current state:', xhr);
-                $('#status').text(`Error: ${xhr.responseText}`);
-            }
-        }
-
-
-        async function getGameArchive(journalId) {
-
-
-            try {
-
-
-                const response = await $.ajax({
-                    url: '/api/journals/get-archive',
-                    type: 'GET',
-                    data: { journalId }
-                });
-
-
-                // Function to handle the successful response
-                displayResultToUi(response);
-
-                const riskLevelImage = document.getElementById('riskLevelImage');
-                riskLevelImage.onclick = false; // Set the switch to disabled
-
-
-                $('#infoHeader').text("Archive");
-                $('#infoContent').text("Note: This is for viewing purposes only and cannot be modified. Please refresh your page to restore the original state.");
-
-            } catch (xhr) {
-                // Log the error details in case of failure
-                console.error('Error fetching archive:', xhr);
-
-
-
+                setTimeout(() => {
+                    handResultContainer.scrollLeft = handResultContainer.scrollWidth;
+                }, 0); // Delay to ensure DOM has updated
             }
 
-        }
+            function updateProgressBar(percentageInput) {
 
+                var percentage = percentageInput * 100;
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = percentage + '%';
 
-        function getHandResult(handResult) {
-
-            // console.log(handResult)
-            const handResultContainer = document.getElementById('handResultContainer');
-            handResultContainer.innerHTML = "";
-
-
-            if (handResult === null) {
-                return;
+                // Change color based on percentage
+                if (percentage < 30) {
+                    progressBar.className = 'progress-bar low';
+                } else if (percentage < 65) {
+                    progressBar.className = 'progress-bar medium';
+                } else {
+                    progressBar.className = 'progress-bar high';
+                }
             }
 
 
-            // Create a document fragment to improve performance
-            const fragment = document.createDocumentFragment();
+            async function getActiveUsers() {
+                try {
+                    const response = await $.ajax({
+                        url: '/active-users',  // Ensure this endpoint exists in your backend
+                        type: 'GET'            // Method type
+                    });
 
-            handResult.replace(/[^WL]/g, '').split('').forEach(r => {
-                const circle = document.createElement('div');
-                circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${r === 'W' ? 'bg-green-500' : r === 'L' ? 'bg-red-500' : 'bg-yellow-500'}`;
-                circle.innerText = r === 'W' ? 'W' : r === 'L' ? 'L' : 'S';
-                fragment.appendChild(circle);
-            });
+                    $('#activeUsersCount').text(response);
 
-            handResultContainer.appendChild(fragment);
-
-
-            setTimeout(() => {
-                handResultContainer.scrollLeft = handResultContainer.scrollWidth;
-            }, 0); // Delay to ensure DOM has updated
-        }
-
-        function updateProgressBar(percentageInput) {
-
-            var percentage = percentageInput * 100;
-            const progressBar = document.getElementById('progressBar');
-            progressBar.style.width = percentage + '%';
-
-            // Change color based on percentage
-            if (percentage < 30) {
-                progressBar.className = 'progress-bar low';
-            } else if (percentage < 65) {
-                progressBar.className = 'progress-bar medium';
-            } else {
-                progressBar.className = 'progress-bar high';
+                } catch (error) {
+                    // Log the error details
+                    console.error('Error fetching active users:', error);
+                }
             }
-        }
 
 
-        async function getActiveUsers() {
-            try {
-                const response = await $.ajax({
-                    url: '/active-users',  // Ensure this endpoint exists in your backend
-                    type: 'GET'            // Method type
-                });
+            function handleViewChange() {
+                const dayRadio = document.getElementById('dayRadio');
+                const weekRadio = document.getElementById('weekRadio');
 
-                $('#activeUsersCount').text(response);
-
-            } catch (error) {
-                // Log the error details
-                console.error('Error fetching active users:', error);
+                if (dayRadio.checked) {
+                    getProfitGraph("Day");
+                } else if (weekRadio.checked) {
+                    getProfitGraph("Week");
+                    // Your logic for week view goes here
+                }
             }
-        }
-
-
-       
 
 
 
-    </script>
+
+            // Dummy data for the graph
+            function getProfitGraph(filterBy) {
+
+
+
+                const dayRadio = document.getElementById('dayRadio');
+                const weekRadio = document.getElementById('weekRadio');
+
+                if (dayRadio.checked) {
+                    filterBy = 'Day';
+                } else {
+                    filterBy = 'Week';
+                }
+
+              
+                // fetch(`/api/journals/profit-data?filterBy=${filterBy}`)
+                fetch(`/api/journals/profit-data?filterBy=${filterBy}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(profitData => {
+                        // Destroy the existing chart if it exists
+                        if (dummyGraph) {
+                            try {
+                                dummyGraph.destroy();
+                            } catch (error) {
+                                console.error('Error destroying chart:', error);
+                            }
+                        }
+
+                        // Create a new chart instance
+                        dummyGraph = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: profitData.labels,  // Use the labels for the x-axis
+                                datasets: [{
+                                    label: 'Dummy Profit Data',  // Single label for the dataset
+                                    data: profitData.data,        // Use the data from the response
+                                    fill: false,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    tension: 0.1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error fetching profit data:', error));
+
+            }
+
+
+
+            function showTab(tab) {
+                const journalContainer = document.getElementById('journalContainer');
+                const graphContainer = document.getElementById('graphContainer');
+                const journalTab = document.getElementById('journalTab');
+                const graphTab = document.getElementById('graphTab');
+
+                if (tab === 'journal') {
+                    journalContainer.classList.remove('hidden');
+                    graphContainer.classList.add('hidden');
+                    journalTab.classList.add('border-blue-500', 'text-gray-700');
+                    graphTab.classList.remove('border-blue-500', 'text-gray-700');
+                    graphTab.classList.add('text-gray-500');
+                } else {
+                    journalContainer.classList.add('hidden');
+                    graphContainer.classList.remove('hidden');
+                    graphTab.classList.add('border-blue-500', 'text-gray-700');
+                    journalTab.classList.remove('border-blue-500', 'text-gray-700');
+                    journalTab.classList.add('text-gray-500');
+                }
+            }
+
+
+
+        </script>
 
 </body>
 
