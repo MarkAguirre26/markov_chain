@@ -900,8 +900,11 @@
             }
 
             function setShieldState() {
-                var shieldState = getShieldValue();
-                if (shieldState == 1) {
+                const shieldState = getShieldValue();
+                const shieldImage = document.getElementById('shieldImage'); // Assuming you have the shieldImage element
+
+                // Set the shield image based on the current state
+                if (shieldState === 1) {
                     shieldImage.src = '/img/shield_active.png';
                     setShieldValue(1);
                 } else {
@@ -909,6 +912,7 @@
                     setShieldValue(0);
                 }
             }
+
 
 
 
@@ -1063,68 +1067,66 @@
 
 
             async function getGameArchive(journalId) {
-
-
                 try {
-
-
                     const response = await $.ajax({
                         url: '/api/journals/get-archive',
                         type: 'GET',
                         data: { journalId }
                     });
 
-
-                    // Function to handle the successful response
+                    // Handle the successful response
                     displayResultToUi(response);
 
                     const riskLevelImage = document.getElementById('riskLevelImage');
-                    riskLevelImage.onclick = false; // Set the switch to disabled
+                    riskLevelImage.onclick = null; // Disable click event
 
-
+                    // Update UI with archive information
                     $('#infoHeader').text("Archive");
                     $('#infoContent').text("Note: This is for viewing purposes only and cannot be modified. Please refresh your page to restore the original state.");
-
-                } catch (xhr) {
+                } catch (error) {
                     // Log the error details in case of failure
-                    console.error('Error fetching archive:', xhr);
-
-
-
+                    console.error('Error fetching archive:', error);
+                    // Optionally, display an error message in the UI
+                    $('#infoHeader').text("Error");
+                    $('#infoContent').text("Failed to fetch the game archive. Please try again later.");
                 }
-
             }
 
 
+
             function getHandResult(handResult) {
-
-                // console.log(handResult)
                 const handResultContainer = document.getElementById('handResultContainer');
-                handResultContainer.innerHTML = "";
+                handResultContainer.innerHTML = ""; // Clear previous results
 
-
-                if (handResult === null) {
-                    return;
+                if (!handResult) {
+                    return; // Early return if handResult is null or undefined
                 }
-
 
                 // Create a document fragment to improve performance
                 const fragment = document.createDocumentFragment();
 
-                handResult.replace(/[^WL]/g, '').split('').forEach(r => {
+                // Filter and process the handResult
+                handResult.replace(/[^WL]/g, '').split('').forEach(result => {
                     const circle = document.createElement('div');
-                    circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${r === 'W' ? 'bg-green-500' : r === 'L' ? 'bg-red-500' : 'bg-yellow-500'}`;
-                    circle.innerText = r === 'W' ? 'W' : r === 'L' ? 'L' : 'S';
+                    const isWin = result === 'W';
+                    const isLoss = result === 'L';
+
+                    // Set class names based on result
+                    circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${isWin ? 'bg-green-500' : isLoss ? 'bg-red-500' : 'bg-yellow-500'
+                        }`;
+
+                    circle.innerText = isWin ? 'W' : isLoss ? 'L' : 'S';
                     fragment.appendChild(circle);
                 });
 
                 handResultContainer.appendChild(fragment);
 
-
+                // Scroll to the right to show the latest results
                 setTimeout(() => {
                     handResultContainer.scrollLeft = handResultContainer.scrollWidth;
                 }, 0); // Delay to ensure DOM has updated
             }
+
 
             function updateProgressBar(percentageInput) {
                 const percentage = percentageInput * 100; // Convert to percentage
