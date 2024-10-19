@@ -7,6 +7,7 @@ public interface GameStatusRepository extends JpaRepository<GameStatus, Integer>
     // Additional query methods (if needed) can be defined here
     void deleteByGameResponseId(Integer gameResponseId);
 
+
     GameStatus findByGameResponseId(Integer gameResponseId);
 
 }

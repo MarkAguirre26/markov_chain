@@ -399,13 +399,13 @@
                 <!-- Graph Tab Content -->
                 <div class="hidden" id="graphContainer">
                     <div class="flex items-center mb-4">
-                        <label class="mr-2 text-gray-700" style="margin-right: 10px;">View By:</label>
+                        <label class="mr-2 text-gray-700 text-sm" style="margin-right: 10px;">View By:</label>
                         <input type="radio" id="dayRadio" name="viewBy" value="day" class="mr-1 cursor-pointer" checked
                             onchange="handleViewChange()">
-                        <label for="dayRadio" class="mr-4 text-gray-700 cursor-pointer">Day</label>
+                        <label for="dayRadio" class="mr-4 text-gray-700 cursor-pointer text-sm">Day</label>
                         <input type="radio" id="weekRadio" name="viewBy" value="week" class="mr-1 cursor-pointer"
                             onchange="handleViewChange()">
-                        <label for="weekRadio" class="text-gray-700 cursor-pointer">Week</label>
+                        <label for="weekRadio" class="text-gray-700 cursor-pointer text-sm">Week</label>
                     </div>
                     <canvas id="profitsGraph" width="400" height="200"></canvas>
                 </div>
@@ -1136,7 +1136,7 @@
                 // Change class based on percentage to adjust color
                 if (percentage < 30) {
                     progressBar.className = 'progress-bar low';
-                } else if (percentage < 65) {
+                } else if (percentage < 59) {
                     progressBar.className = 'progress-bar medium';
                 } else {
                     progressBar.className = 'progress-bar high';

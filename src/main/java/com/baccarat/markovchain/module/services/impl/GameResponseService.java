@@ -42,7 +42,9 @@ public class GameResponseService {
         return gameResponseRepository.findFirstByUserUuidOrderByGameResponseIdDesc(userUuid);
     }
 
-
+public void deleteAllByGameResponseId(List<Integer> gameResponseIds){
+        gameResponseRepository.deleteAllByIdInBatch(gameResponseIds);
+}
 
 
     public List<GameResponse> findAllByUserUuid(String userUuid) {

@@ -22,6 +22,7 @@ public class GameResultResponse {
     private String handResult;
     private String riskLevel;
     private Double confidence;
+    private int virtualWin;
 
     public GameResultResponse(String message, String sequence, GameResultStatus gameStatus, int baseBetUnit,
                               int suggestedBetUnit, int initialPlayingUnits, String recommendedBet,
@@ -68,6 +69,7 @@ public class GameResultResponse {
                 ", lossCounter=" + lossCounter +
                 ", trailingStop='" + trailingStop + '\'' +
                 ", handResult='" + handResult + '\'' +
+                ", virtualWin='" + virtualWin + '\'' +
                 '}';
     }
 }

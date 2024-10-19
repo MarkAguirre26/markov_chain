@@ -25,8 +25,6 @@ import java.util.Optional;
 @RequestMapping("/api/baccarat")
 public class BaccaratController {
 
-    private static final double DEFAULT_PATTERN_CONFIDENCE = 0.6;
-    private static final double CONFIDENCE_INCREMENT = 0.1;
 
 
     private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
@@ -35,6 +33,8 @@ public class BaccaratController {
     private static final String PREDICTION_CONFIDENCE_LOW = "Prediction confidence too low, no bet suggested.";
     private static final String TRAILING_STOP_TRIGGERED_LABEL = "Trailing stop triggered! Restart the game.";
     private static final String PLACE_YOUR_BET = "Place your bet";
+    private static final String YOU_WON = "You won!";
+    private static final String YOU_LOST = "You lost!";
     private static final int ZERO = 0;
 
 
@@ -42,7 +42,7 @@ public class BaccaratController {
 
     private static final double STOP_PROFIT_PERCENTAGE = 0.30;
     private static final double STOP_LOSS_PERCENTAGE = 0.10;
-    private static final double CONFIDENCE_THRESHOLD = 0.55;
+    private static final double CONFIDENCE_THRESHOLD = 0.60;
     private static final int MAX_HANDS = 60;
     private static final int TRAILING_STOP_ACTIVATION = 7;
 
@@ -59,6 +59,8 @@ public class BaccaratController {
     private final String PLAYER = "Player";
     private final String BANKER = "Banker";
     private final String WAIT_FOR_VIRTUAL_WIN = "Wait for virtual win.";
+    private final String VIRTUAL_WON = "Virtual won!";
+    private final String VIRTUAL_LOST = "Virtual lost!";
 
 
     @Autowired
@@ -308,14 +310,17 @@ public class BaccaratController {
 
     }
 
-    private GameResultResponse handleBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal,
-                                         String userInput, Pair<Character, Double> combinedPrediction,
-                                         String predictedBet, int suggestedUnit) {
+    private GameResultResponse handleBet(
+            GameResultResponse gameResultResponse,
+            UserPrincipal userPrincipal,
+            String userInput,
+            Pair<Character, Double> combinedPrediction,
+            String predictedBet,
+            int suggestedUnit) {
 
 
         String username = userPrincipal.getUsername();
 
-//        int betSize = (int) Math.ceil(1 * combinedPrediction.second * 5);
 
         int betSize = 0;
 
@@ -337,6 +342,7 @@ public class BaccaratController {
 
             gameResultResponse.setSequence(gameResultResponse.getSequence());
             gameResultResponse.setRecommendedBet(WAIT);
+            gameResultResponse.setConfidence(combinedPrediction.second);
             return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
 
         }
@@ -349,7 +355,13 @@ public class BaccaratController {
         return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet);
     }
 
-    private GameResultResponse resolveBet(GameResultResponse gameResultResponse, UserPrincipal userPrincipal, String userInput, int betSize, int suggestedUnit, String recommendedBet, String predictedBet) {
+    private GameResultResponse resolveBet(GameResultResponse gameResultResponse,
+                                          UserPrincipal userPrincipal,
+                                          String userInput,
+                                          int betSize,
+                                          int suggestedUnit,
+                                          String recommendedBet,
+                                          String predictedBet) {
 
         String username = userPrincipal.getUsername();
         gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
@@ -369,52 +381,83 @@ public class BaccaratController {
 
     }
 
-    private GameResultResponse validateGameResult(int suggestedUnit, int betSize, String predictedBet,
-                                                  String userInput, String username,
-                                                  GameResultResponse gameResultResponse, String nextPredictedBet) {
+    private GameResultResponse validateGameResult(
+            int suggestedUnit,
+            int betSize,
+            String predictedBet,
+            String userInput,
+            String username,
+            GameResultResponse gameResultResponse,
+            String nextPredictedBet) {
 
 
         if (!predictedBet.equals(WAIT)) {
 
-            String previousPrediction = predictedBet.equals("Player") ? "p" : "b";
+            String previousPrediction = predictedBet.equals(PLAYER) ? "p" : "b";
 
 
             if (previousPrediction.equals(userInput)) {
 
                 boolean toValidate = false;
                 if (gameResultResponse.getLossCounter() >= 2) {
-                    logger.info(username + ": Virtual won!");
-                    gameResultResponse.setMessage(PLACE_YOUR_BET);
-                    gameResultResponse.setLossCounter(0);
+
+
+
+                    int virtualWin = gameResultResponse.getVirtualWin();
+                    logger.info(username + ": " + VIRTUAL_WON + " " + virtualWin);
+                    Config virtualWinConfig = configService.findByName(UserConfig.VIRTUAL_WIN.getValue()).get();
+
+                    if (virtualWin >= Integer.parseInt(virtualWinConfig.getValue())) {
+                        gameResultResponse.setMessage(PLACE_YOUR_BET);
+                        gameResultResponse.setLossCounter(0); // reset the loss counter
+                        gameResultResponse.setVirtualWin(0);
+                    } else {
+                        gameResultResponse.setVirtualWin(virtualWin + 1);
+                    }
+
                 } else {
                     toValidate = true;
-                    logger.info(username + ": You won!");
-                    gameResultResponse.setMessage("You won!");
+                    logger.info(username + ": " + YOU_WON);
+                    gameResultResponse.setMessage(YOU_WON);
 
                 }
 
-                return settleLimitAndValidation(updateProfitAndFund(toValidate, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet);
+                return settleLimitAndValidation(updateProfitAndFund(toValidate, gameResultResponse, suggestedUnit, betSize,
+                        true), nextPredictedBet);
             } else {
 
                 if (gameResultResponse.getLossCounter() >= 2) {
-                    logger.info(username + ": Virtual lost!");
-                    gameResultResponse.setMessage("Virtual lost!");
+
+                    logger.info(username + ": " + VIRTUAL_LOST);
+                    gameResultResponse.setMessage(VIRTUAL_LOST);
 
                 } else {
 
-                    logger.info(username + ": You lost!");
-                    gameResultResponse.setMessage("You lost!");
-
+                    logger.info(username + ": " + YOU_LOST);
+                    gameResultResponse.setMessage(YOU_LOST);
 
                 }
 
 
-                return settleLimitAndValidation(updateProfitAndFund(true, gameResultResponse, suggestedUnit, betSize, false), nextPredictedBet);
+                return settleLimitAndValidation(
+                        updateProfitAndFund(
+                                true,
+                                gameResultResponse,
+                                suggestedUnit,
+                                betSize,
+                                false),
+                        nextPredictedBet);
             }
         } else {
             gameResultResponse.setSuggestedBetUnit(0);
 
-            return settleLimitAndValidation(updateProfitAndFund(false, gameResultResponse, suggestedUnit, betSize, true), nextPredictedBet);
+            return settleLimitAndValidation(
+                    updateProfitAndFund(false,
+                            gameResultResponse,
+                            suggestedUnit,
+                            betSize,
+                            true),
+                    nextPredictedBet);
         }
 
 
@@ -451,9 +494,11 @@ public class BaccaratController {
             gameResultResponse.setRecommendedBet(nextPredictedBet);
 
             if (gameResultResponse.getLossCounter() >= 2
-                    && !gameResultResponse.getMessage().equals("Virtual won!")) {
+                    && !gameResultResponse.getMessage().equals(VIRTUAL_WON)) {
+
                 gameResultResponse.setSuggestedBetUnit(0);
                 gameResultResponse.setMessage(WAIT_FOR_VIRTUAL_WIN);
+
             }
 
             //evaluate trailing stop
@@ -468,8 +513,11 @@ public class BaccaratController {
 
 
                 if (!gameResultResponse.getRecommendedBet().equals(WAIT)) {
-                    if (gameResultResponse.getSuggestedBetUnit() <= 0 && !gameResultResponse.getMessage().equals(WAIT_FOR_VIRTUAL_WIN)) {
+                    if (gameResultResponse.getSuggestedBetUnit() <= 0
+                            && !gameResultResponse.getMessage().equals(WAIT_FOR_VIRTUAL_WIN)) {
+
                         gameResultResponse.setSuggestedBetUnit(1);
+
                     }
 
                 } else {
@@ -601,7 +649,7 @@ public class BaccaratController {
                     currentLossCount = 0;
                     gameResultResponse.setHandResult(gameResultResponse.getHandResult() + "W");
                 } else {
-                    currentLossCount = currentLossCount + 1;
+                    currentLossCount++;
                     profit -= suggestedUnit;
                     playingUnit -= suggestedUnit;
                     totalLosses++;
@@ -795,7 +843,7 @@ public class BaccaratController {
         response.setMessage(latesGameResponse.getMessage());
         response.setRiskLevel(latesGameResponse.getRiskLevel());
         response.setConfidence(latesGameResponse.getConfidence());
-
+        response.setVirtualWin(latesGameResponse.getVirtualWin());
         // Get the GameStatus for the user
         GameStatus gameStatus = gameStatusService.findByGameResponseId(latesGameResponse.getGameResponseId()).orElse(null);
         GameResultStatus gameResultStatus;
@@ -843,6 +891,7 @@ public class BaccaratController {
         gameResponse.setMessage(gameResultResponse.getMessage());
         gameResponse.setRiskLevel(gameResultResponse.getRiskLevel());
         gameResponse.setConfidence(gameResultResponse.getConfidence());
+        gameResponse.setVirtualWin(gameResultResponse.getVirtualWin());
 //        gameResponse.setDateLastUpdated(LocalDateTime.now());
         // Persist the updated game response
         GameResponse newOneGameResponse = gameResponseService.createOrUpdateGameResponse(gameResponse);

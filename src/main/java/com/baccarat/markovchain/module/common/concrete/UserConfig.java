@@ -5,8 +5,8 @@ import lombok.Getter;
 @Getter
 public enum UserConfig {
 
-    DAILY_LIMIT("DAILY_LIMIT");
-//    PLAYING_FUND("PLAYING_FUND"),
+    DAILY_LIMIT("DAILY_LIMIT"),
+    VIRTUAL_WIN("VIRTUAL_WIN");
 //    BASE_BET("BASE_BET");
 
     private final String value;

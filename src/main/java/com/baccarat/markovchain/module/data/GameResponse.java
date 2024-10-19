@@ -50,6 +50,9 @@ public class GameResponse {
     @Column(name = "confidence", length = 10)
     private Double confidence;
 
+    @Column(name = "virtual_win", columnDefinition = "int default 0")
+    private int virtualWin = 0;
+
 
     @Column(name = "date_last_updated")
     private LocalDateTime dateLastUpdated;

@@ -35,6 +35,10 @@ public class UserConfigService {
     public Config saveOrUpdateConfig(Config config) {
         return configRepository.save(config);
     }
+    public Optional<Config> findByName(String name) {
+        return Optional.ofNullable(configRepository.findByName(name));
+    }
+
 
     // Delete a configuration by ID
     public void deleteConfigById(int configId) {
