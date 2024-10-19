@@ -17,26 +17,30 @@ public interface JournalRepository extends JpaRepository<Journal, Integer> {
 
     List<Journal> findByUserUuidAndDateLastModified(String userUuid, LocalDateTime dateCreated);
 
-    @Query(value = "SELECT \n" +
-            "    SUM(j.profit) AS total_profit, \n" +
-            "    DATE(j.date_created) AS created_date \n" +
+    @Query(value = "SELECT     \n" +
+            "    SUM(SUM(j.profit)) OVER (ORDER BY DATE(j.date_created)) AS accumulated_profit,\n" +
+            "DATE(j.date_created) AS created_date\n" +
             "FROM \n" +
             "    journal j \n" +
             "WHERE \n" +
             "    j.user_uuid = :userUuid\n" +
             "GROUP BY \n" +
-            "    DATE(j.date_created);\n", nativeQuery = true)
+            "    DATE(j.date_created)\n" +
+            "ORDER BY \n" +
+            "    created_date;\n", nativeQuery = true)
     List<Object[]> getTotalProfitByDate(@Param("userUuid") String userUuid);
 
-    @Query(value = "SELECT \n" +
-            "    SUM(j.profit) AS total_profit, \n" +
-            "    WEEK(j.date_created) AS week_number \n" +
+    @Query(value = "SELECT    \n" +
+            "    SUM(SUM(j.profit)) OVER (ORDER BY YEARWEEK(j.date_created)) AS accumulated_profit,\n" +
+            " YEARWEEK(j.date_created) AS year_week\n" +
             "FROM \n" +
             "    journal j \n" +
             "WHERE \n" +
             "    j.user_uuid = :userUuid\n" +
             "GROUP BY \n" +
-            "   YEAR(j.date_created),WEEK(j.date_created)", nativeQuery = true)
+            "    YEARWEEK(j.date_created)\n" +
+            "ORDER BY \n" +
+            "    year_week;\n", nativeQuery = true)
     List<Object[]> getTotalProfitByWeek(@Param("userUuid") String userUuid);
 
 }

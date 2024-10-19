@@ -391,27 +391,25 @@
                 </div>
 
                 <!-- Journal Tab Content -->
-                <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">
-                    <!-- Main Card -->
-
+                <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">                 
                     <!-- Journal entries will be populated here -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalEntriesContainer"></div>
                 </div>
-
 
                 <!-- Graph Tab Content -->
                 <div class="hidden" id="graphContainer">
                     <div class="flex items-center mb-4">
                         <label class="mr-2 text-gray-700" style="margin-right: 10px;">View By:</label>
-                        <input type="radio" id="dayRadio" name="viewBy" value="day" class="mr-1" checked
+                        <input type="radio" id="dayRadio" name="viewBy" value="day" class="mr-1 cursor-pointer" checked
                             onchange="handleViewChange()">
-                        <label for="day" class="mr-4 text-gray-700">Day</label>
-                        <input type="radio" id="weekRadio" name="viewBy" value="week" class="mr-1"
+                        <label for="dayRadio" class="mr-4 text-gray-700 cursor-pointer">Day</label>
+                        <input type="radio" id="weekRadio" name="viewBy" value="week" class="mr-1 cursor-pointer"
                             onchange="handleViewChange()">
-                        <label for="week" class="text-gray-700">Week</label>
+                        <label for="weekRadio" class="text-gray-700 cursor-pointer">Week</label>
                     </div>
                     <canvas id="profitsGraph" width="400" height="200"></canvas>
                 </div>
+
 
 
             </div>
@@ -706,7 +704,7 @@
                     <div class="flex justify-between">
                     <span class="font-bold text-xs">Next Bet:</span>
                     
-                    <span style="width: 45px;" class="${statusMessage === 'Wait for virtual win.' ? 'text-xs'
+                    <span style="width: 45px;" class="${statusMessage === 'Wait for virtual win.' ? 'text-sm'
                         : response.recommendedBet.includes('Wait') ? 'text-sm'
                             : response.recommendedBet == 'Player' ? 'h-5 bg-blue-500 text-sm text-white flex items-center justify-center rounded shadow-lg'
                                 : 'w-20 h-5 bg-red-500 text-sm text-white flex items-center justify-center rounded shadow-lg'}">
