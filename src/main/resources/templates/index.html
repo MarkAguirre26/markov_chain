@@ -1202,10 +1202,10 @@
                         dummyGraph = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: profitData.labels,  // Use the labels for the x-axis
+                                labels: profitData.labels,  
                                 datasets: [{
-                                    label: 'Profit/Loss',  // Single label for the dataset
-                                    data: profitData.data,  // Use the data from the response
+                                    label: profitData.data[profitData.data.length - 1],
+                                    data: profitData.data, 
                                     fill: false,
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     tension: 0.1
