@@ -42,8 +42,8 @@ public class BaccaratController {
 
     private static final double STOP_PROFIT_PERCENTAGE = 0.30;
     private static final double STOP_LOSS_PERCENTAGE = 0.10;
-    private static final double CONFIDENCE_THRESHOLD = 0.60;
-    private static final int MAX_HANDS = 60;
+    private static final double CONFIDENCE_THRESHOLD = 0.55;
+
     private static final int TRAILING_STOP_ACTIVATION = 7;
 
     private final MarkovChain markovChain;
