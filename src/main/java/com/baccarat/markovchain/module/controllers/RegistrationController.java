@@ -56,7 +56,7 @@ public class RegistrationController {
         User createdUser = userService.createUser(user);
 
 
-        Config dailyLimitConfig = new Config(createdUser.getUuid(), UserConfig.DAILY_LIMIT.getValue(), "10");
+        Config dailyLimitConfig = new Config(createdUser.getUuid(), UserConfig.DAILY_LIMIT.getValue(), "100");
         userConfigService.saveOrUpdateConfig(dailyLimitConfig);
         logger.info("Saving daily limit config for {}", createdUser.getUsername());
 

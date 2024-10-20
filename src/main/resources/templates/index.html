@@ -385,7 +385,7 @@
                 <!-- Tab Navigation -->
                 <div class="flex mb-2">
                     <button id="journalTab" class="flex-1 py-2 text-gray-700 text-xs border-b-2 border-blue-500"
-                        onclick="showTab('journal')">Journal</button>
+                        onclick="showTab('History')">History</button>
                     <button id="graphTab" class="flex-1 py-2 text-gray-500 border-b-2 text-xs"
                         onclick="showTab('graph')">Profit/Loss</button>
                 </div>
@@ -431,7 +431,7 @@
                 </div>
                 <!-- Modal Body -->
                 <div class="p-4">
-                    <p>Do you want to add this game result to your journal?</p>
+                    <p>Do you want to save this game result?</p>
                 </div>
                 <!-- Modal Footer -->
                 <div class="px-4 py-2 border-t flex flex-col space-y-2">
@@ -675,7 +675,7 @@
 
 
                 <div class="bg-gray-200 text-gray-800 text-xs font-semibold p-1 flex justify-between">
-                    <span id="playedShoe">Shoe: ${playedShoe}/10</span>
+                    <span id="playedShoe">Shoe: ${playedShoe}</span>
 
                    
                     
@@ -1030,9 +1030,9 @@
                         $('#journalContainer').append(journalDiv);
 
                         // Add glowing effect to the first valid journal
-                        if (index === 0) {
-                            journalDiv.classList.add('glow');
-                        }
+                        // if (index === 0) {
+                        //     journalDiv.classList.add('glow');
+                        // }
                         playedShoe++;
                     });
 
@@ -1241,7 +1241,7 @@
                 const journalTab = document.getElementById('journalTab');
                 const graphTab = document.getElementById('graphTab');
 
-                if (tab === 'journal') {
+                if (tab === 'History') {
                     journalContainer.classList.remove('hidden');
                     graphContainer.classList.add('hidden');
                     journalTab.classList.add('border-blue-500', 'text-gray-700');
