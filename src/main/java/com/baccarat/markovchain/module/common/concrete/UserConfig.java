@@ -6,6 +6,7 @@ import lombok.Getter;
 public enum UserConfig {
 
     DAILY_LIMIT("DAILY_LIMIT"),
+    FREEZE("FREEZE"),
     VIRTUAL_WIN("VIRTUAL_WIN");
 //    BASE_BET("BASE_BET");
 

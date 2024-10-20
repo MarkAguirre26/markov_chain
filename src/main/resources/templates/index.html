@@ -265,9 +265,9 @@
                                 aria-label="Change Risk Level">
                                 <img id="riskLevelImage" src="/img/risk_medium.png" class="w-7 h-7" alt="Risk Level">
                             </button>
-                            <button id="shieldButton" class="cursor-pointer" onclick="changeShield(this)"
-                                aria-label="Change Shield Status" style="display: none;">
-                                <img id="shieldImage" src="/img/shield_disabled.png" class="w-7 h-7"
+                            <button id="shieldButton" class="cursor-pointer" onclick="changeShield()"
+                                aria-label="Change Shield Status">
+                                <img id="shieldImage" src="/img/shield_disabled.png" class="w-6 h-6"
                                     alt="Shield Status">
                             </button>
                         </div>
@@ -391,7 +391,7 @@
                 </div>
 
                 <!-- Journal Tab Content -->
-                <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">                 
+                <div id="journalContainer" class="grid grid-cols-1 md:grid-cols-2 gap-1">
                     <!-- Journal entries will be populated here -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-1" id="journalEntriesContainer"></div>
                 </div>
@@ -889,26 +889,32 @@
 
                 if (shieldImage.src.includes('shield_disabled.png')) {
                     shieldImage.src = '/img/shield_active.png';
-                    setShieldValue(1);
+                    freezeStateAsync('ON');
+                    setShieldValue('ON');
                 } else {
                     shieldImage.src = '/img/shield_disabled.png';
-                    setShieldValue(0);
+                    freezeStateAsync('OFF');
+                    setShieldValue('OFF');
                 }
-
             }
 
             function setShieldState() {
+
                 const shieldState = getShieldValue();
                 const shieldImage = document.getElementById('shieldImage'); // Assuming you have the shieldImage element
 
-                // Set the shield image based on the current state
-                if (shieldState === 1) {
+                // console.log(shieldState);
+
+                if (shieldState === 'ON') {
                     shieldImage.src = '/img/shield_active.png';
-                    setShieldValue(1);
+                  
                 } else {
                     shieldImage.src = '/img/shield_disabled.png';
-                    setShieldValue(0);
+                  
                 }
+              
+
+                
             }
 
 
@@ -1202,10 +1208,10 @@
                         dummyGraph = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: profitData.labels,  
+                                labels: profitData.labels,
                                 datasets: [{
                                     label: profitData.data[profitData.data.length - 1],
-                                    data: profitData.data, 
+                                    data: profitData.data,
                                     fill: false,
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     tension: 0.1
@@ -1250,6 +1256,39 @@
                 }
             }
 
+            async function freezeStateAsync(yesNoValue) {
+
+
+                try {
+                    const response = await $.ajax({
+                        url: '/api/baccarat/freeze-state',
+                        type: 'POST',
+                        data: { onOff: yesNoValue }
+                    });
+                    // console.log('Success:', response);
+                    // alert(response);  // Optionally show a success message
+
+                    // Set the shield image based on the current state
+                // if (response === 'ON') {
+                //     // shieldImage.src = '/img/shield_active.png';
+                //     setShieldValue("ON");
+                //     freezeStateAsync('ON');
+                // } else {
+                //     // shieldImage.src = '/img/shield_disabled.png';
+                //     setShieldValue('OFF');
+                //     freezeStateAsync('OFF');
+                // }
+
+                setShieldState();
+
+                } catch (error) {
+                    console.log('Error:', error);
+                    alert('Operation failed: ' + error.responseText);  // Optionally show an error message
+                }
+            }
+
+            // // Example usage
+            // freezeStateAsync('yes');  // Call the function with 'yes' or 'no'
 
 
         </script>

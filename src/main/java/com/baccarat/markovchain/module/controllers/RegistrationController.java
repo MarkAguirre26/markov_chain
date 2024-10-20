@@ -60,6 +60,13 @@ public class RegistrationController {
         userConfigService.saveOrUpdateConfig(dailyLimitConfig);
         logger.info("Saving daily limit config for {}", createdUser.getUsername());
 
+
+        Config freezeConfig = new Config(createdUser.getUuid(), UserConfig.FREEZE.getValue(), "NO");
+        userConfigService.saveOrUpdateConfig(freezeConfig);
+        logger.info("Saving daily limit config for {}", createdUser.getUsername());
+
+
+
 //        logger.info("User created: {}", createdUser);
         return ResponseEntity.ok("Created user" + user.getUsername());
     }

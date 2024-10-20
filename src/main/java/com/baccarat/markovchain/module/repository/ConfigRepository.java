@@ -11,4 +11,6 @@ import java.util.List;
 public interface ConfigRepository extends JpaRepository<Config, Integer> {
     List<Config> findByUserUuid(String userUuid);
     Config findByName(String name);
+
+    Config findByUserUuidAndName(String userUuid, String name);
 }

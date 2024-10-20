@@ -5,7 +5,7 @@ import com.baccarat.markovchain.module.common.concrete.UserConfig;
 import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
 import com.baccarat.markovchain.module.data.response.GameResultStatus;
-import com.baccarat.markovchain.module.helper.ShoePatternAnalyzer;
+import com.baccarat.markovchain.module.helper.BaccaratKISS123;
 import com.baccarat.markovchain.module.model.Pair;
 import com.baccarat.markovchain.module.model.UserPrincipal;
 import com.baccarat.markovchain.module.services.TrailingStopService;
@@ -13,6 +13,8 @@ import com.baccarat.markovchain.module.services.impl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +28,6 @@ import java.util.Optional;
 public class BaccaratController {
 
 
-
     private static final String STOP_PROFIT_REACHED = "Stop profit reached! Restart the game.";
     private static final String STOP_LOSS_REACHED = "Stop loss reached! Restart the game.";
     private static final String DAILY_LIMIT_REACHED = "Daily limit! Please play again after ";
@@ -36,12 +37,14 @@ public class BaccaratController {
     private static final String YOU_WON = "You won!";
     private static final String YOU_LOST = "You lost!";
     private static final int ZERO = 0;
+    private static final String ON = "ON";
+    private static final String OFF = "OFF";
 
 
     private static final Logger logger = LoggerFactory.getLogger(BaccaratController.class);
 
     private static final double STOP_PROFIT_PERCENTAGE = 0.30;
-    private static final double STOP_LOSS_PERCENTAGE = 0.10;
+    private static final double STOP_LOSS_PERCENTAGE = 0.12;
     private static final double CONFIDENCE_THRESHOLD = 0.55;
 
     private static final int TRAILING_STOP_ACTIVATION = 7;
@@ -324,13 +327,10 @@ public class BaccaratController {
 
         int betSize = 0;
 
-
-        if (Boolean.TRUE.equals(ShoePatternAnalyzer.isShoePatternTrendChoppy(gameResultResponse.getHandResult()))) {
-            System.out.println("Shoe Pattern detected as choppy");
-            betSize = 1;  // 1 unit if shoe pattern detected is choppy
+        if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
+            betSize = 1;
         } else {
-            System.out.println("Shoe Pattern detected as streak or volatile");
-            betSize = calculateWager(combinedPrediction.second, gameResultResponse); // Calculate bet size based on confidence if shoe pattern is streak or volatile
+            betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse.getHandResult());
         }
 
 
@@ -350,7 +350,7 @@ public class BaccaratController {
         gameResultResponse.setConfidence(combinedPrediction.second);
 
         String prediction = String.valueOf(combinedPrediction.first);
-        String recommendedBet = Objects.equals(prediction, "p") ? "Player" : "Banker";
+        String recommendedBet = Objects.equals(prediction, "p") ? PLAYER : BANKER;
 
         return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet);
     }
@@ -400,7 +400,6 @@ public class BaccaratController {
 
                 boolean toValidate = false;
                 if (gameResultResponse.getLossCounter() >= 2) {
-
 
 
                     int virtualWin = gameResultResponse.getVirtualWin();
@@ -491,6 +490,17 @@ public class BaccaratController {
             return provideGameResponse(gameResultResponse);
         } else {
 
+            int betSize = 0;
+
+            if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
+                betSize = 1;
+            } else {
+                betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse.getHandResult());
+            }
+            gameResultResponse.setSuggestedBetUnit(betSize);
+//
+//            ----------------------------------------------------------
+
             gameResultResponse.setRecommendedBet(nextPredictedBet);
 
             if (gameResultResponse.getLossCounter() >= 2
@@ -529,16 +539,17 @@ public class BaccaratController {
 
                 }
             } else {
-                if (gameResultResponse.getLossCounter() > 0) {
-                    if (gameResultResponse.getSuggestedBetUnit() < 0) {
-                        gameResultResponse.setSuggestedBetUnit(1);
-                    }
-                }
+//                if (gameResultResponse.getLossCounter() > 0) {
+//                    if (gameResultResponse.getSuggestedBetUnit() < 0) {
+//                        gameResultResponse.setSuggestedBetUnit(1);
+//                    }
+//                }
             }
 
 
             double confidence = gameResultResponse.getConfidence() == null ? 0 : gameResultResponse.getConfidence();
             gameResultResponse.setConfidence(confidence);
+
 
             return provideGameResponse(gameResultResponse);
         }
@@ -626,6 +637,14 @@ public class BaccaratController {
         }
     }
 
+    private boolean isFrozen() {
+        String userUuid = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUserUuid();
+        return configService.findByUserUuidAndName(userUuid, UserConfig.FREEZE.getValue())
+                .map(Config::getValue)
+                .map(ON::equals)
+                .orElse(false);
+    }
+
 
     private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse,
                                                    int suggestedUnit, int betSize, boolean isWin) {
@@ -643,14 +662,15 @@ public class BaccaratController {
 
 
                 if (isWin) {
-                    profit += suggestedUnit;
+
+                    profit = (isFrozen() ? profit : profit + suggestedUnit);
                     playingUnit += suggestedUnit;
                     totalWins++;
                     currentLossCount = 0;
                     gameResultResponse.setHandResult(gameResultResponse.getHandResult() + "W");
                 } else {
                     currentLossCount++;
-                    profit -= suggestedUnit;
+                    profit = (isFrozen() ? profit : profit - suggestedUnit);
                     playingUnit -= suggestedUnit;
                     totalLosses++;
                     betSize -= 2;
@@ -691,6 +711,37 @@ public class BaccaratController {
 
         return gameResultResponse;
     }
+
+    @PostMapping("/freeze-state")
+    public ResponseEntity<String> freezeState(@RequestParam String onOff) {
+        try {
+            // Get the current authenticated user
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String userUuid = userPrincipal.getUserUuid();
+
+            // Find the freeze configuration or create a new one if it doesn't exist
+            Config freezeConfig = configService.findByUserUuidAndName(userUuid, UserConfig.FREEZE.getValue())
+                    .orElseGet(() -> new Config(userUuid, UserConfig.FREEZE.getValue(), "OFF"));
+
+            // Update the value of the freeze configuration
+            freezeConfig.setValue(onOff);
+
+            // Save or update the configuration
+            configService.saveOrUpdateConfig(freezeConfig);
+
+            // Return success with the updated value
+            return ResponseEntity.ok(onOff);
+
+        } catch (Exception e) {
+            // Log the error properly (use a logger)
+            // logger.error("Error updating freeze state for user: " + userUuid, e);
+            e.printStackTrace(); // Replace with proper logging
+
+            // Return Internal Server Error in case of failure
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Operation failed");
+        }
+    }
+
 
     @GetMapping("/current-state")
     public GameResultResponse getCurrentState(@RequestParam String message) {
@@ -864,7 +915,6 @@ public class BaccaratController {
         } else {
             response.setTrailingStop("0");
         }
-
         // Log the response
         logger.info("{}: Game Response-> {}", userPrincipal.getUsername(), response);
 

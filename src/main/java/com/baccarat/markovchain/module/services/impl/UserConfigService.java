@@ -39,6 +39,11 @@ public class UserConfigService {
         return Optional.ofNullable(configRepository.findByName(name));
     }
 
+    public Optional<Config> findByUserUuidAndName(String userUuid,String name) {
+        return Optional.ofNullable(configRepository.findByUserUuidAndName(userUuid,name));
+    }
+
+
 
     // Delete a configuration by ID
     public void deleteConfigById(int configId) {
