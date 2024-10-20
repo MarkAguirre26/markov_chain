@@ -907,14 +907,14 @@
 
                 if (shieldState === 'ON') {
                     shieldImage.src = '/img/shield_active.png';
-                  
+
                 } else {
                     shieldImage.src = '/img/shield_disabled.png';
-                  
-                }
-              
 
-                
+                }
+
+
+
             }
 
 
@@ -1220,6 +1220,14 @@
                             options: {
                                 responsive: true,
                                 scales: {
+                                    x: {
+                                        ticks: {
+                                            autoSkip: true, // Automatically skip ticks
+                                            maxTicksLimit: 10, // Limit the number of ticks
+                                            maxRotation: 45, // Rotate labels if needed
+                                            minRotation: 0 // Minimum label rotation
+                                        }
+                                    },
                                     y: {
                                         beginAtZero: true
                                     }
@@ -1231,6 +1239,7 @@
                         console.error('Error fetching profit data:', error);
                     });
             }
+
 
 
 
@@ -1265,21 +1274,9 @@
                         type: 'POST',
                         data: { onOff: yesNoValue }
                     });
-                    // console.log('Success:', response);
-                    // alert(response);  // Optionally show a success message
 
-                    // Set the shield image based on the current state
-                // if (response === 'ON') {
-                //     // shieldImage.src = '/img/shield_active.png';
-                //     setShieldValue("ON");
-                //     freezeStateAsync('ON');
-                // } else {
-                //     // shieldImage.src = '/img/shield_disabled.png';
-                //     setShieldValue('OFF');
-                //     freezeStateAsync('OFF');
-                // }
 
-                setShieldState();
+                    setShieldState();
 
                 } catch (error) {
                     console.log('Error:', error);
@@ -1287,8 +1284,7 @@
                 }
             }
 
-            // // Example usage
-            // freezeStateAsync('yes');  // Call the function with 'yes' or 'no'
+
 
 
         </script>

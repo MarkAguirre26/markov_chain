@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <meta name="description" content="Login Page">
-    <meta name="keywords" content="login, user account">
+    <meta name="keywords" content="Player Companion Baccarat App Game Tracker">
     <title>Player Companion Baccarat App Game Tracker</title>
     <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -14,53 +14,34 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
-<body class="bg-gray-200 min-h-screen flex items-center justify-center">
-    <section class="w-full h-full flex items-center justify-center">
-        <div class="bg-white shadow-lg rounded-lg overflow-hidden" style="max-width: 350px; width: 100%;"> <!-- Reduced max-width -->
-            <div class="p-4"> <!-- Reduced padding -->
-                <h2 class="text-xl font-bold text-center text-gray-800 mb-3">Sign-In</h2> <!-- Reduced font size and margin -->
+<body class="min-h-screen bg-cover bg-center flex items-center justify-center"
+    style="background-color: #f5f5f5;">
+    <div class="bg-white bg-opacity-80 p-8 rounded-lg shadow-lg max-w-md w-full">
+        <form th:action="@{/auth}" method="POST" class="space-y-6">
+            <h1 class="text-3xl font-semibold text-center text-gray-800">Welcome back!</h1>
+            <div class="space-y-4">
 
-                <form th:action="@{/auth}" method="POST">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 
-                    <!-- Email Field -->
-                    <div class="mb-3 flex items-center"> <!-- Reduced margin -->
-                        <i class="fas fa-envelope text-lg text-gray-400 mr-2"></i> <!-- Kept icon size -->
-                        <div class="flex-grow">
-                            <input type="text" id="username" name="username" aria-label="username" 
-                                class="w-full py-1.5 px-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                                placeholder="Username or email" required>
-                        </div>
-                    </div>
-
-                    <!-- Password Field -->
-                    <div class="mb-3 flex items-center"> <!-- Reduced margin -->
-                        <i class="fas fa-lock text-lg text-gray-400 mr-2"></i> <!-- Kept icon size -->
-                        <div class="flex-grow">
-                            <input type="password" id="password" name="password" aria-label="Password"   
-                                class="w-full py-1.5 px-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                                placeholder="Password" required>
-                        </div>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div class="flex justify-center">
-                        <button type="submit"
-                            class="bg-yellow-500 text-white py-2 px-3 rounded-lg font-bold hover:bg-yellow-600 transition duration-300 text-sm">Sign-In</button> <!-- Reduced padding and font size -->
-                    </div>
-
-                    <div class="flex justify-center">
-                        <p class="mt-2 text-gray-600 text-sm"> <!-- Reduced margin and font size -->
-                            New Here?
-                            <a th:href="@{/register}" class="text-yellow-500 hover:underline cursor-pointer">Create Account</a> <!-- Shortened link text -->
-                        </p>
-                    </div>
-                </form>
+                <input type="text"  id="username" name="username"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Username" required>
+                <input type="password" id="password" name="password"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Password" required>
 
             </div>
-        </div>
-    </section>
+            <button type="submit"
+                class="w-full bg-purple-600 text-white py-3 rounded-md hover:bg-purple-700 focus:ring-4 focus:ring-purple-500 transition duration-200">Login</button>
+            <div class="text-center text-gray-500 mt-4">
+                <!-- <a href="#" class="text-purple-600 hover:underline">Forgot your password?</a> -->
+            </div>
+            <div class="text-center text-gray-500">
+                Don't have an account? <a th:href="@{/register}" class="text-purple-600 hover:underline">Sign up</a>
+                
+            </div>
+        </form>
+    </div>
 </body>
-
 
 </html>
