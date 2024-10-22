@@ -43,11 +43,11 @@ public class BaccaratController {
 
     private static final Logger logger = LoggerFactory.getLogger(BaccaratController.class);
 
-    private static final double STOP_PROFIT_PERCENTAGE = 0.30;
+    private static final double STOP_PROFIT_PERCENTAGE = 0.20;
     private static final double STOP_LOSS_PERCENTAGE = 0.12;
-    private static final double CONFIDENCE_THRESHOLD = 0.55;
+    private static final double CONFIDENCE_THRESHOLD = 0.60;
 
-    private static final int TRAILING_STOP_ACTIVATION = 7;
+    private static final int TRAILING_STOP_ACTIVATION = 5;
 
     private final MarkovChain markovChain;
     private final PatternRecognizer patternRecognizer;
@@ -332,25 +332,29 @@ public class BaccaratController {
         } else {
             betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse.getHandResult());
         }
-
+        String prediction = "";
+        String recommendedBet = "";
+//        b b b p p p b b p b p b p b b b p b b p b b b b b b b
 
         if (combinedPrediction.second < CONFIDENCE_THRESHOLD) {
 
-
-            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.second);
-            gameResultResponse.setMessage(PREDICTION_CONFIDENCE_LOW);
-
-            gameResultResponse.setSequence(gameResultResponse.getSequence());
-            gameResultResponse.setRecommendedBet(WAIT);
-            gameResultResponse.setConfidence(combinedPrediction.second);
-            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
-
+//            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.first);
+//            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.second);
+//            gameResultResponse.setMessage(PREDICTION_CONFIDENCE_LOW);
+//
+//            gameResultResponse.setSequence(gameResultResponse.getSequence());
+//            gameResultResponse.setRecommendedBet(WAIT);
+//            gameResultResponse.setConfidence(combinedPrediction.second);
+//            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
+            prediction = String.valueOf(combinedPrediction.first);
+            recommendedBet = Objects.equals(prediction, "p") ? BANKER : PLAYER;
+        } else {
+            prediction = String.valueOf(combinedPrediction.first);
+            recommendedBet = Objects.equals(prediction, "p") ? PLAYER : BANKER;
         }
 
         gameResultResponse.setConfidence(combinedPrediction.second);
 
-        String prediction = String.valueOf(combinedPrediction.first);
-        String recommendedBet = Objects.equals(prediction, "p") ? PLAYER : BANKER;
 
         return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet);
     }
@@ -490,6 +494,7 @@ public class BaccaratController {
             return provideGameResponse(gameResultResponse);
         } else {
 
+            //            ---------------------MONEY MANAGEMENT-------------------------------------
             int betSize = 0;
 
             if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
@@ -562,7 +567,7 @@ public class BaccaratController {
         if (gameResultResponse.getGameStatus().getProfit() >= TRAILING_STOP_ACTIVATION) {
 
             int currentProfit = gameResultResponse.getGameStatus().getProfit();
-            double trailingPercent = 5;
+            double trailingPercent = 3;
             double stopProfit = currentProfit - trailingPercent;
 
             TrailingStop existingTrailingStop = trailingStopService.getTrailingStopByUserUuid(userPrincipal.getUserUuid());
@@ -733,8 +738,32 @@ public class BaccaratController {
             return ResponseEntity.ok(onOff);
 
         } catch (Exception e) {
-            // Log the error properly (use a logger)
-            // logger.error("Error updating freeze state for user: " + userUuid, e);
+            e.printStackTrace(); // Replace with proper logging
+
+            // Return Internal Server Error in case of failure
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Operation failed");
+        }
+    }
+
+    @GetMapping("/get-freeze-state")
+    public ResponseEntity<String> freezeState() {
+        try {
+            // Get the current authenticated user
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String userUuid = userPrincipal.getUserUuid();
+
+            // Find the freeze configuration or create a new one if it doesn't exist
+            Config freezeConfig = configService.findByUserUuidAndName(userUuid, UserConfig.FREEZE.getValue())
+                    .orElseGet(() -> new Config(userUuid, UserConfig.FREEZE.getValue(), "OFF"));
+
+            // Update the value of the freeze configuration
+            freezeConfig.setValue(freezeConfig.getValue());
+
+
+            // Return success with the updated value
+            return ResponseEntity.ok(freezeConfig.getValue());
+
+        } catch (Exception e) {
             e.printStackTrace(); // Replace with proper logging
 
             // Return Internal Server Error in case of failure

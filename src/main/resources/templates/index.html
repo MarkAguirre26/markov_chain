@@ -628,7 +628,7 @@
 
 
 
-                setShieldState();
+              getFreezeStateAsync();
             });
 
 
@@ -889,44 +889,42 @@
 
                 if (shieldImage.src.includes('shield_disabled.png')) {
                     shieldImage.src = '/img/shield_active.png';
-                    freezeStateAsync('ON');
                     setShieldValue('ON');
                 } else {
                     shieldImage.src = '/img/shield_disabled.png';
-                    freezeStateAsync('OFF');
                     setShieldValue('OFF');
                 }
             }
 
-            function setShieldState() {
+            // function setShieldState(shieldState) {
+            //     console.log(shieldState)
+            //     // const shieldState = getShieldValue();
+            //     const shieldImage = document.getElementById('shieldImage'); // Assuming you have the shieldImage element
 
-                const shieldState = getShieldValue();
-                const shieldImage = document.getElementById('shieldImage'); // Assuming you have the shieldImage element
+            //     // console.log(shieldState);
 
-                // console.log(shieldState);
+            //     if (shieldState === 'ON') {
+            //         shieldImage.src = '/img/shield_active.png';
 
-                if (shieldState === 'ON') {
-                    shieldImage.src = '/img/shield_active.png';
+            //     } else {
+            //         shieldImage.src = '/img/shield_disabled.png';
 
-                } else {
-                    shieldImage.src = '/img/shield_disabled.png';
-
-                }
-
-
-
-            }
+            //     }
 
 
 
+            // }
 
-            function setShieldValue(value) {
-                localStorage.setItem('isShieldActive', value);
-            }
 
-            function getShieldValue() {
-                return localStorage.getItem('isShieldActive');
-            }
+
+
+            // function setShieldValue(value) {
+            //     localStorage.setItem('isShieldActive', value);
+            // }
+
+            // function getShieldValue() {
+            //     return localStorage.getItem('isShieldActive');
+            // }
 
             // Function to modify the date
             function modifyDate(dateString, days, options) {
@@ -1265,7 +1263,7 @@
                 }
             }
 
-            async function freezeStateAsync(yesNoValue) {
+            async function setShieldValue(yesNoValue) {
 
 
                 try {
@@ -1275,8 +1273,32 @@
                         data: { onOff: yesNoValue }
                     });
 
+                    getFreezeStateAsync();
 
-                    setShieldState();
+                } catch (error) {
+                    console.log('Error:', error);
+                    alert('Operation failed: ' + error.responseText);  // Optionally show an error message
+                }
+            }
+
+            async function getFreezeStateAsync() {
+
+
+                try {
+                    const response = await $.ajax({
+                        url: '/api/baccarat/get-freeze-state',
+                        type: 'GET'
+                    });
+
+
+                    const shieldImage = document.getElementById('shieldImage');
+                    if (response === 'ON') {
+                        shieldImage.src = '/img/shield_active.png';
+
+                    } else {
+                        response.src = '/img/shield_disabled.png';
+
+                    }
 
                 } catch (error) {
                     console.log('Error:', error);
