@@ -43,6 +43,9 @@ public class GamesArchive {
     @Column(name = "hand_count")
     private Integer handCount;
 
+    @Column(name = "skip_state", length = 254)
+    private String skipState;
+
     @Column(name = "wins")
     private Integer wins;
 
@@ -60,7 +63,7 @@ public class GamesArchive {
     private String riskLevel;
 
     public GamesArchive(Integer journalId, Integer baseBetUnit, Integer suggestedBetUnit, Integer lossCounter,
-                        String recommendedBet, String sequence, String handResult, String message, Integer handCount,
+                        String recommendedBet, String sequence, String handResult,String skipState, String message, Integer handCount,
                         Integer wins, Integer losses, Integer profit, Integer playingUnits, String riskLevel) {
         this.journalId = journalId;
         this.baseBetUnit = baseBetUnit;
@@ -69,6 +72,7 @@ public class GamesArchive {
         this.recommendedBet = recommendedBet;
         this.sequence = sequence;
         this.handResult = handResult;
+        this.skipState = skipState;
         this.message = message;
         this.handCount = handCount;
         this.wins = wins;

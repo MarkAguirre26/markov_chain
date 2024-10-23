@@ -220,7 +220,7 @@ public class BaccaratController {
 
             gamesArchiveService.addGameArchive(new GamesArchive(savedJournal.getJournalId(), response.getBaseBetUnit(),
                     response.getSuggestedBetUnit(), response.getLossCounter(), response.getRecommendedBet(),
-                    response.getSequence(), response.getHandResult(), "Archived", gameResultStatus.getHandCount(),
+                    response.getSequence(), response.getHandResult(),response.getSkipState(), "Archived", gameResultStatus.getHandCount(),
                     gameResultStatus.getWins(), gameResultStatus.getLosses(), gameResultStatus.getProfit(),
                     gameResultStatus.getPlayingUnits(), response.getRiskLevel()));
         }
@@ -339,7 +339,7 @@ public class BaccaratController {
         if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
             betSize = 1;
         } else {
-            betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse.getHandResult());
+            betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse);
         }
         String prediction = "";
         String recommendedBet = "";
@@ -514,7 +514,7 @@ public class BaccaratController {
             if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
                 betSize = 1;
             } else {
-                betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse.getHandResult());
+                betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse);
             }
             gameResultResponse.setSuggestedBetUnit(betSize);
 //

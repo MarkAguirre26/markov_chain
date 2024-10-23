@@ -79,6 +79,7 @@ public class JournalController {
 
                     gamesArchive.getLossCounter()
             );
+            response.setSkipState(gamesArchive.getSkipState());
             response.setRiskLevel(gamesArchive.getRiskLevel());
             response.setHandResult(gamesArchive.getHandResult());
             return ResponseEntity.ok(response);
