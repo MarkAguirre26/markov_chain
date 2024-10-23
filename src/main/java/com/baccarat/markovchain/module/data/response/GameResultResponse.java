@@ -20,6 +20,7 @@ public class GameResultResponse {
     private int lossCounter;
     private String trailingStop;
     private String handResult;
+    private String skipState;
     private String riskLevel;
     private Double confidence;
     private int virtualWin;
@@ -69,6 +70,7 @@ public class GameResultResponse {
                 ", lossCounter=" + lossCounter +
                 ", trailingStop='" + trailingStop + '\'' +
                 ", handResult='" + handResult + '\'' +
+                ", skipState='" + skipState + '\'' +
                 ", virtualWin='" + virtualWin + '\'' +
                 '}';
     }

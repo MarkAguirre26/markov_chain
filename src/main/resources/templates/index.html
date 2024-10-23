@@ -265,10 +265,9 @@
                                 aria-label="Change Risk Level">
                                 <img id="riskLevelImage" src="/img/risk_medium.png" class="w-7 h-7" alt="Risk Level">
                             </button>
-                            <button id="shieldButton" class="cursor-pointer" onclick="changeShield()"
-                                aria-label="Change Shield Status">
-                                <img id="shieldImage" src="/img/shield_disabled.png" class="w-6 h-6"
-                                    alt="Shield Status">
+                            <button id="resetButton" class="cursor-pointer" aria-label="Change reset Status">
+                                <img id="resetButtonImage" src="/img/circular_reset.png" class="w-6 h-6"
+                                    alt="Reset Status">
                             </button>
                         </div>
 
@@ -322,12 +321,12 @@
 
                 </div>
 
-                <div class="flex justify-between mb-2"> <!-- Added margin-bottom for spacing -->
-                    <button type="button" id="resetButton" style="display: none;"
+                <div class="flex  mb-2"> <!-- Added margin-bottom for spacing -->
+                    <button type="button" id="skipButton" onclick="turnOnOffSkip()"
                         class="flex-1 bg-gradient-to-l from-yellow-700 to-yellow-800 text-white py-1 rounded hover:from-yellow-600 hover:to-yellow-700 transition duration-200 mr-2">
-                        Reset Game
+                        Skip
                     </button>
-                    <button type="button" id="undoButton" style="display: none;"
+                    <button type="button" id="undoButton"
                         class="flex-1 bg-gradient-to-r from-green-700 to-green-800 text-white py-1 rounded hover:from-green-600 hover:to-green-700 transition duration-200 ml-2">
                         Undo
                     </button>
@@ -456,7 +455,7 @@
 
             let playedShoe = 0;
             let dateCreated;
-            var shieldState = false;
+            var freezeState = 'N';
             var totalProfit = 0;
 
             const ctx = document.getElementById('profitsGraph').getContext('2d');
@@ -553,7 +552,8 @@
                             userInput,
                             recommendedBet: $('#recommendedBet').text(),
                             riskLevel: riskLevelValue,
-                            suggestedUnit: $('#suggestedBetUnit').text()
+                            suggestedUnit: $('#suggestedBetUnit').text(),
+                            skipState: freezeState
                         }));
 
                         displayResultToUi(response);
@@ -603,13 +603,23 @@
                         return;
                     }
 
+                    const handCountText = $("#handCount").text();
+                    if (handCountText === 'Hands: 1') {
+                        // RESET
+                        let message = $('#status').text();
+                        if (message.includes("Archived")) {
+                            return;
+                        }
+                        modal.classList.remove('hidden');
+                    } else {
+
+                        $('#undoButton').prop('disabled', true);
+                        showSpinner();
+                        await undo();
+                    }
 
 
 
-
-                    $('#undoButton').prop('disabled', true);
-                    showSpinner();
-                    await undo();
                 });
 
 
@@ -621,19 +631,18 @@
                     if (message.includes("Archived")) {
                         return;
                     }
-
                     modal.classList.remove('hidden');
 
                 });
 
 
 
-              getFreezeStateAsync();
+                getFreezeStateAsync();
             });
 
 
             async function displayResultToUi(response) {
-                // console.log(response);
+                console.log(response);
 
                 hideSpinner();
                 $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
@@ -649,7 +658,7 @@
                 // Handle status, reset, and undo button visibility
                 $('#status').toggle(handCount > 0 || statusMessage.includes("Daily limit!"));
                 $('#resetButton, #undoButton').toggle(handCount > 0);
-                if (handCount === 1) $('#undoButton').hide();
+                // if (handCount === 1) $('#undoButton').hide();
 
                 // $('#status').text(tempMessage).css('color', statusMessage.includes("profit") ? 'green' : statusMessage.includes("loss") ? 'red' : 'black');
                 $('#status')
@@ -747,12 +756,13 @@
 
 
                 displayResults(response.sequence.toUpperCase());
-                getHandResult(response.handResult);
+                getHandResult(response);
                 getActiveUsers();
                 // Handle button visibility after game result
                 if (statusMessage.includes("reached")) {
                     $('#playerButton, #bankerButton').prop('disabled', true);
-                    $('#undoButton').hide();
+                    // $('#undoButton').hide();
+                    // $('#skipButton').hide();
                     $('#resetButton').show();
                     await getJournal("today");
                 }
@@ -883,48 +893,24 @@
 
             }
 
-            function changeShield() {
+            function turnOnOffSkip() {
+                const button = document.getElementById("skipButton");
 
-                const shieldImage = document.getElementById('shieldImage');
+                if (button.classList.contains("bg-gradient-to-l")) {
+                    // Change the button to gray
+                    // button.classList.remove("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
+                    // button.classList.add("bg-gray-500", "hover:bg-gray-600");
 
-                if (shieldImage.src.includes('shield_disabled.png')) {
-                    shieldImage.src = '/img/shield_active.png';
-                    setShieldValue('ON');
-                } else {
-                    shieldImage.src = '/img/shield_disabled.png';
                     setShieldValue('OFF');
+                } else {
+                    setShieldValue('ON');
+                    // Revert back to the original yellow color
+                    // button.classList.remove("bg-gray-500", "hover:bg-gray-600");
+                    // button.classList.add("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
                 }
             }
 
-            // function setShieldState(shieldState) {
-            //     console.log(shieldState)
-            //     // const shieldState = getShieldValue();
-            //     const shieldImage = document.getElementById('shieldImage'); // Assuming you have the shieldImage element
 
-            //     // console.log(shieldState);
-
-            //     if (shieldState === 'ON') {
-            //         shieldImage.src = '/img/shield_active.png';
-
-            //     } else {
-            //         shieldImage.src = '/img/shield_disabled.png';
-
-            //     }
-
-
-
-            // }
-
-
-
-
-            // function setShieldValue(value) {
-            //     localStorage.setItem('isShieldActive', value);
-            // }
-
-            // function getShieldValue() {
-            //     return localStorage.getItem('isShieldActive');
-            // }
 
             // Function to modify the date
             function modifyDate(dateString, days, options) {
@@ -1096,37 +1082,52 @@
 
 
 
-            function getHandResult(handResult) {
+            function getHandResult(response) {
+
+                let handResult = response.handResult;
+                let skipState = response.skipState;
+
                 const handResultContainer = document.getElementById('handResultContainer');
-                handResultContainer.innerHTML = ""; // Clear previous results
+                handResultContainer.innerHTML = "";
 
                 if (!handResult) {
-                    return; // Early return if handResult is null or undefined
+                    return;
                 }
 
-                // Create a document fragment to improve performance
+
                 const fragment = document.createDocumentFragment();
 
-                // Filter and process the handResult
-                handResult.replace(/[^WL]/g, '').split('').forEach(result => {
+
+                handResult.replace(/[^WL]/g, '').split('').forEach((result, index) => {
                     const circle = document.createElement('div');
                     const isWin = result === 'W';
                     const isLoss = result === 'L';
+                    const isShouldSkip = skipState[index] === 'Y';
 
-                    // Set class names based on result
+
                     circle.className = `flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ${isWin ? 'bg-green-500' : isLoss ? 'bg-red-500' : 'bg-yellow-500'
                         }`;
 
+                    // circle.innerText = isWin ? 'W' : isLoss ? 'L' : 'S';
+                    // circle.style.color = isShouldSkip ? 'yellow' : 'white'; 
+                    // circle.style.fontWeight = isShouldSkip ? 'bold' : 'normal'; 
+                    circle.classList.add(isShouldSkip ? 'text-yellow-500' : 'text-white');
+                    if (isShouldSkip) {
+                        circle.classList.add('font-bold');  // Apply bold text if skipState is true
+                    }
+
+                    // Set the inner text
                     circle.innerText = isWin ? 'W' : isLoss ? 'L' : 'S';
+
                     fragment.appendChild(circle);
                 });
 
                 handResultContainer.appendChild(fragment);
 
-                // Scroll to the right to show the latest results
+
                 setTimeout(() => {
                     handResultContainer.scrollLeft = handResultContainer.scrollWidth;
-                }, 0); // Delay to ensure DOM has updated
+                }, 0);
             }
 
 
@@ -1283,7 +1284,7 @@
 
             async function getFreezeStateAsync() {
 
-
+                const button = document.getElementById("skipButton");
                 try {
                     const response = await $.ajax({
                         url: '/api/baccarat/get-freeze-state',
@@ -1291,14 +1292,22 @@
                     });
 
 
-                    const shieldImage = document.getElementById('shieldImage');
-                    if (response === 'ON') {
-                        shieldImage.src = '/img/shield_active.png';
+                    if (response === 'OFF') {
+
+
+                        button.classList.remove("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
+                        button.classList.add("bg-gray-500", "hover:bg-gray-600");
+                        freezeState = 'N'
 
                     } else {
-                        response.src = '/img/shield_disabled.png';
 
+                        // Revert back to the original yellow color
+                        button.classList.remove("bg-gray-500", "hover:bg-gray-600");
+                        button.classList.add("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
+                        freezeState = 'Y'
                     }
+
+                    console.log(freezeState);
 
                 } catch (error) {
                     console.log('Error:', error);

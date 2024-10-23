@@ -41,6 +41,10 @@ public class GameResponse {
     @Column(name = "hand_result", length = 50)
     private String handResult;
 
+    @Column(name = "skip_state", length = 50)
+    private String skipState;
+
+
     @Column(name = "message", length = 50)
     private String message;
 

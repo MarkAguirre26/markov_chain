@@ -84,13 +84,14 @@ public class BaccaratController {
     public GameResultResponse play(@RequestParam String userInput,
                                    @RequestParam String recommendedBet,
                                    @RequestParam String riskLevel,
-                                   @RequestParam int suggestedUnit) {
+                                   @RequestParam int suggestedUnit,
+                                   @RequestParam String skipState) {
 
-        return processGame(userInput, recommendedBet, riskLevel, suggestedUnit);
+        return processGame(userInput, recommendedBet, riskLevel, suggestedUnit, skipState);
     }
 
 
-    public GameResultResponse processGame(String userInput, String recommendedBet, String riskLevel, int suggestedUnit) {
+    public GameResultResponse processGame(String userInput, String recommendedBet, String riskLevel, int suggestedUnit, String skipState) {
 
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -100,9 +101,16 @@ public class BaccaratController {
 
         existingGame.setRiskLevel(riskLevel);
 
+//        if (existingGame.getHandResult() != null && !existingGame.getHandResult().isEmpty()) {
+//            existingGame.setSkipState(existingGame.getSkipState() == null ? skipState : existingGame.getSkipState() + skipState);
+//        }
+
+
+
         logger.info(userName + ": Received user input: {}", userInput);
         logger.info(userName + ": Received recommendedBet input: {}", recommendedBet);
         logger.info(userName + ": Received suggestedUnit input: {}", suggestedUnit);
+        logger.info(userName + ": Received skipState input: {}", skipState);
 
         if (hasReachedDailyJournalLimit()) {
 
@@ -158,7 +166,7 @@ public class BaccaratController {
         // Combine predictions and handle the bet
         Pair<Character, Double> combinedPrediction = combinePredictions(markovPrediction);
 
-        return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, suggestedUnit);
+        return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, suggestedUnit,skipState);
     }
 
 
@@ -319,7 +327,8 @@ public class BaccaratController {
             String userInput,
             Pair<Character, Double> combinedPrediction,
             String predictedBet,
-            int suggestedUnit) {
+            int suggestedUnit,String skipState
+    ) {
 
 
         String username = userPrincipal.getUsername();
@@ -338,16 +347,17 @@ public class BaccaratController {
 
         if (combinedPrediction.second < CONFIDENCE_THRESHOLD) {
 
-//            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.first);
-//            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.second);
-//            gameResultResponse.setMessage(PREDICTION_CONFIDENCE_LOW);
-//
-//            gameResultResponse.setSequence(gameResultResponse.getSequence());
-//            gameResultResponse.setRecommendedBet(WAIT);
-//            gameResultResponse.setConfidence(combinedPrediction.second);
-//            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, gameResultResponse.getRecommendedBet());
-            prediction = String.valueOf(combinedPrediction.first);
-            recommendedBet = Objects.equals(prediction, "p") ? BANKER : PLAYER;
+            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.first);
+            logger.info(username + ": " + PREDICTION_CONFIDENCE_LOW + " " + combinedPrediction.second);
+            gameResultResponse.setMessage(PREDICTION_CONFIDENCE_LOW);
+
+            gameResultResponse.setSequence(gameResultResponse.getSequence());
+            gameResultResponse.setRecommendedBet(WAIT);
+            gameResultResponse.setConfidence(combinedPrediction.second);
+            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse,
+                    gameResultResponse.getRecommendedBet(), skipState);
+//            prediction = String.valueOf(combinedPrediction.first);
+//            recommendedBet = Objects.equals(prediction, "p") ? BANKER : PLAYER;
         } else {
             prediction = String.valueOf(combinedPrediction.first);
             recommendedBet = Objects.equals(prediction, "p") ? PLAYER : BANKER;
@@ -356,7 +366,7 @@ public class BaccaratController {
         gameResultResponse.setConfidence(combinedPrediction.second);
 
 
-        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet);
+        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet,skipState);
     }
 
     private GameResultResponse resolveBet(GameResultResponse gameResultResponse,
@@ -365,7 +375,8 @@ public class BaccaratController {
                                           int betSize,
                                           int suggestedUnit,
                                           String recommendedBet,
-                                          String predictedBet) {
+                                          String predictedBet,
+                                          String skipState) {
 
         String username = userPrincipal.getUsername();
         gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
@@ -378,10 +389,10 @@ public class BaccaratController {
             logger.info("LossCounter:" + lossCounter);
             gameResultResponse.setRecommendedBet(recommendedBet);
 
-            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet);
+            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet,skipState);
         }
 
-        return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet);
+        return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet,skipState);
 
     }
 
@@ -392,7 +403,8 @@ public class BaccaratController {
             String userInput,
             String username,
             GameResultResponse gameResultResponse,
-            String nextPredictedBet) {
+            String nextPredictedBet,
+            String skipState) {
 
 
         if (!predictedBet.equals(WAIT)) {
@@ -426,7 +438,7 @@ public class BaccaratController {
                 }
 
                 return settleLimitAndValidation(updateProfitAndFund(toValidate, gameResultResponse, suggestedUnit, betSize,
-                        true), nextPredictedBet);
+                        true,skipState), nextPredictedBet);
             } else {
 
                 if (gameResultResponse.getLossCounter() >= 2) {
@@ -448,8 +460,9 @@ public class BaccaratController {
                                 gameResultResponse,
                                 suggestedUnit,
                                 betSize,
-                                false),
-                        nextPredictedBet);
+                                false,skipState),
+                        nextPredictedBet
+                        );
             }
         } else {
             gameResultResponse.setSuggestedBetUnit(0);
@@ -459,8 +472,9 @@ public class BaccaratController {
                             gameResultResponse,
                             suggestedUnit,
                             betSize,
-                            true),
-                    nextPredictedBet);
+                            true,skipState),
+                    nextPredictedBet
+                    );
         }
 
 
@@ -504,7 +518,7 @@ public class BaccaratController {
             }
             gameResultResponse.setSuggestedBetUnit(betSize);
 //
-//            ----------------------------------------------------------
+            //            ----------------------------------------------------------
 
             gameResultResponse.setRecommendedBet(nextPredictedBet);
 
@@ -544,16 +558,17 @@ public class BaccaratController {
 
                 }
             } else {
-//                if (gameResultResponse.getLossCounter() > 0) {
-//                    if (gameResultResponse.getSuggestedBetUnit() < 0) {
-//                        gameResultResponse.setSuggestedBetUnit(1);
-//                    }
-//                }
+
             }
 
 
             double confidence = gameResultResponse.getConfidence() == null ? 0 : gameResultResponse.getConfidence();
             gameResultResponse.setConfidence(confidence);
+
+
+
+
+
 
 
             return provideGameResponse(gameResultResponse);
@@ -652,7 +667,7 @@ public class BaccaratController {
 
 
     private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse,
-                                                   int suggestedUnit, int betSize, boolean isWin) {
+                                                   int suggestedUnit, int betSize, boolean isWin,String skipState) {
 
 
         int profit = gameResultResponse.getGameStatus().getProfit();
@@ -683,6 +698,16 @@ public class BaccaratController {
                     gameResultResponse.setHandResult(gameResultResponse.getHandResult() + "L");
 
                 }
+
+
+                //            SKIP STATE
+
+
+                    if (gameResultResponse.getHandResult() != null && !gameResultResponse.getHandResult().isEmpty()) {
+                        gameResultResponse.setSkipState(gameResultResponse.getSkipState() == null ? skipState : gameResultResponse.getSkipState() + skipState);
+                    }
+
+
             }
 
 
@@ -924,6 +949,7 @@ public class BaccaratController {
         response.setRiskLevel(latesGameResponse.getRiskLevel());
         response.setConfidence(latesGameResponse.getConfidence());
         response.setVirtualWin(latesGameResponse.getVirtualWin());
+        response.setSkipState(latesGameResponse.getSkipState());
         // Get the GameStatus for the user
         GameStatus gameStatus = gameStatusService.findByGameResponseId(latesGameResponse.getGameResponseId()).orElse(null);
         GameResultStatus gameResultStatus;
@@ -971,6 +997,7 @@ public class BaccaratController {
         gameResponse.setRiskLevel(gameResultResponse.getRiskLevel());
         gameResponse.setConfidence(gameResultResponse.getConfidence());
         gameResponse.setVirtualWin(gameResultResponse.getVirtualWin());
+        gameResponse.setSkipState(gameResultResponse.getSkipState() == null ? "" : gameResultResponse.getSkipState());
 //        gameResponse.setDateLastUpdated(LocalDateTime.now());
         // Persist the updated game response
         GameResponse newOneGameResponse = gameResponseService.createOrUpdateGameResponse(gameResponse);
