@@ -323,7 +323,7 @@
 
                 <div class="flex  mb-2"> <!-- Added margin-bottom for spacing -->
                     <button type="button" id="skipButton" onclick="turnOnOffSkip()"
-                        class="flex-1 bg-gradient-to-l from-yellow-700 to-yellow-800 text-white py-1 rounded hover:from-yellow-600 hover:to-yellow-700 transition duration-200 mr-2">
+                        class="flex-1 bg-gradient-to-l from-yellow-600 to-yellow-700 text-white py-1 rounded hover:from-yellow-600 hover:to-yellow-700 transition duration-200 mr-2">
                         Skip
                     </button>
                     <button type="button" id="undoButton"
@@ -708,7 +708,7 @@
                     <span class="text-xs ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">${profit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between border-b pb-1">
-                    <span class="font-bold text-xs">Stake:</span><span class="text-sm font-bold">${response.recommendedBet.includes("Wait..") ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
+                    <span class="font-bold text-xs">Stake:</span><span id="nextbetText" class="text-sm font-bold">${response.recommendedBet.includes("Wait..") ? "0" : freezeState === 'Y' ? "0" : response.suggestedBetUnit.toFixed(0)}</span>
                     </div>
                     <div class="flex justify-between">
                     <span class="font-bold text-xs">Next Bet:</span>
@@ -1295,16 +1295,21 @@
                     if (response === 'OFF') {
 
 
-                        button.classList.remove("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
+                        button.classList.remove("bg-gradient-to-l", "from-yellow-600", "to-yellow-700");
                         button.classList.add("bg-gray-500", "hover:bg-gray-600");
                         freezeState = 'N'
+
+                        var recommendedBet = $("#recommendedBet").text();
+                        var suggestedBetUnitValue = $("#suggestedBetUnit").text();
+                        $('#nextbetText').text(!recommendedBet.includes('Wait') ? suggestedBetUnitValue : "0");
 
                     } else {
 
                         // Revert back to the original yellow color
                         button.classList.remove("bg-gray-500", "hover:bg-gray-600");
-                        button.classList.add("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
+                        button.classList.add("bg-gradient-to-l", "from-yellow-600", "to-yellow-700");
                         freezeState = 'Y'
+                        $('#nextbetText').text("0");
                     }
 
                     console.log(freezeState);
