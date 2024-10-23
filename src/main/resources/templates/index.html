@@ -271,6 +271,10 @@
                             </button>
                         </div>
 
+                        <button id="threeDotsButton" class="cursor-pointer" onclick="showStrategyDialog()">
+                            <i class="fas fa-ellipsis-v w-6 h-6 text-gray-500"></i>
+                            <!-- Font Awesome three dots icon -->
+                        </button>
 
                     </div>
                 </div>
@@ -426,7 +430,7 @@
             <div class="bg-white rounded-lg shadow-lg w-96">
                 <!-- Modal Header -->
                 <div class="px-4 py-2 border-b">
-                    <h3 class="text-lg font-semibold">Confirmation</h3>
+                    <h3 class="text-sm font-semibold">Confirmation</h3>
                 </div>
                 <!-- Modal Body -->
                 <div class="p-4">
@@ -449,6 +453,36 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- Strategies dialog-->
+        <div id="strategiesDialog"
+            class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+            <div class="bg-white rounded-lg shadow-lg w-96">
+                <!-- Header -->
+                <div class="px-4 py-2 border-b">
+                    <h3 class="text-sm font-semibold">Strategies</h3>
+                </div>
+
+                <!-- Radio buttons list for strategies -->
+                <div class="px-4 py-4 space-y-2">
+                    <label class="flex items-center">
+                        <input id="winlockCheckBox" type="checkbox" name="strategy" value="WinLock" class="mr-2">
+                        <span class="text-sm">WinLock</span>
+                        <span class="text-gray-500 text-xs" style="margin-left: 5px;">(W-Entry, LL-Exit)</span>
+                    </label>
+                </div>
+                <!-- Close button -->
+                <div class="px-4 py-2 border-t flex flex-col space-y-2">
+                    <button id="cancelButton" style="margin-top: 20px;"
+                        class="text-xs bg-gray-500 text-white w-full py-2 rounded-lg shadow hover:bg-gray-600 transition duration-300 transform hover:scale-105"
+                        onclick="hideStrategyDialog()">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
 
 
         <script>
@@ -613,6 +647,11 @@
                         modal.classList.remove('hidden');
                     } else {
 
+                        let message = $('#status').text();
+                        if (message.includes("Restart")) {
+                            return;
+                        }
+
                         $('#undoButton').prop('disabled', true);
                         showSpinner();
                         await undo();
@@ -635,9 +674,14 @@
 
                 });
 
+                $('#winlockCheckBox').click(function() {
+                        setWinLockValue();
+                });
 
 
                 getFreezeStateAsync();
+                getIsWinLock();
+
             });
 
 
@@ -645,6 +689,7 @@
                 // console.log(response);
 
                 hideSpinner();
+                
                 $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
 
 
@@ -728,8 +773,7 @@
                 </div>
                 </div>
                 <p id="recommendedBet" style="display:none;">${response.recommendedBet}</p>
-                <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>
-            `);
+                <p id="suggestedBetUnit" style="display:none;">${response.suggestedBetUnit.toFixed(0)}</p>`);
 
 
 
@@ -786,7 +830,9 @@
 
 
                 updateProgressBar(response.confidence);
-
+                getFreezeStateAsync();
+                getIsWinLock();
+                showorHideStrategiesDots();
             }
 
             async function undo() {
@@ -896,17 +942,12 @@
             function turnOnOffSkip() {
                 const button = document.getElementById("skipButton");
 
-                if (button.classList.contains("bg-gradient-to-l")) {
-                    // Change the button to gray
-                    // button.classList.remove("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
-                    // button.classList.add("bg-gray-500", "hover:bg-gray-600");
+                if (button.classList.contains("bg-gradient-to-l")) {                   
 
                     setShieldValue('OFF');
                 } else {
                     setShieldValue('ON');
-                    // Revert back to the original yellow color
-                    // button.classList.remove("bg-gray-500", "hover:bg-gray-600");
-                    // button.classList.add("bg-gradient-to-l", "from-yellow-700", "to-yellow-800");
+                  
                 }
             }
 
@@ -1282,6 +1323,33 @@
                 }
             }
 
+
+            async function setWinLockValue() {
+
+                let yesNoValue;
+                if ($('#winlockCheckBox').is(':checked')) {
+                    // If checked, get its value
+                    yesNoValue = 'ON';                 
+                } else {
+                    yesNoValue = 'OFF';
+                }
+
+
+                try {
+                    const response = await $.ajax({
+                        url: '/api/baccarat/win-lock',
+                        type: 'POST',
+                        data: { onOff: yesNoValue }
+                    });
+
+                  getIsWinLock();
+
+                } catch (error) {
+                    console.log('Error:', error);
+                    alert('Operation failed: ' + error.responseText);  // Optionally show an error message
+                }
+            }
+
             async function getFreezeStateAsync() {
 
                 const button = document.getElementById("skipButton");
@@ -1321,7 +1389,64 @@
             }
 
 
+            async function getIsWinLock() {
 
+
+                try {
+                    const response = await $.ajax({
+                        url: '/api/baccarat/win-lock',
+                        type: 'GET'
+                    });
+
+                    // console.log(response);
+
+                    if (response === true) {
+                        $('#winlockCheckBox').prop('checked', true);
+                    } else {
+                        $('#winlockCheckBox').prop('checked', false);
+                    }
+                    getFreezeStateAsync();
+
+
+                } catch (error) {
+                    console.log('Error:', error);
+                    alert('Operation failed: ' + error.responseText);
+                }
+            }
+
+            function showorHideStrategiesDots(){
+                const handCountValue = $("#handCount").text();
+                if (getNumbersFromString(handCountValue) > 0) {
+                 
+                    $('#threeDotsButton').hide();
+                }else{
+                    $('#threeDotsButton').show();
+                }
+            }
+
+
+
+            function showStrategyDialog() {
+
+                const handCountValue = $("#handCount").text();
+                if (getNumbersFromString(handCountValue) > 0) {
+                    return;
+                }
+
+                const dialog = document.getElementById('strategiesDialog');
+                dialog.classList.remove('hidden');
+            }
+
+            function hideStrategyDialog() {
+
+                const dialog = document.getElementById('strategiesDialog');
+                dialog.classList.add('hidden');
+            }
+
+
+            function getNumbersFromString(str) {
+                return str.replace(/\D/g, '');  // \D matches any non-digit character
+            }
 
         </script>
 

@@ -6,6 +6,7 @@ import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
 import com.baccarat.markovchain.module.data.response.GameResultStatus;
 import com.baccarat.markovchain.module.helper.BaccaratKISS123;
+import com.baccarat.markovchain.module.helper.TriggerFinder;
 import com.baccarat.markovchain.module.model.Pair;
 import com.baccarat.markovchain.module.model.UserPrincipal;
 import com.baccarat.markovchain.module.services.TrailingStopService;
@@ -18,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.*;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -106,45 +107,44 @@ public class BaccaratController {
 //        }
 
 
-
         logger.info(userName + ": Received user input: {}", userInput);
         logger.info(userName + ": Received recommendedBet input: {}", recommendedBet);
         logger.info(userName + ": Received suggestedUnit input: {}", suggestedUnit);
         logger.info(userName + ": Received skipState input: {}", skipState);
 
-        if (hasReachedDailyJournalLimit()) {
-
-
-            // Get the current UTC time
-            ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneOffset.UTC);
-            // Get the start of the next day (12:00 AM UTC of the next day)
-            LocalDate tomorrow = LocalDate.now(ZoneOffset.UTC).plusDays(1);
-            ZonedDateTime nextMidnightUtc = tomorrow.atStartOfDay(ZoneOffset.UTC);
-            // Calculate the duration between the current time and the next midnight
-            Duration duration = Duration.between(currentUtcTime, nextMidnightUtc);
-
-
-            // Get the hours, minutes, and seconds remaining until the next midnight
-            long hours = duration.toHours();
-            long minutes = duration.toMinutes() % 60;
-//            long seconds = duration.getSeconds() % 60;
-
-            String diff;
-            if (hours > 1) {
-                diff = hours + " hours";
-            } else {
-                diff = minutes + " minutes";
-            }
-
-            System.out.println("Time difference: " + hours + " hours, " + minutes + " minutes");
-
-
-            existingGame.setDailyLimitReached(true);
-            existingGame.setMessage(DAILY_LIMIT_REACHED + diff);
-            existingGame.setRecommendedBet(recommendedBet);
-            logger.info(userName + ": " + existingGame.getMessage());
-            return existingGame;
-        }
+//        if (hasReachedDailyJournalLimit()) {
+//
+//
+//            // Get the current UTC time
+//            ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneOffset.UTC);
+//            // Get the start of the next day (12:00 AM UTC of the next day)
+//            LocalDate tomorrow = LocalDate.now(ZoneOffset.UTC).plusDays(1);
+//            ZonedDateTime nextMidnightUtc = tomorrow.atStartOfDay(ZoneOffset.UTC);
+//            // Calculate the duration between the current time and the next midnight
+//            Duration duration = Duration.between(currentUtcTime, nextMidnightUtc);
+//
+//
+//            // Get the hours, minutes, and seconds remaining until the next midnight
+//            long hours = duration.toHours();
+//            long minutes = duration.toMinutes() % 60;
+////            long seconds = duration.getSeconds() % 60;
+//
+//            String diff;
+//            if (hours > 1) {
+//                diff = hours + " hours";
+//            } else {
+//                diff = minutes + " minutes";
+//            }
+//
+//            System.out.println("Time difference: " + hours + " hours, " + minutes + " minutes");
+//
+//
+//            existingGame.setDailyLimitReached(true);
+//            existingGame.setMessage(DAILY_LIMIT_REACHED + diff);
+//            existingGame.setRecommendedBet(recommendedBet);
+//            logger.info(userName + ": " + existingGame.getMessage());
+//            return existingGame;
+//        }
 
         if (existingGame.getMessage().equals(TRAILING_STOP_TRIGGERED_LABEL)) {
             logger.info(userName + ": Trailing stop triggered, skipping game");
@@ -166,7 +166,7 @@ public class BaccaratController {
         // Combine predictions and handle the bet
         Pair<Character, Double> combinedPrediction = combinePredictions(markovPrediction);
 
-        return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, suggestedUnit,skipState);
+        return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, suggestedUnit, skipState);
     }
 
 
@@ -220,7 +220,7 @@ public class BaccaratController {
 
             gamesArchiveService.addGameArchive(new GamesArchive(savedJournal.getJournalId(), response.getBaseBetUnit(),
                     response.getSuggestedBetUnit(), response.getLossCounter(), response.getRecommendedBet(),
-                    response.getSequence(), response.getHandResult(),response.getSkipState(), "Archived", gameResultStatus.getHandCount(),
+                    response.getSequence(), response.getHandResult(), response.getSkipState(), "Archived", gameResultStatus.getHandCount(),
                     gameResultStatus.getWins(), gameResultStatus.getLosses(), gameResultStatus.getProfit(),
                     gameResultStatus.getPlayingUnits(), response.getRiskLevel()));
         }
@@ -230,29 +230,23 @@ public class BaccaratController {
 
     }
 
-    private int getDailyLimit() {
+    private boolean isUserUsedTheTemplate() {
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
+        Config userConfig = configService.getConfigsByUserUuid(userUuid)
+                .stream()
+                .filter(config -> config.getName().equals(UserConfig.WIN_ENTRY_STOP_LL.getValue()))
+                .findFirst()
+                .orElse(null);
 
-        // Continue with your logic using userUuid
-        return configService.getConfigsByUserUuid(userUuid).stream().filter(config -> config.getName().equals(UserConfig.DAILY_LIMIT.getValue())).map(Config::getValue).map(Integer::parseInt).findFirst().orElse(0);
+        if (userConfig != null) {
+            return userConfig.getValue().equals("ON");
+        } else {
+            setWinLock("OFF");
+            return false;
+        }
 
-    }
-
-
-    private boolean hasReachedDailyJournalLimit() {
-        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        ZonedDateTime nowUTC = ZonedDateTime.now(ZoneOffset.UTC);
-
-        // Extract just the date portion
-        LocalDate currentUTCDate = nowUTC.toLocalDate();
-
-
-        List<Journal> journals = journalService.getJournalsByUserUuidAndDateCreated(userPrincipal.getUserUuid(), currentUTCDate);
-        int maxDailyJournalLimit = getDailyLimit();
-        return journals.size() >= maxDailyJournalLimit;
     }
 
 
@@ -327,7 +321,7 @@ public class BaccaratController {
             String userInput,
             Pair<Character, Double> combinedPrediction,
             String predictedBet,
-            int suggestedUnit,String skipState
+            int suggestedUnit, String skipState
     ) {
 
 
@@ -366,7 +360,7 @@ public class BaccaratController {
         gameResultResponse.setConfidence(combinedPrediction.second);
 
 
-        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet,skipState);
+        return resolveBet(gameResultResponse, userPrincipal, userInput, betSize, suggestedUnit, recommendedBet, predictedBet, skipState);
     }
 
     private GameResultResponse resolveBet(GameResultResponse gameResultResponse,
@@ -379,7 +373,7 @@ public class BaccaratController {
                                           String skipState) {
 
         String username = userPrincipal.getUsername();
-        gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
+//        gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
 
         if (predictedBet.equals(WAIT) || predictedBet.isEmpty()) {
 
@@ -389,10 +383,10 @@ public class BaccaratController {
             logger.info("LossCounter:" + lossCounter);
             gameResultResponse.setRecommendedBet(recommendedBet);
 
-            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet,skipState);
+            return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet, skipState);
         }
 
-        return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet,skipState);
+        return validateGameResult(suggestedUnit, betSize, predictedBet, userInput, username, gameResultResponse, recommendedBet, skipState);
 
     }
 
@@ -438,7 +432,7 @@ public class BaccaratController {
                 }
 
                 return settleLimitAndValidation(updateProfitAndFund(toValidate, gameResultResponse, suggestedUnit, betSize,
-                        true,skipState), nextPredictedBet);
+                        true, skipState), nextPredictedBet);
             } else {
 
                 if (gameResultResponse.getLossCounter() >= 2) {
@@ -460,9 +454,9 @@ public class BaccaratController {
                                 gameResultResponse,
                                 suggestedUnit,
                                 betSize,
-                                false,skipState),
+                                false, skipState),
                         nextPredictedBet
-                        );
+                );
             }
         } else {
             gameResultResponse.setSuggestedBetUnit(0);
@@ -472,9 +466,9 @@ public class BaccaratController {
                             gameResultResponse,
                             suggestedUnit,
                             betSize,
-                            true,skipState),
+                            true, skipState),
                     nextPredictedBet
-                    );
+            );
         }
 
 
@@ -490,7 +484,7 @@ public class BaccaratController {
         gameResultResponse.setSequence(gameResultResponse.getSequence());
 
         gameResultResponse.setRecommendedBet(WAIT);
-        gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
+//        gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
 
         if (hasReachedStopProfit(gameResultResponse)) {
             logger.warn(": Reached stop profit. New profit: {}, New playing fund: {}", profit, playingUnit);
@@ -565,11 +559,24 @@ public class BaccaratController {
             double confidence = gameResultResponse.getConfidence() == null ? 0 : gameResultResponse.getConfidence();
             gameResultResponse.setConfidence(confidence);
 
+            if (gameResultResponse.getHandResult() != null) {
+                boolean isUserUsedTheTemplate = isUserUsedTheTemplate();
+                if (isUserUsedTheTemplate) {
+                    boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "W");
+                    if (isTriggerExist) {
+                        saveFreezeState("OFF");
+                        boolean isStopTriggerExist = TriggerFinder.isStopTriggerExists(gameResultResponse.getHandResult(), "W", "LL");
+                        if (isStopTriggerExist) {
+                            saveFreezeState("ON");
+                            gameResultResponse.setMessage(STOP_LOSS_REACHED);
+                        }
+                    } else {
+                        saveFreezeState("ON");
+                    }
+                }
 
 
-
-
-
+            }
 
             return provideGameResponse(gameResultResponse);
         }
@@ -667,7 +674,7 @@ public class BaccaratController {
 
 
     private GameResultResponse updateProfitAndFund(boolean isToValidate, GameResultResponse gameResultResponse,
-                                                   int suggestedUnit, int betSize, boolean isWin,String skipState) {
+                                                   int suggestedUnit, int betSize, boolean isWin, String skipState) {
 
 
         int profit = gameResultResponse.getGameStatus().getProfit();
@@ -703,9 +710,9 @@ public class BaccaratController {
                 //            SKIP STATE
 
 
-                    if (gameResultResponse.getHandResult() != null && !gameResultResponse.getHandResult().isEmpty()) {
-                        gameResultResponse.setSkipState(gameResultResponse.getSkipState() == null ? skipState : gameResultResponse.getSkipState() + skipState);
-                    }
+                if (gameResultResponse.getHandResult() != null && !gameResultResponse.getHandResult().isEmpty()) {
+                    gameResultResponse.setSkipState(gameResultResponse.getSkipState() == null ? skipState : gameResultResponse.getSkipState() + skipState);
+                }
 
 
             }
@@ -745,20 +752,8 @@ public class BaccaratController {
     @PostMapping("/freeze-state")
     public ResponseEntity<String> freezeState(@RequestParam String onOff) {
         try {
-            // Get the current authenticated user
-            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String userUuid = userPrincipal.getUserUuid();
 
-            // Find the freeze configuration or create a new one if it doesn't exist
-            Config freezeConfig = configService.findByUserUuidAndName(userUuid, UserConfig.FREEZE.getValue())
-                    .orElseGet(() -> new Config(userUuid, UserConfig.FREEZE.getValue(), "OFF"));
-
-            // Update the value of the freeze configuration
-            freezeConfig.setValue(onOff);
-
-            // Save or update the configuration
-            configService.saveOrUpdateConfig(freezeConfig);
-
+            saveFreezeState(onOff);
             // Return success with the updated value
             return ResponseEntity.ok(onOff);
 
@@ -768,6 +763,23 @@ public class BaccaratController {
             // Return Internal Server Error in case of failure
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Operation failed");
         }
+    }
+
+    private void saveFreezeState(String onOff) {
+        // Get the current authenticated user
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
+
+        // Find the freeze configuration or create a new one if it doesn't exist
+        Config freezeConfig = configService.findByUserUuidAndName(userUuid, UserConfig.FREEZE.getValue())
+                .orElseGet(() -> new Config(userUuid, UserConfig.FREEZE.getValue(), "OFF"));
+
+        logger.info("Saving freeze state for {}", freezeConfig);
+        // Update the value of the freeze configuration
+        freezeConfig.setValue(onOff);
+
+        // Save or update the configuration
+        configService.saveOrUpdateConfig(freezeConfig);
     }
 
     @GetMapping("/get-freeze-state")
@@ -796,6 +808,44 @@ public class BaccaratController {
         }
     }
 
+    @GetMapping("/win-lock")
+    public ResponseEntity<Boolean> winLock() {
+        boolean isWinLock = isUserUsedTheTemplate();
+//        if (isWinLock) {
+//            freezeState("ON");
+//        }
+        return ResponseEntity.ok(isWinLock);
+    }
+
+    @PostMapping("/win-lock")
+    public ResponseEntity<String> setWinLock(@RequestParam String onOff) {
+        try {
+            // Get the current authenticated user
+            UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String userUuid = userPrincipal.getUserUuid();
+
+            // Find the freeze configuration or create a new one if it doesn't exist
+            Config freezeConfig = configService.findByUserUuidAndName(userUuid, UserConfig.WIN_ENTRY_STOP_LL.getValue())
+                    .orElseGet(() -> new Config(userUuid, UserConfig.WIN_ENTRY_STOP_LL.getValue(), "OFF"));
+
+            // Update the value of the freeze configuration
+            freezeConfig.setValue(onOff);
+
+            // Save or update the configuration
+            configService.saveOrUpdateConfig(freezeConfig);
+
+            // Return success with the updated value
+            return ResponseEntity.ok(onOff);
+
+        } catch (Exception e) {
+            e.printStackTrace(); // Replace with proper logging
+
+            // Return Internal Server Error in case of failure
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Operation failed");
+        }
+
+    }
+
 
     @GetMapping("/current-state")
     public GameResultResponse getCurrentState(@RequestParam String message) {
@@ -815,12 +865,12 @@ public class BaccaratController {
 
         GameResultResponse existingGame = getGameResponse(userPrincipal);
 
-        if (hasReachedDailyJournalLimit()) {
-            existingGame.setDailyLimitReached(true);
-            existingGame.setMessage(DAILY_LIMIT_REACHED);
-            existingGame.setRecommendedBet(WAIT);
-            return existingGame;
-        }
+//        if (hasReachedDailyJournalLimit()) {
+//            existingGame.setDailyLimitReached(true);
+//            existingGame.setMessage(DAILY_LIMIT_REACHED);
+//            existingGame.setRecommendedBet(WAIT);
+//            return existingGame;
+//        }
 
         if (existingGame.getMessage().equals(TRAILING_STOP_TRIGGERED_LABEL)) {
             return existingGame;

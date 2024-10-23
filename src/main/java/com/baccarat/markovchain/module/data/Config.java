@@ -2,11 +2,13 @@ package com.baccarat.markovchain.module.data;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 
 @Entity
 @Table(name = "config")
 @Data
+@ToString
 public class Config {
 
     @Id
