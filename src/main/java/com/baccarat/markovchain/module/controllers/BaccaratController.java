@@ -6,7 +6,7 @@ import com.baccarat.markovchain.module.common.concrete.UserConfig;
 import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
 import com.baccarat.markovchain.module.data.response.GameResultStatus;
-import com.baccarat.markovchain.module.helper.BaccaratKISS123;
+import com.baccarat.markovchain.module.helper.BaccaratBetting;
 import com.baccarat.markovchain.module.helper.TriggerFinder;
 import com.baccarat.markovchain.module.model.Pair;
 import com.baccarat.markovchain.module.model.UserPrincipal;
@@ -81,6 +81,12 @@ public class BaccaratController {
 
     }
 
+    public static int ensurePositive(int number) {
+        if (number < 0) {
+            throw new IllegalArgumentException("Number must be positive");
+        }
+        return number;
+    }
 
     @PostMapping("/play")
     public GameResultResponse play(@RequestParam String userInput,
@@ -91,7 +97,6 @@ public class BaccaratController {
 
         return processGame(userInput, recommendedBet, riskLevel, suggestedUnit, skipState);
     }
-
 
     public GameResultResponse processGame(String userInput, String recommendedBet, String riskLevel, int suggestedUnit, String skipState) {
 
@@ -169,7 +174,6 @@ public class BaccaratController {
 
         return handleBet(gameResultResponse, userPrincipal, userInput, combinedPrediction, recommendedBet, suggestedUnit, skipState);
     }
-
 
     public void initialize(GameResultResponse game) {
 
@@ -255,7 +259,6 @@ public class BaccaratController {
 
     }
 
-
     private GameResultResponse updateSequenceAndUpdateHandCount(GameResultResponse existingGame, String userInput) {
 
         // Fetch the current game response once
@@ -294,7 +297,6 @@ public class BaccaratController {
         }
         return false;
     }
-
 
     public int calculateWager(double confidence, GameResultResponse gameResultResponse) {
 
@@ -339,7 +341,7 @@ public class BaccaratController {
         if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
             betSize = 1;
         } else {
-            betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse);
+            betSize = BaccaratBetting.kissOneTwoThree(gameResultResponse);
         }
         String prediction = "";
         String recommendedBet = "";
@@ -508,14 +510,22 @@ public class BaccaratController {
             return provideGameResponse(gameResultResponse);
         } else {
 
+            String currentStrategy = currentStrategy();
             //            ---------------------MONEY MANAGEMENT-------------------------------------
             int betSize = 0;
 
             if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
                 betSize = 1;
             } else {
-                betSize = BaccaratKISS123.calculateLastBetUnit(gameResultResponse);
+                if (currentStrategy.equals(Strategy_Enum.ONE_THREE_TWO_SIX.getValue())) {
+                    betSize = BaccaratBetting.oneThreeTwoSix(gameResultResponse);
+                } else {
+                    betSize = BaccaratBetting.kissOneTwoThree(gameResultResponse);
+                }
+
             }
+
+
             gameResultResponse.setSuggestedBetUnit(betSize);
 //
             //            ----------------------------------------------------------
@@ -567,7 +577,7 @@ public class BaccaratController {
 
             if (gameResultResponse.getHandResult() != null) {
                 // WINLOCK-------------------------------------------------------
-                String currentStrategy = currentStrategy();
+//                String currentStrategy = currentStrategy();
                 if (currentStrategy.equals(Strategy_Enum.WINLOCK.getValue())) {
                     boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "W");
                     if (isTriggerExist) {
@@ -580,7 +590,7 @@ public class BaccaratController {
                     } else {
                         saveFreezeState("ON");
                     }
-                }else if (currentStrategy.equals(Strategy_Enum.TREND_OF_TWO.getValue())) {
+                } else if (currentStrategy.equals(Strategy_Enum.TREND_OF_TWO.getValue())) {
                     boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "WW");
                     if (isTriggerExist) {
                         saveFreezeState("OFF");
@@ -592,7 +602,7 @@ public class BaccaratController {
                     } else {
                         saveFreezeState("ON");
                     }
-                }else if (currentStrategy.equals(Strategy_Enum.TREND_OF_THREE.getValue())) {
+                } else if (currentStrategy.equals(Strategy_Enum.TREND_OF_THREE.getValue())) {
                     boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "WWW");
                     if (isTriggerExist) {
                         saveFreezeState("OFF");
@@ -608,6 +618,25 @@ public class BaccaratController {
 
 
             }
+
+            String t = gameResultResponse.getTrailingStop().isEmpty() ? "0.0" : gameResultResponse.getTrailingStop();
+            double doubleValue = Double.parseDouble(t);
+            int tsValue = (int) doubleValue;
+            int betsize = gameResultResponse.getSuggestedBetUnit();
+            int p = gameResultResponse.getGameStatus().getProfit();
+
+            int maxBet = 0;
+
+            if (p > 0 && tsValue > 0) {
+                maxBet = profit - tsValue;
+                gameResultResponse.setSuggestedBetUnit(maxBet);
+            }
+
+//            int temp = tsValue - betsize;
+//            if (temp < 0) {
+//                betsize = ensurePositive(betsize - tsValue);
+
+//            }
 
             return provideGameResponse(gameResultResponse);
         }

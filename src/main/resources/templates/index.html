@@ -501,6 +501,12 @@
                             <span class="text-gray-500 text-xs ml-1">(WWW-Entry, LL-Exit)</span>
                         </li>
 
+                        <li class="flex items-center">
+                            <input id="oneThreeTwoSix" type="radio" name="strategy" value="oneThreeTwoSix" class="mr-1">
+                            <span class="text-sm">Stochastic Betting</span>
+                            <span class="text-gray-500 text-xs ml-1"> 1-3-2-3 strategy</span>
+                        </li>
+
                        
                     </ul>
                 </div>
@@ -726,6 +732,11 @@
                     setStrategyValue('TREND_OF_THREE');
                 });
 
+                $('#oneThreeTwoSix').click(function () {
+                    setStrategyValue('ONE_THREE_TWO_SIX');
+                });
+
+                
 
                 getFreezeStateAsync();
                 getStrategy();
@@ -1439,29 +1450,39 @@
                     });
 
 
-                    $("#strategyLabel").text(toCamelCase(response));
+                    $("#strategyLabel").text(toCamelCase(response) === 'One_three_two_six'?'Stochastic':toCamelCase(response));
                     
                     if (response === 'WINLOCK') {
                         $('#winlockRadio').prop('checked', true);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', false);
+                        $('#oneThreeTwoSix').prop('checked', false);
 
                     }else if (response === 'TREND_OF_TWO') {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', true);
                         $('#trendOfThreeRadio').prop('checked', false);
+                        $('#oneThreeTwoSix').prop('checked', false);
                     }else if (response === 'TREND_OF_THREE') {
-                        $('#winlockRadio').prop('checked', true);
+                        $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', true);
+                        $('#oneThreeTwoSix').prop('checked', false);
+                    }else if (response === 'ONE_THREE_TWO_SIX') {
+                        $('#winlockRadio').prop('checked', false);
+                        $('#freeHandRadio').prop('checked', false);
+                        $('#trendOfTwoRadio').prop('checked', false);
+                        $('#trendOfThreeRadio').prop('checked', false);  
+                        $('#oneThreeTwoSix').prop('checked', true);
                     } else {
-                        $('#winlockRadio').prop('checked', true);
+                        $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', true);
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', false);
+                        $('#oneThreeTwoSix').prop('checked', false);
                     }
                     getFreezeStateAsync();
 
