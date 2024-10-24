@@ -1,6 +1,7 @@
 package com.baccarat.markovchain.module.controllers;
 
 import com.baccarat.markovchain.module.common.concrete.RiskLevel;
+import com.baccarat.markovchain.module.common.concrete.Strategy_Enum;
 import com.baccarat.markovchain.module.common.concrete.UserConfig;
 import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
@@ -230,21 +231,26 @@ public class BaccaratController {
 
     }
 
-    private boolean isUserUsedTheTemplate() {
+    private String currentStrategy() {
 
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
-        Config userConfig = configService.getConfigsByUserUuid(userUuid)
+//        Config strategyConfig = configService.getConfigsByUserUuid(userUuid)
+//                .stream()
+//                .filter(config -> config.getName().equals(Strategy_Enum.STRATEGY.getValue()))
+//                .findFirst()
+//                .orElse(null);
+        Config strategyConfig = configService.findByUserUuidAndName(userUuid, Strategy_Enum.STRATEGY.getValue())
                 .stream()
-                .filter(config -> config.getName().equals(UserConfig.WIN_ENTRY_STOP_LL.getValue()))
+                .filter(config -> config.getName().equals(Strategy_Enum.STRATEGY.getValue()))
                 .findFirst()
                 .orElse(null);
 
-        if (userConfig != null) {
-            return userConfig.getValue().equals("ON");
+        if (strategyConfig != null) {
+            return strategyConfig.getValue();
         } else {
-            setWinLock("OFF");
-            return false;
+            setStrategy(Strategy_Enum.FREEHAND.getValue());
+            return Strategy_Enum.FREEHAND.getValue();
         }
 
     }
@@ -560,12 +566,37 @@ public class BaccaratController {
             gameResultResponse.setConfidence(confidence);
 
             if (gameResultResponse.getHandResult() != null) {
-                boolean isUserUsedTheTemplate = isUserUsedTheTemplate();
-                if (isUserUsedTheTemplate) {
+                // WINLOCK-------------------------------------------------------
+                String currentStrategy = currentStrategy();
+                if (currentStrategy.equals(Strategy_Enum.WINLOCK.getValue())) {
                     boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "W");
                     if (isTriggerExist) {
                         saveFreezeState("OFF");
                         boolean isStopTriggerExist = TriggerFinder.isStopTriggerExists(gameResultResponse.getHandResult(), "W", "LL");
+                        if (isStopTriggerExist) {
+                            saveFreezeState("ON");
+                            gameResultResponse.setMessage(STOP_LOSS_REACHED);
+                        }
+                    } else {
+                        saveFreezeState("ON");
+                    }
+                }else if (currentStrategy.equals(Strategy_Enum.TREND_OF_TWO.getValue())) {
+                    boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "WW");
+                    if (isTriggerExist) {
+                        saveFreezeState("OFF");
+                        boolean isStopTriggerExist = TriggerFinder.isStopTriggerExists(gameResultResponse.getHandResult(), "WW", "LL");
+                        if (isStopTriggerExist) {
+                            saveFreezeState("ON");
+                            gameResultResponse.setMessage(STOP_LOSS_REACHED);
+                        }
+                    } else {
+                        saveFreezeState("ON");
+                    }
+                }else if (currentStrategy.equals(Strategy_Enum.TREND_OF_THREE.getValue())) {
+                    boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "WWW");
+                    if (isTriggerExist) {
+                        saveFreezeState("OFF");
+                        boolean isStopTriggerExist = TriggerFinder.isStopTriggerExists(gameResultResponse.getHandResult(), "WWW", "LL");
                         if (isStopTriggerExist) {
                             saveFreezeState("ON");
                             gameResultResponse.setMessage(STOP_LOSS_REACHED);
@@ -808,34 +839,43 @@ public class BaccaratController {
         }
     }
 
-    @GetMapping("/win-lock")
-    public ResponseEntity<Boolean> winLock() {
-        boolean isWinLock = isUserUsedTheTemplate();
-//        if (isWinLock) {
-//            freezeState("ON");
-//        }
-        return ResponseEntity.ok(isWinLock);
+    @GetMapping("/strategy")
+    public ResponseEntity<String> getStrategy() {
+
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String userUuid = userPrincipal.getUserUuid();
+        Config strategyConfig = configService.getConfigsByUserUuid(userUuid)
+                .stream()
+                .filter(config -> config.getName().equals(Strategy_Enum.STRATEGY.getValue()))
+                .findFirst()
+                .orElse(null);
+
+        if (strategyConfig != null) {
+            return ResponseEntity.ok(strategyConfig.getValue());
+        }
+        return ResponseEntity.ok(Strategy_Enum.FREEHAND.getValue());
     }
 
-    @PostMapping("/win-lock")
-    public ResponseEntity<String> setWinLock(@RequestParam String onOff) {
+    @PostMapping("/strategy")
+    public ResponseEntity<String> setStrategy(@RequestParam String strategy) {
         try {
             // Get the current authenticated user
             UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             String userUuid = userPrincipal.getUserUuid();
 
             // Find the freeze configuration or create a new one if it doesn't exist
-            Config freezeConfig = configService.findByUserUuidAndName(userUuid, UserConfig.WIN_ENTRY_STOP_LL.getValue())
-                    .orElseGet(() -> new Config(userUuid, UserConfig.WIN_ENTRY_STOP_LL.getValue(), "OFF"));
+            Config strategyConfig = configService.findByUserUuidAndName(userUuid, Strategy_Enum.STRATEGY.getValue())
+                    .orElseGet(() -> new Config(userUuid, Strategy_Enum.STRATEGY.getValue(), Strategy_Enum.FREEHAND.getValue()));
 
             // Update the value of the freeze configuration
-            freezeConfig.setValue(onOff);
+            strategyConfig.setValue(strategy);
+
 
             // Save or update the configuration
-            configService.saveOrUpdateConfig(freezeConfig);
+            configService.saveOrUpdateConfig(strategyConfig);
 
             // Return success with the updated value
-            return ResponseEntity.ok(onOff);
+            return ResponseEntity.ok("ok");
 
         } catch (Exception e) {
             e.printStackTrace(); // Replace with proper logging

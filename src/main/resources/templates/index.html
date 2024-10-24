@@ -259,6 +259,16 @@
                             <i class="fas fa-user-check w-5 h-5 text-green-500"></i> <!-- Font Awesome icon -->
                         </div>
 
+
+                        <!-- Flex-grow spacer to push the strategy label into the middle -->
+                        <div class="flex-grow"></div>
+
+                        <!-- Centered strategy label -->
+                        <span class="text-sm font-semibold text-gray-500" id="strategyLabel"></span>
+
+                        <!-- Another flex-grow spacer to balance the space on both sides -->
+                        <div class="flex-grow"></div>
+
                         <!-- Icons on the right -->
                         <div class="flex space-x-4 pl-2 ml-auto" style="margin-right: 10px;">
                             <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)"
@@ -464,14 +474,38 @@
                     <h3 class="text-sm font-semibold">Strategies</h3>
                 </div>
 
-                <!-- Radio buttons list for strategies -->
-                <div class="px-4 py-4 space-y-2">
-                    <label class="flex items-center">
-                        <input id="winlockCheckBox" type="checkbox" name="strategy" value="WinLock" class="mr-2">
-                        <span class="text-sm">WinLock</span>
-                        <span class="text-gray-500 text-xs" style="margin-left: 5px;">(W-Entry, LL-Exit)</span>
-                    </label>
+                <div class="px-2 py-2">
+                    <ul class="space-y-1">
+                       
+                        <li class="flex items-center">
+                            <input id="freeHandRadio" type="radio" name="strategy" value="freehand" class="mr-1">
+                            <span class="text-sm">FreeHand - KISS</span>
+                            <span class="text-gray-500 text-xs ml-1">(No specified entry or stop)</span>
+                        </li>
+
+                        <li class="flex items-center">
+                            <input id="winlockRadio" type="radio" name="strategy" value="WinLock" class="mr-1">
+                            <span class="text-sm">WinLock - KISS</span>
+                            <span class="text-gray-500 text-xs ml-1">(W-Entry, LL-Exit)</span>
+                        </li>
+
+                        <li class="flex items-center">
+                            <input id="trendOfTwoRadio" type="radio" name="strategy" value="TrendOfTwo" class="mr-1">
+                            <span class="text-sm">TrendOfTwo - KISS</span>
+                            <span class="text-gray-500 text-xs ml-1">(WW-Entry, LL-Exit)</span>
+                        </li>
+
+                        <li class="flex items-center">
+                            <input id="trendOfThreeRadio" type="radio" name="strategy" value="TrendOfThree" class="mr-1">
+                            <span class="text-sm">TrendOfThree - KISS</span>
+                            <span class="text-gray-500 text-xs ml-1">(WWW-Entry, LL-Exit)</span>
+                        </li>
+
+                       
+                    </ul>
                 </div>
+
+
                 <!-- Close button -->
                 <div class="px-4 py-2 border-t flex flex-col space-y-2">
                     <button id="cancelButton" style="margin-top: 20px;"
@@ -674,13 +708,27 @@
 
                 });
 
-                $('#winlockCheckBox').click(function() {
-                        setWinLockValue();
+                $('#winlockRadio').click(function () {
+                    setStrategyValue('WINLOCK');
+                });
+
+
+                $('#freeHandRadio').click(function () {
+                    setStrategyValue('FREEHAND');
+                });
+
+                $('#trendOfTwoRadio').click(function () {
+                    setStrategyValue('TREND_OF_TWO');
+                });
+
+
+                $('#trendOfThreeRadio').click(function () {
+                    setStrategyValue('TREND_OF_THREE');
                 });
 
 
                 getFreezeStateAsync();
-                getIsWinLock();
+                getStrategy();
 
             });
 
@@ -689,7 +737,7 @@
                 // console.log(response);
 
                 hideSpinner();
-                
+
                 $('#playerButton, #bankerButton, #resetButton, #undoButton').prop('disabled', false);
 
 
@@ -831,7 +879,7 @@
 
                 updateProgressBar(response.confidence);
                 getFreezeStateAsync();
-                getIsWinLock();
+                getStrategy();
                 showorHideStrategiesDots();
             }
 
@@ -942,12 +990,12 @@
             function turnOnOffSkip() {
                 const button = document.getElementById("skipButton");
 
-                if (button.classList.contains("bg-gradient-to-l")) {                   
+                if (button.classList.contains("bg-gradient-to-l")) {
 
                     setShieldValue('OFF');
                 } else {
                     setShieldValue('ON');
-                  
+
                 }
             }
 
@@ -1324,25 +1372,17 @@
             }
 
 
-            async function setWinLockValue() {
-
-                let yesNoValue;
-                if ($('#winlockCheckBox').is(':checked')) {
-                    // If checked, get its value
-                    yesNoValue = 'ON';                 
-                } else {
-                    yesNoValue = 'OFF';
-                }
+            async function setStrategyValue(strategyValue) {
 
 
                 try {
                     const response = await $.ajax({
-                        url: '/api/baccarat/win-lock',
+                        url: '/api/baccarat/strategy',
                         type: 'POST',
-                        data: { onOff: yesNoValue }
+                        data: { strategy: strategyValue }
                     });
 
-                  getIsWinLock();
+                    getStrategy();
 
                 } catch (error) {
                     console.log('Error:', error);
@@ -1389,21 +1429,39 @@
             }
 
 
-            async function getIsWinLock() {
+            async function getStrategy() {
 
 
                 try {
                     const response = await $.ajax({
-                        url: '/api/baccarat/win-lock',
+                        url: '/api/baccarat/strategy',
                         type: 'GET'
                     });
 
-                    // console.log(response);
 
-                    if (response === true) {
-                        $('#winlockCheckBox').prop('checked', true);
+                    $("#strategyLabel").text(toCamelCase(response));
+                    
+                    if (response === 'WINLOCK') {
+                        $('#winlockRadio').prop('checked', true);
+                        $('#freeHandRadio').prop('checked', false);
+                        $('#trendOfTwoRadio').prop('checked', false);
+                        $('#trendOfThreeRadio').prop('checked', false);
+
+                    }else if (response === 'TREND_OF_TWO') {
+                        $('#winlockRadio').prop('checked', false);
+                        $('#freeHandRadio').prop('checked', false);
+                        $('#trendOfTwoRadio').prop('checked', true);
+                        $('#trendOfThreeRadio').prop('checked', false);
+                    }else if (response === 'TREND_OF_THREE') {
+                        $('#winlockRadio').prop('checked', true);
+                        $('#freeHandRadio').prop('checked', false);
+                        $('#trendOfTwoRadio').prop('checked', false);
+                        $('#trendOfThreeRadio').prop('checked', true);
                     } else {
-                        $('#winlockCheckBox').prop('checked', false);
+                        $('#winlockRadio').prop('checked', true);
+                        $('#freeHandRadio').prop('checked', true);
+                        $('#trendOfTwoRadio').prop('checked', false);
+                        $('#trendOfThreeRadio').prop('checked', false);
                     }
                     getFreezeStateAsync();
 
@@ -1414,12 +1472,12 @@
                 }
             }
 
-            function showorHideStrategiesDots(){
+            function showorHideStrategiesDots() {
                 const handCountValue = $("#handCount").text();
                 if (getNumbersFromString(handCountValue) > 0) {
-                 
+
                     $('#threeDotsButton').hide();
-                }else{
+                } else {
                     $('#threeDotsButton').show();
                 }
             }
@@ -1447,6 +1505,12 @@
             function getNumbersFromString(str) {
                 return str.replace(/\D/g, '');  // \D matches any non-digit character
             }
+
+            function toCamelCase(str) {
+                // Convert to lowercase and capitalize only the first letter
+                return str.toLowerCase().replace(/^[a-z]/, (match) => match.toUpperCase());
+            }
+
 
         </script>
 
