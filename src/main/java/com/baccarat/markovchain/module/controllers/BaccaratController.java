@@ -630,12 +630,12 @@ public class BaccaratController {
                 double doubleValue = Double.parseDouble(t);
                 int tsValue = (int) doubleValue;
                 int p = gameResultResponse.getGameStatus().getProfit();
-
+               
                 int maxBet = 0;
                 if (p > 0 && tsValue > 0) {
                     maxBet = profit - tsValue;
-                    gameResultResponse.setSuggestedBetUnit(maxBet);
                 }
+                gameResultResponse.setSuggestedBetUnit(maxBet);
             }
 
 
@@ -645,19 +645,7 @@ public class BaccaratController {
     }
 
 
-    private GameResultResponse validateBetSize(GameResultResponse gameResultResponse, int profit) {
-        String t = gameResultResponse.getTrailingStop().isEmpty() ? "0.0" : gameResultResponse.getTrailingStop();
-        double doubleValue = Double.parseDouble(t);
-        int tsValue = (int) doubleValue;
-        int p = gameResultResponse.getGameStatus().getProfit();
 
-        int maxBet = 0;
-        if (p > 0 && tsValue > 0) {
-            maxBet = profit - tsValue;
-            gameResultResponse.setSuggestedBetUnit(maxBet);
-        }
-        return gameResultResponse;
-    }
 
     private GameResultResponse trailingStop(GameResultResponse gameResultResponse, boolean isUndo) {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

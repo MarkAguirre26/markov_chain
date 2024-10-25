@@ -607,19 +607,24 @@
 
 
             function connect() {
-                var socket = new SockJS('/ws');
-                stompClient = Stomp.over(socket);
-                stompClient.connect({}, function (frame) {
-                    console.log('Connected: ' + frame);
-                    stompClient.subscribe('/topic/messages', function (message) {
-                        // showMessage(message.body);
-                        setTimeout(() => {
-                            showNotification(message.body);
-                        }, 1000);
+                try {
+                    var socket = new SockJS('/ws');
+                    stompClient = Stomp.over(socket);
+                    stompClient.connect({}, function (frame) {
+                        console.log('Connected: ' + frame);
+                        stompClient.subscribe('/topic/messages', function (message) {
+                            // showMessage(message.body);
+                            setTimeout(() => {
+                                showNotification(message.body);
+                            }, 1000);
+                        });
+                    }, function (error) {
+                        console.error('Error: ' + error);
                     });
-                }, function (error) {
-                    console.error('Error: ' + error);
-                });
+                } catch (e) {
+                        console.log(e);
+                }
+
             }
 
 
