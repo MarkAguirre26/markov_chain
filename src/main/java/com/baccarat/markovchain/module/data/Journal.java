@@ -33,17 +33,23 @@ public class Journal {
     @Column(name = "profit")
     private Integer profit;
 
+    @Column(name = "strategy")
+    private String strategy;
+
     @Column(name = "date_last_modified")
     private LocalDateTime dateLastModified;
 
     @Column(name = "date_created", updatable = false)
     private LocalDate dateCreated;
 
-    public Journal(Integer journalId, String userUuid, String winLose, Integer hand, Integer profit) {
+    public Journal(Integer journalId, String userUuid, String winLose, Integer hand, Integer profit, String strategy) {
         this.journalId = journalId;
         this.userUuid = userUuid;
         this.winLose = winLose;
         this.hand = hand;
         this.profit = profit;
-       }
+        this.strategy = strategy;
+    }
+
+
 }

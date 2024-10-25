@@ -271,10 +271,10 @@
 
                         <!-- Icons on the right -->
                         <div class="flex space-x-4 pl-2 ml-auto" style="margin-right: 10px;">
-                            <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)"
+                            <!-- <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)"
                                 aria-label="Change Risk Level">
                                 <img id="riskLevelImage" src="/img/risk_medium.png" class="w-7 h-7" alt="Risk Level">
-                            </button>
+                            </button> -->
                             <button id="resetButton" class="cursor-pointer" aria-label="Change reset Status">
                                 <img id="resetButtonImage" src="/img/circular_reset.png" class="w-6 h-6"
                                     alt="Reset Status">
@@ -478,6 +478,12 @@
                     <ul class="space-y-1">
                        
                         <li class="flex items-center">
+                            <input id="flatRadio" type="radio" name="strategy" value="flat" class="mr-1">
+                            <span class="text-sm">Flat </span>
+                            <span class="text-gray-500 text-xs ml-1">(Super low risk)</span>
+                        </li>
+
+                        <li class="flex items-center">
                             <input id="freeHandRadio" type="radio" name="strategy" value="freehand" class="mr-1">
                             <span class="text-sm">FreeHand - KISS</span>
                             <span class="text-gray-500 text-xs ml-1">(No specified entry or stop)</span>
@@ -614,18 +620,18 @@
 
 
 
-                    const riskLevelImage = document.getElementById('riskLevelImage');
+                    // const riskLevelImage = document.getElementById('riskLevelImage');
 
-                    const currentSrc = riskLevelImage.src; // Get the full URL of the current image             
+                    // const currentSrc = riskLevelImage.src; // Get the full URL of the current image             
 
-                    var riskLevelValue = currentSrc.includes('risk_low.png') ? 'VERY_LOW' : 'LOW'
+                    // var riskLevelValue = currentSrc.includes('risk_low.png') ? 'VERY_LOW' : 'LOW'
 
 
                     try {
                         const response = await $.post('/api/baccarat/play', $.param({
                             userInput,
                             recommendedBet: $('#recommendedBet').text(),
-                            riskLevel: riskLevelValue,
+                            riskLevel: '',
                             suggestedUnit: $('#suggestedBetUnit').text(),
                             skipState: freezeState
                         }));
@@ -736,8 +742,13 @@
                     setStrategyValue('ONE_THREE_TWO_SIX');
                 });
 
-                
+                $('#flatRadio').click(function () {
+                    setStrategyValue('FLAT');
+                });
 
+
+                
+                
                 getFreezeStateAsync();
                 getStrategy();
 
@@ -856,9 +867,17 @@
                     $('#infoContent').text(contentText);
                 }
 
+                
+                try{
+                    displayResults(response.sequence.toUpperCase());
+                }catch(e){
+
+                }
+
+               
 
 
-                displayResults(response.sequence.toUpperCase());
+
                 getHandResult(response);
                 getActiveUsers();
                 // Handle button visibility after game result
@@ -876,22 +895,13 @@
 
 
 
-                const riskLevelImage = document.getElementById('riskLevelImage');
+          
 
-
-                // console.log(response.riskLevel);
-
-                if (response.riskLevel === 'LOW') {
-                    riskLevelImage.src = '/img/risk_medium.png'
-                } else {
-                    riskLevelImage.src = '/img/risk_low.png'
-                }
-
-
+                showorHideStrategiesDots();
                 updateProgressBar(response.confidence);
                 getFreezeStateAsync();
                 getStrategy();
-                showorHideStrategiesDots();
+             
             }
 
             async function undo() {
@@ -943,13 +953,13 @@
 
             function displayResults(playerAndBankerCollections) {
 
-                const riskLevelImage = document.getElementById('riskLevelImage');
+                // const riskLevelImage = document.getElementById('riskLevelImage');
                 const results = playerAndBankerCollections.replace("1111", "").split('');
 
                 // riskLevelImage.disabled = false; // enable the toggle once there is no handCount
-                riskLevelImage.onclick = changeRiskLevel;// Remove the click event
-                if (!results.length) return; // Early return if results are empty
-                riskLevelImage.onclick = null;
+                // riskLevelImage.onclick = changeRiskLevel;// Remove the click event
+                // if (!results.length) return; // Early return if results are empty
+                // riskLevelImage.onclick = null;
 
 
 
@@ -985,18 +995,18 @@
                 }, 0); // Using a timeout to ensure rendering is complete before scrolling
             }
 
-            function changeRiskLevel(event) {
-                event.stopPropagation();
-                const riskLevelImage = document.getElementById('riskLevelImage');
-                // console.log(riskLevelImage.src);
+            // function changeRiskLevel(event) {
+            //     event.stopPropagation();
+            //     const riskLevelImage = document.getElementById('riskLevelImage');
+            //     // console.log(riskLevelImage.src);
 
-                if (riskLevelImage.src.includes('risk_medium.png')) {
-                    riskLevelImage.src = '/img/risk_low.png';
-                } else {
-                    riskLevelImage.src = '/img/risk_medium.png';
-                }
+            //     if (riskLevelImage.src.includes('risk_medium.png')) {
+            //         riskLevelImage.src = '/img/risk_low.png';
+            //     } else {
+            //         riskLevelImage.src = '/img/risk_medium.png';
+            //     }
 
-            }
+            // }
 
             function turnOnOffSkip() {
                 const button = document.getElementById("skipButton");
@@ -1096,6 +1106,14 @@
                         shoeHeading.textContent = `Shoe: ${journal.shoe}`;
                         centerContainer.appendChild(shoeHeading);
 
+                        // can you aslo put 'statregy' label under the Shoe
+                        // Create Strategy label and append it under the Shoe heading
+                        const strategyLabel = document.createElement('p');
+                        strategyLabel.classList.add('font-normal', 'text-xs');
+                        strategyLabel.textContent = `${journal.strategy}`;
+                        centerContainer.appendChild(strategyLabel);
+
+
                         // Create container for right-aligned content (Hand, Profit)
                         const rightContainer = document.createElement('div');
                         rightContainer.classList.add('flex-grow', 'text-right');
@@ -1165,8 +1183,8 @@
                     // Handle the successful response
                     displayResultToUi(response);
 
-                    const riskLevelImage = document.getElementById('riskLevelImage');
-                    riskLevelImage.onclick = null; // Disable click event
+                    // const riskLevelImage = document.getElementById('riskLevelImage');
+                    // riskLevelImage.onclick = null; // Disable click event
 
                     // Update UI with archive information
                     $('#infoHeader').text("Archive");
@@ -1458,6 +1476,7 @@
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', false);
                         $('#oneThreeTwoSix').prop('checked', false);
+                        $('#flatRadio').prop('checked', false);
 
                     }else if (response === 'TREND_OF_TWO') {
                         $('#winlockRadio').prop('checked', false);
@@ -1465,24 +1484,35 @@
                         $('#trendOfTwoRadio').prop('checked', true);
                         $('#trendOfThreeRadio').prop('checked', false);
                         $('#oneThreeTwoSix').prop('checked', false);
+                        $('#flatRadio').prop('checked', false);
                     }else if (response === 'TREND_OF_THREE') {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', true);
                         $('#oneThreeTwoSix').prop('checked', false);
+                        $('#flatRadio').prop('checked', false);
                     }else if (response === 'ONE_THREE_TWO_SIX') {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', false);  
                         $('#oneThreeTwoSix').prop('checked', true);
+                        $('#flatRadio').prop('checked', false);
+                    }else if (response === 'FLAT') {
+                        $('#winlockRadio').prop('checked', false);
+                        $('#freeHandRadio').prop('checked', false);
+                        $('#trendOfTwoRadio').prop('checked', false);
+                        $('#trendOfThreeRadio').prop('checked', false);  
+                        $('#oneThreeTwoSix').prop('checked', false);
+                        $('#flatRadio').prop('checked', true);
                     } else {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', true);
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', false);
                         $('#oneThreeTwoSix').prop('checked', false);
+                        $('#flatRadio').prop('checked', false);
                     }
                     getFreezeStateAsync();
 
@@ -1495,6 +1525,9 @@
 
             function showorHideStrategiesDots() {
                 const handCountValue = $("#handCount").text();
+
+                // console.log(handCountValue);
+
                 if (getNumbersFromString(handCountValue) > 0) {
 
                     $('#threeDotsButton').hide();

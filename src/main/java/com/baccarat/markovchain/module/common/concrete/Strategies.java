@@ -3,7 +3,7 @@ package com.baccarat.markovchain.module.common.concrete;
 import lombok.Getter;
 
 @Getter
-public enum Strategy_Enum {
+public enum Strategies {
 
    
     WINLOCK("WINLOCK"),
@@ -11,13 +11,14 @@ public enum Strategy_Enum {
     TREND_OF_THREE("TREND_OF_THREE"),
     FREEHAND("FREEHAND"),
     ONE_THREE_TWO_SIX("ONE_THREE_TWO_SIX"),
+    FLAT("FLAT"),
     STRATEGY("STRATEGY");
    
 //    BASE_BET("BASE_BET");
 
     private final String value;
 
-    Strategy_Enum(String value) {
+    Strategies(String value) {
         this.value = value;
     }
 

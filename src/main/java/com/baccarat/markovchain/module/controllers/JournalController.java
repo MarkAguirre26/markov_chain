@@ -116,6 +116,7 @@ public class JournalController {
                         journals.get(i).getHand(),
                         journals.get(i).getProfit(),
                         journals.get(i).getWinLose(),
+                        journals.get(i).getStrategy(),
                         journals.get(i).getDateCreated()))
                 .collect(Collectors.toList());
 

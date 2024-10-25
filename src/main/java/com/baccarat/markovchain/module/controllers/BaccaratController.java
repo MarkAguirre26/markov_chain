@@ -1,7 +1,7 @@
 package com.baccarat.markovchain.module.controllers;
 
 import com.baccarat.markovchain.module.common.concrete.RiskLevel;
-import com.baccarat.markovchain.module.common.concrete.Strategy_Enum;
+import com.baccarat.markovchain.module.common.concrete.Strategies;
 import com.baccarat.markovchain.module.common.concrete.UserConfig;
 import com.baccarat.markovchain.module.data.*;
 import com.baccarat.markovchain.module.data.response.GameResultResponse;
@@ -215,9 +215,11 @@ public class BaccaratController {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
+        String strategy = currentStrategy().equals(Strategies.ONE_THREE_TWO_SIX.getValue()) ? "Stochastic" : currentStrategy();
+
         String winLose = response.getGameStatus().getWins() + "/" + response.getGameStatus().getLosses();
         Journal savedJournal = journalService.saveJournal(new Journal(ZERO, userUuid, winLose, response.getGameStatus().getHandCount(),
-                response.getGameStatus().getProfit()));
+                response.getGameStatus().getProfit(), strategy.toLowerCase()));
 
         if (savedJournal != null) {
 
@@ -244,17 +246,17 @@ public class BaccaratController {
 //                .filter(config -> config.getName().equals(Strategy_Enum.STRATEGY.getValue()))
 //                .findFirst()
 //                .orElse(null);
-        Config strategyConfig = configService.findByUserUuidAndName(userUuid, Strategy_Enum.STRATEGY.getValue())
+        Config strategyConfig = configService.findByUserUuidAndName(userUuid, Strategies.STRATEGY.getValue())
                 .stream()
-                .filter(config -> config.getName().equals(Strategy_Enum.STRATEGY.getValue()))
+                .filter(config -> config.getName().equals(Strategies.STRATEGY.getValue()))
                 .findFirst()
                 .orElse(null);
 
         if (strategyConfig != null) {
             return strategyConfig.getValue();
         } else {
-            setStrategy(Strategy_Enum.FREEHAND.getValue());
-            return Strategy_Enum.FREEHAND.getValue();
+            setStrategy(Strategies.FREEHAND.getValue());
+            return Strategies.FREEHAND.getValue();
         }
 
     }
@@ -338,11 +340,11 @@ public class BaccaratController {
 
         int betSize = 0;
 
-        if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
-            betSize = 1;
-        } else {
-            betSize = BaccaratBetting.kissOneTwoThree(gameResultResponse);
-        }
+//        if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
+//            betSize = 1;
+//        } else {
+//            betSize = BaccaratBetting.kissOneTwoThree(gameResultResponse);
+//        }
         String prediction = "";
         String recommendedBet = "";
 //        b b b p p p b b p b p b p b b b p b b p b b b b b b b
@@ -514,19 +516,19 @@ public class BaccaratController {
             //            ---------------------MONEY MANAGEMENT-------------------------------------
             int betSize = 0;
 
-            if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
-                betSize = 1;
+            if (currentStrategy.equals(Strategies.ONE_THREE_TWO_SIX.getValue())) {
+                betSize = BaccaratBetting.oneThreeTwoSix(gameResultResponse);
+
+
+            } else if (currentStrategy.equals(Strategies.FLAT.getValue())) {
+                betSize = 1;//1 unit fixed
+
             } else {
-                if (currentStrategy.equals(Strategy_Enum.ONE_THREE_TWO_SIX.getValue())) {
-                    betSize = BaccaratBetting.oneThreeTwoSix(gameResultResponse);
-                } else {
-                    betSize = BaccaratBetting.kissOneTwoThree(gameResultResponse);
-                }
+                betSize = BaccaratBetting.kissOneTwoThree(gameResultResponse);
 
             }
-
-
             gameResultResponse.setSuggestedBetUnit(betSize);
+
 //
             //            ----------------------------------------------------------
 
@@ -548,7 +550,7 @@ public class BaccaratController {
             // code below will not be executed if the above condition is true
             gameResultResponse.setTrailingStop(gameResultResponseWithTrailingStop.getTrailingStop());
 
-            if (gameResultResponse.getRiskLevel().equals(RiskLevel.VERY_LOW.getValue())) {
+            if (currentStrategy.equals(Strategies.FLAT.getValue())) {
 
 
                 if (!gameResultResponse.getRecommendedBet().equals(WAIT)) {
@@ -578,7 +580,7 @@ public class BaccaratController {
             if (gameResultResponse.getHandResult() != null) {
                 // WINLOCK-------------------------------------------------------
 //                String currentStrategy = currentStrategy();
-                if (currentStrategy.equals(Strategy_Enum.WINLOCK.getValue())) {
+                if (currentStrategy.equals(Strategies.WINLOCK.getValue())) {
                     boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "W");
                     if (isTriggerExist) {
                         saveFreezeState("OFF");
@@ -590,7 +592,7 @@ public class BaccaratController {
                     } else {
                         saveFreezeState("ON");
                     }
-                } else if (currentStrategy.equals(Strategy_Enum.TREND_OF_TWO.getValue())) {
+                } else if (currentStrategy.equals(Strategies.TREND_OF_TWO.getValue())) {
                     boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "WW");
                     if (isTriggerExist) {
                         saveFreezeState("OFF");
@@ -602,7 +604,7 @@ public class BaccaratController {
                     } else {
                         saveFreezeState("ON");
                     }
-                } else if (currentStrategy.equals(Strategy_Enum.TREND_OF_THREE.getValue())) {
+                } else if (currentStrategy.equals(Strategies.TREND_OF_THREE.getValue())) {
                     boolean isTriggerExist = TriggerFinder.isEntryTriggerExists(gameResultResponse.getHandResult(), "WWW");
                     if (isTriggerExist) {
                         saveFreezeState("OFF");
@@ -619,28 +621,39 @@ public class BaccaratController {
 
             }
 
-            String t = gameResultResponse.getTrailingStop().isEmpty() ? "0.0" : gameResultResponse.getTrailingStop();
-            double doubleValue = Double.parseDouble(t);
-            int tsValue = (int) doubleValue;
-            int betsize = gameResultResponse.getSuggestedBetUnit();
-            int p = gameResultResponse.getGameStatus().getProfit();
+            // I added this to prevent BET from overlapping with the trailing stop.
+            if (currentStrategy.equals(Strategies.ONE_THREE_TWO_SIX.getValue())) {
+                String t = gameResultResponse.getTrailingStop().isEmpty() ? "0.0" : gameResultResponse.getTrailingStop();
+                double doubleValue = Double.parseDouble(t);
+                int tsValue = (int) doubleValue;
+                int p = gameResultResponse.getGameStatus().getProfit();
 
-            int maxBet = 0;
-
-            if (p > 0 && tsValue > 0) {
-                maxBet = profit - tsValue;
-                gameResultResponse.setSuggestedBetUnit(maxBet);
+                int maxBet = 0;
+                if (p > 0 && tsValue > 0) {
+                    maxBet = profit - tsValue;
+                    gameResultResponse.setSuggestedBetUnit(maxBet);
+                }
             }
 
-//            int temp = tsValue - betsize;
-//            if (temp < 0) {
-//                betsize = ensurePositive(betsize - tsValue);
-
-//            }
 
             return provideGameResponse(gameResultResponse);
         }
 
+    }
+
+
+    private GameResultResponse validateBetSize(GameResultResponse gameResultResponse, int profit) {
+        String t = gameResultResponse.getTrailingStop().isEmpty() ? "0.0" : gameResultResponse.getTrailingStop();
+        double doubleValue = Double.parseDouble(t);
+        int tsValue = (int) doubleValue;
+        int p = gameResultResponse.getGameStatus().getProfit();
+
+        int maxBet = 0;
+        if (p > 0 && tsValue > 0) {
+            maxBet = profit - tsValue;
+            gameResultResponse.setSuggestedBetUnit(maxBet);
+        }
+        return gameResultResponse;
     }
 
     private GameResultResponse trailingStop(GameResultResponse gameResultResponse, boolean isUndo) {
@@ -875,14 +888,14 @@ public class BaccaratController {
         String userUuid = userPrincipal.getUserUuid();
         Config strategyConfig = configService.getConfigsByUserUuid(userUuid)
                 .stream()
-                .filter(config -> config.getName().equals(Strategy_Enum.STRATEGY.getValue()))
+                .filter(config -> config.getName().equals(Strategies.STRATEGY.getValue()))
                 .findFirst()
                 .orElse(null);
 
         if (strategyConfig != null) {
             return ResponseEntity.ok(strategyConfig.getValue());
         }
-        return ResponseEntity.ok(Strategy_Enum.FREEHAND.getValue());
+        return ResponseEntity.ok(Strategies.FREEHAND.getValue());
     }
 
     @PostMapping("/strategy")
@@ -893,8 +906,8 @@ public class BaccaratController {
             String userUuid = userPrincipal.getUserUuid();
 
             // Find the freeze configuration or create a new one if it doesn't exist
-            Config strategyConfig = configService.findByUserUuidAndName(userUuid, Strategy_Enum.STRATEGY.getValue())
-                    .orElseGet(() -> new Config(userUuid, Strategy_Enum.STRATEGY.getValue(), Strategy_Enum.FREEHAND.getValue()));
+            Config strategyConfig = configService.findByUserUuidAndName(userUuid, Strategies.STRATEGY.getValue())
+                    .orElseGet(() -> new Config(userUuid, Strategies.STRATEGY.getValue(), Strategies.FREEHAND.getValue()));
 
             // Update the value of the freeze configuration
             strategyConfig.setValue(strategy);
