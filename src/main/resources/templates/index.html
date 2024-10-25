@@ -231,6 +231,34 @@
     .high {
         background-color: green;
     }
+
+    /* .online-user {
+        position: relative;
+        display: inline-block;
+        padding: 5px;
+      
+    } */
+
+    .icon {
+        font-size: 20px;
+        /* Smaller icon size */
+        color: #28a745;
+        /* Green color to indicate online status */
+    }
+
+    .online-user {
+     margin-top: 10px;
+    /* position: absolute; */
+    top: 0;
+    right: 0;
+    /* background-color: #0dbb35; */
+    color: #6b7280;
+    border-radius: 50%;
+    padding: 2px 5px;
+    font-size: 11px;
+    font-weight: normal;
+    transform: translate(50%, -50%);
+    }
 </style>
 
 <body class="bg-gray-100">
@@ -254,11 +282,20 @@
                             </button>
                         </form>
 
-                        <div class="flex items-center" style="margin-left: 5px;">
-                            <span id="activeUsersCount" class="text-gray-500 font-semibold mr-2 text-xs">0</span>
-                            <i class="fas fa-user-check w-5 h-5 text-green-500"></i> <!-- Font Awesome icon -->
+                        <div class="flex items-center">
+                            <span id="activeUsersCount" class="online-user">0</span>
+                            <i class="fas fa-user-circle text-green-500"></i>
                         </div>
+                        <!-- <div class="relative flex items-center" style="margin-left: 5px;">
+                            <i class="fas fa-user-circle w-5 h-5 text-green-500"></i>
+                            <span id="activeUsersCount" class="absolute bg-green-500 text-white font-semibold rounded-full w-5 h-5 flex items-center justify-center -top-1 -right-1 text-xs">0</span>
+                        </div>
+                         -->
+                        
 
+
+                        <!-- <span class="icon"><i class="fas fa-user-circle"></i></span>       
+                                <span id="activeUsersCount" class="online-user">0</span>  -->
 
                         <!-- Flex-grow spacer to push the strategy label into the middle -->
                         <div class="flex-grow"></div>
@@ -476,7 +513,7 @@
 
                 <div class="px-2 py-2">
                     <ul class="space-y-1">
-                       
+
                         <li class="flex items-center">
                             <input id="flatRadio" type="radio" name="strategy" value="flat" class="mr-1">
                             <span class="text-sm">Flat </span>
@@ -502,7 +539,8 @@
                         </li>
 
                         <li class="flex items-center">
-                            <input id="trendOfThreeRadio" type="radio" name="strategy" value="TrendOfThree" class="mr-1">
+                            <input id="trendOfThreeRadio" type="radio" name="strategy" value="TrendOfThree"
+                                class="mr-1">
                             <span class="text-sm">TrendOfThree - KISS</span>
                             <span class="text-gray-500 text-xs ml-1">(WWW-Entry, LL-Exit)</span>
                         </li>
@@ -513,7 +551,7 @@
                             <span class="text-gray-500 text-xs ml-1"> 1-3-2-3 strategy</span>
                         </li>
 
-                       
+
                     </ul>
                 </div>
 
@@ -747,8 +785,8 @@
                 });
 
 
-                
-                
+
+
                 getFreezeStateAsync();
                 getStrategy();
 
@@ -867,14 +905,14 @@
                     $('#infoContent').text(contentText);
                 }
 
-                
-                try{
+
+                try {
                     displayResults(response.sequence.toUpperCase());
-                }catch(e){
+                } catch (e) {
 
                 }
 
-               
+
 
 
 
@@ -895,13 +933,13 @@
 
 
 
-          
+
 
                 showorHideStrategiesDots();
                 updateProgressBar(response.confidence);
                 getFreezeStateAsync();
                 getStrategy();
-             
+
             }
 
             async function undo() {
@@ -1468,8 +1506,8 @@
                     });
 
 
-                    $("#strategyLabel").text(toCamelCase(response) === 'One_three_two_six'?'Stochastic':toCamelCase(response));
-                    
+                    $("#strategyLabel").text(toCamelCase(response) === 'One_three_two_six' ? 'Stochastic' : toCamelCase(response));
+
                     if (response === 'WINLOCK') {
                         $('#winlockRadio').prop('checked', true);
                         $('#freeHandRadio').prop('checked', false);
@@ -1478,32 +1516,32 @@
                         $('#oneThreeTwoSix').prop('checked', false);
                         $('#flatRadio').prop('checked', false);
 
-                    }else if (response === 'TREND_OF_TWO') {
+                    } else if (response === 'TREND_OF_TWO') {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', true);
                         $('#trendOfThreeRadio').prop('checked', false);
                         $('#oneThreeTwoSix').prop('checked', false);
                         $('#flatRadio').prop('checked', false);
-                    }else if (response === 'TREND_OF_THREE') {
+                    } else if (response === 'TREND_OF_THREE') {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', false);
                         $('#trendOfThreeRadio').prop('checked', true);
                         $('#oneThreeTwoSix').prop('checked', false);
                         $('#flatRadio').prop('checked', false);
-                    }else if (response === 'ONE_THREE_TWO_SIX') {
+                    } else if (response === 'ONE_THREE_TWO_SIX') {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', false);
-                        $('#trendOfThreeRadio').prop('checked', false);  
+                        $('#trendOfThreeRadio').prop('checked', false);
                         $('#oneThreeTwoSix').prop('checked', true);
                         $('#flatRadio').prop('checked', false);
-                    }else if (response === 'FLAT') {
+                    } else if (response === 'FLAT') {
                         $('#winlockRadio').prop('checked', false);
                         $('#freeHandRadio').prop('checked', false);
                         $('#trendOfTwoRadio').prop('checked', false);
-                        $('#trendOfThreeRadio').prop('checked', false);  
+                        $('#trendOfThreeRadio').prop('checked', false);
                         $('#oneThreeTwoSix').prop('checked', false);
                         $('#flatRadio').prop('checked', true);
                     } else {
