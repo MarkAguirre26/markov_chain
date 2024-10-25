@@ -1,47 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>Online Active User Icon</title>
-    
-<style>
-
-
-.online-user {
-    position: relative;
-    display: inline-block;
-    padding: 5px; /* Reduced padding */
-}
-
-.icon {
-    font-size: 20px; /* Smaller icon size */
-    color: #28a745; /* Green color to indicate online status */
-}
-
-.online-user {
-    margin-top: 5px;
-    position: absolute;
-    top: 0; /* Position the count on top of the icon */
-    right: 0; /* Align the count to the right edge of the icon */
-    background-color: #68cf17;
-    color: white;
-    border-radius: 50%;
-    padding: 2px 5px; /* Reduced padding for the count */
-    font-size: 9px; /* Smaller font size */
-    font-weight: bold;
-    transform: translate(50%, -50%); /* Center the label above the corner */
-}
-
-
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bottom Notification</title>
+  <style>
+    /* Style for the notification box */
+    .notification {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(63, 55, 55, 0.726); /* Slightly transparent */
+      color: #fff;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 16px;
+      display: none; /* Initially hidden */
+      z-index: 1000; /* Ensure it appears on top */
+    }
+  </style>
 </head>
-
 <body>
-    <div class="online-user">
-        <span class="icon"><i class="fas fa-user-circle"></i></span> <!-- Font Awesome user icon -->
-        <span class="online-user">5</span> <!-- Number of online users -->
-    </div>
+
+  <!-- Notification box -->
+  <div class="notification" id="notification">
+<span id="message">Bitoy just won 1</span>
+  </div>
+
+  <script>
+    // Function to show and automatically hide the notification
+    function showNotification(message) {
+      const notification = document.getElementById('notification');
+      notification.style.display = 'block';
+      $('#message').text(message)
+      // Hide the notification after 1 second
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 2000);
+    }
+
+    // Show the notification after 2 seconds (for demo purposes)
+    setTimeout(showNotification("test message"), 1000);
+  </script>
+
 </body>
 </html>

@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Player Companion Baccarat App Game Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,6 +15,23 @@
 </head>
 
 <style>
+    .notification {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(63, 55, 55, 0.726);
+        /* Slightly transparent */
+        color: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 16px;
+        display: none;
+        /* Initially hidden */
+        z-index: 1000;
+        /* Ensure it appears on top */
+    }
+
     /* Hide scrollbars but still allow scrolling */
     .hidden-scrollbar {
         scrollbar-width: none;
@@ -247,17 +266,17 @@
     }
 
     .online-user {
-     margin-top: 10px;
-    /* position: absolute; */
-    top: 0;
-    right: 0;
-    /* background-color: #0dbb35; */
-    color: #6b7280;
-    border-radius: 50%;
-    padding: 2px 5px;
-    font-size: 11px;
-    font-weight: normal;
-    transform: translate(50%, -50%);
+        margin-top: 10px;
+        /* position: absolute; */
+        top: 0;
+        right: 0;
+        /* background-color: #0dbb35; */
+        color: #6b7280;
+        border-radius: 50%;
+        padding: 2px 5px;
+        font-size: 11px;
+        font-weight: normal;
+        transform: translate(50%, -50%);
     }
 </style>
 
@@ -284,18 +303,8 @@
 
                         <div class="flex items-center">
                             <span id="activeUsersCount" class="online-user">0</span>
-                            <i class="fas fa-user-circle text-green-500"></i>
+                            <i class="fas fa-users text-green-500"></i>
                         </div>
-                        <!-- <div class="relative flex items-center" style="margin-left: 5px;">
-                            <i class="fas fa-user-circle w-5 h-5 text-green-500"></i>
-                            <span id="activeUsersCount" class="absolute bg-green-500 text-white font-semibold rounded-full w-5 h-5 flex items-center justify-center -top-1 -right-1 text-xs">0</span>
-                        </div>
-                         -->
-                        
-
-
-                        <!-- <span class="icon"><i class="fas fa-user-circle"></i></span>       
-                                <span id="activeUsersCount" class="online-user">0</span>  -->
 
                         <!-- Flex-grow spacer to push the strategy label into the middle -->
                         <div class="flex-grow"></div>
@@ -547,8 +556,8 @@
 
                         <li class="flex items-center">
                             <input id="oneThreeTwoSix" type="radio" name="strategy" value="oneThreeTwoSix" class="mr-1">
-                            <span class="text-sm">Stochastic Betting</span>
-                            <span class="text-gray-500 text-xs ml-1"> 1-3-2-3 strategy</span>
+                            <span class="text-sm">Stochastic</span>
+                            <span class="text-gray-500 text-xs ml-1"> Bet after v-W, Skip after L</span>
                         </li>
 
 
@@ -567,6 +576,9 @@
             </div>
         </div>
 
+        <div class="notification" id="notification">
+            <span id="message"></span>
+        </div>
 
 
         <script>
@@ -575,9 +587,41 @@
             let dateCreated;
             var freezeState = 'N';
             var totalProfit = 0;
+            var stompClient = null;
+
 
             const ctx = document.getElementById('profitsGraph').getContext('2d');
             let dummyGraph; // Variable to hold the chart instance
+
+
+            function showNotification(message) {
+                const notification = document.getElementById('notification');
+                notification.style.display = 'block';
+
+                $('#message').text(message);
+                // Hide the notification after 1 second
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 4000);
+            }
+
+
+            function connect() {
+                var socket = new SockJS('/ws');
+                stompClient = Stomp.over(socket);
+                stompClient.connect({}, function (frame) {
+                    console.log('Connected: ' + frame);
+                    stompClient.subscribe('/topic/messages', function (message) {
+                        // showMessage(message.body);
+                        setTimeout(() => {
+                            showNotification(message.body);
+                        }, 1000);
+                    });
+                }, function (error) {
+                    console.error('Error: ' + error);
+                });
+            }
+
 
             function showSpinner() {
                 const circleContainer = document.getElementById("circleContainer");
@@ -789,7 +833,7 @@
 
                 getFreezeStateAsync();
                 getStrategy();
-
+                connect();
             });
 
 

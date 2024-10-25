@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/join")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .authorizeHttpRequests(request -> request
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/img/**", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/auth").permitAll() // Allow access to the custom login page
                         .requestMatchers("/logout").permitAll() // Allow access to logout

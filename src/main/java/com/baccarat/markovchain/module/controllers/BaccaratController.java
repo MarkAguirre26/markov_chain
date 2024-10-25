@@ -58,8 +58,10 @@ public class BaccaratController {
     private final GameResponseService gameResponseService;
     private final TrailingStopService trailingStopService;
     private final GamesArchiveService gamesArchiveService;
-
     private final UserConfigService configService;
+    private final WebSocketMessageService messageService;
+
+
     private final String WAIT = "Wait..";
     private final String PLAYER = "Player";
     private final String BANKER = "Banker";
@@ -69,7 +71,7 @@ public class BaccaratController {
 
 
     @Autowired
-    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, GameStatusService gameStatusService, GameResponseService gameResponseService, TrailingStopService trailingStopService, GamesArchiveService gamesArchiveService, UserConfigService configService) {
+    public BaccaratController(MarkovChain markovChain, PatternRecognizer patternRecognizer, JournalServiceImpl journalService, GameStatusService gameStatusService, GameResponseService gameResponseService, TrailingStopService trailingStopService, GamesArchiveService gamesArchiveService, UserConfigService configService, WebSocketMessageService messageService) {
         this.markovChain = markovChain;
         this.patternRecognizer = patternRecognizer;
         this.journalService = journalService;
@@ -79,6 +81,7 @@ public class BaccaratController {
         this.gamesArchiveService = gamesArchiveService;
         this.configService = configService;
 
+        this.messageService = messageService;
     }
 
     public static int ensurePositive(int number) {
@@ -984,8 +987,9 @@ public class BaccaratController {
 
         try {
 
+            GameResultResponse grr = getGameResponse(userPrincipal);
             if (yesNo.equalsIgnoreCase("yes")) {
-                saveAndReturn(getGameResponse(userPrincipal));
+                saveAndReturn(grr);
             }
 
             deleteGamesByUserUuid(userUuid);
@@ -997,6 +1001,13 @@ public class BaccaratController {
             initialize(gameResultResponse);
 
             logger.info(userPrincipal.getUsername() + ": Game state reset!");
+
+            String p = grr.getGameStatus().getProfit() < 0 ? "lost" : "won";
+            String message = String.format("%s just %s %s!", userPrincipal.getUsername(), p, grr.getGameStatus().getProfit());
+
+
+            messageService.sendMessage(message);
+
             return gameResultResponse;
         } catch (Exception e) {
             logger.error("Error resetting game state", e);
