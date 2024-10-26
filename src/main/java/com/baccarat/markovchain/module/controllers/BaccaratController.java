@@ -634,8 +634,9 @@ public class BaccaratController {
                 int maxBet = 0;
                 if (p > 0 && tsValue > 0) {
                     maxBet = profit - tsValue;
+                    gameResultResponse.setSuggestedBetUnit(maxBet);
                 }
-                gameResultResponse.setSuggestedBetUnit(maxBet);
+
             }
 
 

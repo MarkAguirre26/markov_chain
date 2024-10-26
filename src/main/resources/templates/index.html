@@ -291,46 +291,60 @@
                     <div class="flex justify-between items-center">
 
                         <!-- Logout button on the left -->
-                        <form th:action="@{/logout}" method="post">
+                        <!-- <form th:action="@{/logout}" method="post">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                             <button type="submit"
                                 class="bg-gray-600 text-white text-xs font-semibold py-0.5 px-1 rounded hover:bg-gray-700 transition duration-200"
                                 style="background-color: rgb(75 85 99 / 0%);">
-                                <!-- <i class="fas fa-sign-out-alt text-base"></i> -->
                                 <img src="/img/logout.png" class="w-7 h-7" alt="logout">
                             </button>
-                        </form>
+                        </form> -->
 
                         <div class="flex items-center">
                             <span id="activeUsersCount" class="online-user">0</span>
                             <i class="fas fa-users text-green-500"></i>
                         </div>
 
-                        <!-- Flex-grow spacer to push the strategy label into the middle -->
                         <div class="flex-grow"></div>
-
-                        <!-- Centered strategy label -->
                         <span class="text-sm font-semibold text-gray-500" id="strategyLabel"></span>
-
-                        <!-- Another flex-grow spacer to balance the space on both sides -->
                         <div class="flex-grow"></div>
 
-                        <!-- Icons on the right -->
                         <div class="flex space-x-4 pl-2 ml-auto" style="margin-right: 10px;">
-                            <!-- <button id="riskLevelButton" class="cursor-pointer" onclick="changeRiskLevel(this)"
-                                aria-label="Change Risk Level">
-                                <img id="riskLevelImage" src="/img/risk_medium.png" class="w-7 h-7" alt="Risk Level">
-                            </button> -->
+
                             <button id="resetButton" class="cursor-pointer" aria-label="Change reset Status">
                                 <img id="resetButtonImage" src="/img/circular_reset.png" class="w-6 h-6"
                                     alt="Reset Status">
                             </button>
                         </div>
 
-                        <button id="threeDotsButton" class="cursor-pointer" onclick="showStrategyDialog()">
-                            <i class="fas fa-ellipsis-v w-6 h-6 text-gray-500"></i>
-                            <!-- Font Awesome three dots icon -->
-                        </button>
+
+                        <!-- Three dots button with menu -->
+                        <div class="relative">
+                            <button id="threeDotsButton" class="cursor-pointer" onclick="toggleMenu()">
+                                <i class="fas fa-ellipsis-v w-6 h-6 text-gray-500"></i>
+                            </button>
+
+                            <!-- Dropdown menu positioned below the button -->
+                            <div id="dropdownMenu"
+                                class="hidden absolute top-full right-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                <ul class="text-sm">
+                                    <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                        onclick="showStrategyDialog()">Strategies</li>
+                                    <hr class="border-t border-gray-300 my-1">
+                                    <li class="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                                        <!-- Integrated logout form inside the menu -->
+                                        <form th:action="@{/logout}" method="post">
+                                            <input type="hidden" th:name="${_csrf.parameterName}"
+                                                th:value="${_csrf.token}" />
+                                            <button type="submit" class="flex items-center space-x-1">
+                                                <img src="/img/logout.png" class="w-5 h-5" alt="logout">
+                                                <span>Logout</span>
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
@@ -594,6 +608,13 @@
             let dummyGraph; // Variable to hold the chart instance
 
 
+
+            function toggleMenu() {
+                const menu = document.getElementById('dropdownMenu');
+                menu.classList.toggle('hidden');
+            }
+
+
             function showNotification(message) {
                 const notification = document.getElementById('notification');
                 notification.style.display = 'block';
@@ -622,7 +643,7 @@
                         console.error('Error: ' + error);
                     });
                 } catch (e) {
-                        console.log(e);
+                    console.log(e);
                 }
 
             }
@@ -1627,6 +1648,8 @@
 
             function showStrategyDialog() {
 
+                
+
                 const handCountValue = $("#handCount").text();
                 if (getNumbersFromString(handCountValue) > 0) {
                     return;
@@ -1640,6 +1663,14 @@
 
                 const dialog = document.getElementById('strategiesDialog');
                 dialog.classList.add('hidden');
+
+
+                const menu = document.getElementById('dropdownMenu');
+                const button = document.getElementById('threeDotsButton');
+                if (!menu.contains(event.target) && event.target !== button) {
+                    menu.classList.add('hidden');
+                }
+                
             }
 
 
