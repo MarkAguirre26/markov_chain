@@ -13,4 +13,10 @@ public class TriggerFinder {
     }
 
 
+
+    public static boolean isGoodToBet(String handResult) {
+        return handResult.endsWith("W");
+    }
+
+
 }

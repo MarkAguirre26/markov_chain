@@ -46,7 +46,7 @@ public class BaccaratController {
     private static final Logger logger = LoggerFactory.getLogger(BaccaratController.class);
 
     private static final double STOP_PROFIT_PERCENTAGE = 0.20;
-    private static final double STOP_LOSS_PERCENTAGE = 0.12;
+    private static final double STOP_LOSS_PERCENTAGE = 0.10;
     private static final double CONFIDENCE_THRESHOLD = 0.56;
 
     private static final int TRAILING_STOP_ACTIVATION = 5;
@@ -218,7 +218,7 @@ public class BaccaratController {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String userUuid = userPrincipal.getUserUuid();
 
-        String strategy = currentStrategy().equals(Strategies.ONE_THREE_TWO_SIX.getValue()) ? "Stochastic" : currentStrategy();
+        String strategy = currentStrategy().equals(Strategies.STOCHASTIC.getValue()) ? "Stochastic" : currentStrategy();
 
         String winLose = response.getGameStatus().getWins() + "/" + response.getGameStatus().getLosses();
         Journal savedJournal = journalService.saveJournal(new Journal(ZERO, userUuid, winLose, response.getGameStatus().getHandCount(),
@@ -282,16 +282,16 @@ public class BaccaratController {
         return existingGame;
     }
 
-    private boolean hasReachedStopProfit(GameResultResponse gameResultResponse) {
-
-//        GameResultResponse gameResultResponse = getGameResponse();
-        int profit = gameResultResponse.getGameStatus().getProfit();
-        if (profit >= STOP_PROFIT_PERCENTAGE * gameResultResponse.getInitialPlayingUnits()) {
-
-            return true;
-        }
-        return false;
-    }
+//    private boolean hasReachedStopProfit(GameResultResponse gameResultResponse) {
+//
+////        GameResultResponse gameResultResponse = getGameResponse();
+//        int profit = gameResultResponse.getGameStatus().getProfit();
+//        if (profit >= STOP_PROFIT_PERCENTAGE * gameResultResponse.getInitialPlayingUnits()) {
+//
+//            return true;
+//        }
+//        return false;
+//    }
 
     private boolean hasReachedStopLoss(GameResultResponse gameResultResponse) {
         int profit = gameResultResponse.getGameStatus().getProfit();
@@ -499,14 +499,7 @@ public class BaccaratController {
         gameResultResponse.setRecommendedBet(WAIT);
 //        gameResultResponse.setDailyLimitReached(hasReachedDailyJournalLimit());
 
-        if (hasReachedStopProfit(gameResultResponse)) {
-            logger.warn(": Reached stop profit. New profit: {}, New playing fund: {}", profit, playingUnit);
-            gameResultResponse.setMessage(STOP_PROFIT_REACHED);
-            gameResultResponse.setSuggestedBetUnit(0);
-            gameResultResponse.setRecommendedBet(WAIT);
-//            return saveAndReturn(provideGameResponse(gameResultResponse));
-            return provideGameResponse(gameResultResponse);
-        } else if (hasReachedStopLoss(gameResultResponse)) {
+        if (hasReachedStopLoss(gameResultResponse)) {
             logger.warn(": Reached stop loss. New profit: {}, New playing fund: {}", profit, playingUnit);
             gameResultResponse.setMessage(STOP_LOSS_REACHED);
             gameResultResponse.setSuggestedBetUnit(0);
@@ -519,7 +512,7 @@ public class BaccaratController {
             //            ---------------------MONEY MANAGEMENT-------------------------------------
             int betSize = 0;
 
-            if (currentStrategy.equals(Strategies.ONE_THREE_TWO_SIX.getValue())) {
+            if (currentStrategy.equals(Strategies.STOCHASTIC.getValue())) {
                 betSize = BaccaratBetting.oneThreeTwoSix(gameResultResponse);
 
 
@@ -619,18 +612,25 @@ public class BaccaratController {
                     } else {
                         saveFreezeState("ON");
                     }
+                } else if (currentStrategy.equals(Strategies.STOCHASTIC.getValue())) {
+                    boolean isGoodTobet = TriggerFinder.isGoodToBet(gameResultResponse.getHandResult());
+                    if (isGoodTobet) {
+                        saveFreezeState("OFF");
+                    } else {
+                        saveFreezeState("ON");
+                    }
                 }
 
 
             }
 
             // I added this to prevent BET from overlapping with the trailing stop.
-            if (currentStrategy.equals(Strategies.ONE_THREE_TWO_SIX.getValue())) {
+            if (currentStrategy.equals(Strategies.STOCHASTIC.getValue())) {
                 String t = gameResultResponse.getTrailingStop().isEmpty() ? "0.0" : gameResultResponse.getTrailingStop();
                 double doubleValue = Double.parseDouble(t);
                 int tsValue = (int) doubleValue;
                 int p = gameResultResponse.getGameStatus().getProfit();
-               
+
                 int maxBet = 0;
                 if (p > 0 && tsValue > 0) {
                     maxBet = profit - tsValue;
@@ -644,8 +644,6 @@ public class BaccaratController {
         }
 
     }
-
-
 
 
     private GameResultResponse trailingStop(GameResultResponse gameResultResponse, boolean isUndo) {
@@ -1060,7 +1058,11 @@ public class BaccaratController {
         // Get the GameResponse for the user
         Optional<GameResponse> g1 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
         if (g1.isEmpty()) {
-            reset("no");
+//            reset("no");
+            GameStatus gameStatus = createInitialGameStatus();
+            GameResultResponse gameResultResponse = createInitialGameResultResponse(gameStatus);
+
+            initialize(gameResultResponse);
         }
 
         Optional<GameResponse> g2 = gameResponseService.findFirstByUserUuidOrderByGameResponseIdDesc(userPrincipal.getUserUuid());
